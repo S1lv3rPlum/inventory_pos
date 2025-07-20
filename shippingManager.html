@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Shipping Manager</title>
+  <link rel="stylesheet" href="styles.css" />
+
+
+
+  <style>
+    /* This matches Inventory.html's menu button wrapper */
+    #menu-toggle-wrapper {
+      position: sticky;
+      top: 1rem;
+      z-index: 1001;
+      margin-bottom: 1rem;
+    }
+
+#menu-toggle {
+  background-color: var(--accent-color, #007bff);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background: #eee; }
+    .shipped { background-color: #d4ffd4; }
+  </style>
+   <!-- Hamburger Menu Button -->
+    <div id="menu-toggle-wrapper">
+      <button id="menu-toggle" class="menu-button" aria-label="Open menu">☰</button>
+    </div>
+</head>
+<body>
+  <div class="container">
+    
+    <h1>Unshipped Online Sales</h1>
+    <label>
+      <input type="checkbox" id="toggleShipped"> Show shipped items
+    </label>
+    <div id="salesTableContainer"></div>
+  </div>
+
+
+    <!-- Slide-in Menu -->
+  <div id="menu-overlay" class="hidden" aria-hidden="true">
+    <div class="side-menu" role="menu">
+        <nav>
+        <button class="menu-navButton" data-target="inventory.html" role="menuitem">Inventory</button>
+        <button class="menu-navButton" data-target="pos.html" role="menuitem">Make a Sale</button>
+        <button class="menu-navButton" data-target="BrowseProducts.html" role="menuitem">Browse Products</button>
+        <button class="menu-navButton" data-target="sales.html" role="menuitem">Sales Records</button>
+        <button class="menu-navButton" data-target="shippingManager.html" role="menuitem">Shipping Manager</button>
+        <button class="menu-navButton" data-target="settings.html" role="menuitem">Settings</button>
+        
+      </nav>
+    </div>
+  </div>
+
+  <script src="shippingManager.js"></script>
+  <script src="menu-overlay.js"></script>
+</body>
+</html>

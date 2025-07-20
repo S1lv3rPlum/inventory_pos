@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Settings</title>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="backup.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #fff;
+      --text-color: #000;
+      --accent-color: #3498db;
+      --accent-color-dark: #2980b9;
+      --button-bg: var(--accent-color);
+      --button-text: #fff;
+      --button-hover-bg: var(--accent-color-dark);
+    }
+
+    body.light-theme {
+      --bg-color: #fff;
+      --text-color: #000;
+    }
+    body.dark-theme {
+      --bg-color: #222;
+      --text-color: #eee;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    button.full-width {
+      width: 100%;
+      padding: 1rem;
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+      cursor: pointer;
+      background-color: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      border-radius: 6px;
+      transition: background-color 0.3s;
+    }
+    button.full-width:hover {
+      background-color: var(--button-hover-bg);
+    }
+
+    .panel {
+      padding: 1rem;
+      border: 1px solid var(--accent-color-dark);
+      margin-bottom: 1rem;
+      display: none;
+      border-radius: 6px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    /* Original side-menu styling */
+    #menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100%;
+      background-color: var(--bg-color);
+      box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
+      overflow-y: auto;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+      padding: 1rem;
+    }
+    #menu-overlay.active {
+      transform: translateX(0);
+    }
+    .side-menu {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      width: 280px;
+      height: 100%;
+      padding: 1rem;
+      box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
+      overflow-y: auto;
+    }
+    #menu-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--accent-color);
+      margin-bottom: 1rem;
+    }
+    .side-menu nav button {
+      display: block;
+      width: 100%;
+      background-color: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      font-size: 1.1rem;
+      text-align: left;
+      transition: background-color 0.3s;
+    }
+    .side-menu nav button:hover {
+      background-color: var(--button-hover-bg);
+    }
+
+    /* Hamburger toggle */
+    #menu-toggle-wrapper {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1001;
+    }
+    #menu-toggle {
+      font-size: 2rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--accent-color);
+    }
+  </style>
+</head>
+<body class="light-theme">
+
+  <!-- Hamburger toggle -->
+  <div id="menu-toggle-wrapper">
+    <button id="menu-toggle" aria-label="Open menu">☰</button>
+  </div>
+
+  <!-- Menu overlay -->
+  <div id="menu-overlay" aria-hidden="true">
+    <div class="side-menu" role="menu">
+      <button id="menu-close" aria-label="Close menu">✕</button>
+      <nav>
+        <button class="menu-navButton" data-target="inventory.html">Inventory</button>
+        <button class="menu-navButton" data-target="pos.html">Make a Sale</button>
+        <button class="menu-navButton" data-target="BrowseProducts.html" role="menuitem">Browse Products</button>
+        <button class="menu-navButton" data-target="sales.html">Sales Records</button>
+        <button class="menu-navButton" data-target="shippingManager.html" role="menuitem">Shipping Manager</button>
+        <button class="menu-navButton" data-target="settings.html">Settings</button>
+      </nav>
+    </div>
+  </div>
+
+  <main>
+    <button class="full-width" id="btnTheme">Theme Settings</button>
+<div style="margin-top:1rem;">
+  <label><input type="radio" name="theme" id="themeLight" value="light" /> Light</label>
+  <label><input type="radio" name="theme" id="themeDark" value="dark" /> Dark</label>
+  <label><input type="radio" name="theme" id="themeCustom" value="custom" /> Custom</label>
+</div>
+
+<div id="accentPresetContainer" style="margin-top:10px;">
+  <strong>Accent Color Preset:</strong>
+  <label><input type="radio" name="accentPreset" value="#3498db" /> Blue</label>
+  <label><input type="radio" name="accentPreset" value="#2ecc71" /> Green</label>
+  <label><input type="radio" name="accentPreset" value="#e74c3c" /> Red</label>
+</div>
+
+<div id="customColorContainer" style="margin-top:10px; display:none;">
+  <strong>Full Custom Colors:</strong><br>
+  Background: <input type="color" id="bgColorPicker" value="#ffffff" /><br>
+  Text: <input type="color" id="textColorPicker" value="#000000" /><br>
+  Accent: <input type="color" id="accentColorPicker" value="#3498db" />
+</div>
+
+<div style="display: flex; align-items: center; margin-top: 10px;">
+  <div id="customColorPreview" style="padding:10px; border:1px solid #ccc; width:120px; height:60px;">
+    <div style="width:100%; height:30px;" id="previewBackground"></div>
+    <button id="previewButton" style="margin-top:5px;">Accent Button</button>
+  </div>
+
+  <button id="resetThemeBtn" style="margin-left:auto; padding: 0.75rem 1.2rem; font-size: 1rem;">🔄 Reset Theme</button>
+</div>
+
+
+    <button class="full-width" id="btnUserMgmt">User Management</button>
+<div class="panel" id="panelUserMgmt" style="text-align:center; font-size:1.3rem; color: var(--accent-color);">
+  🎉 <strong>User Management Coming Soon!</strong> 🎉<br>
+  <span style="font-size:0.9rem; color: var(--accent-color-dark);">Stay tuned for exciting updates!</span>
+</div>
+
+
+    <button class="full-width" id="btnBackup">Close for the Night (Backup)</button>
+    <div class="panel" id="panelBackup">
+      <section>
+  <h3>Backup & Restore Data</h3>
+  <button id="exportBackupBtn">⬆️ Export Backup</button>
+  <button id="importBackupBtn">⬇️ Import Backup</button>
+  <input type="file" id="importBackupInput" accept=".json" style="display:none" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script src="backup.js"></script>
+<script>
+  setupBackupUI("exportBackupBtn", "importBackupBtn", "importBackupInput");
+</script>
+</section>
+
+    </div>
+  </main>
+
+  <script>
+    // Hamburger menu toggle
+    const menuToggle = document.getElementById('menu-toggle');
+    const menuOverlay = document.getElementById('menu-overlay');
+    const menuClose = document.getElementById('menu-close');
+
+    menuToggle.addEventListener('click', () => {
+      menuOverlay.classList.add('active');
+      menuOverlay.setAttribute('aria-hidden', 'false');
+    });
+
+    menuClose.addEventListener('click', () => {
+      menuOverlay.classList.remove('active');
+      menuOverlay.setAttribute('aria-hidden', 'true');
+    });
+
+    // Navigate on side menu button click
+    menuOverlay.querySelectorAll('.menu-navButton').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-target');
+        if (target) {
+          window.location.href = target;
+        }
+      });
+    });
+
+    // Panels and their toggling buttons
+const panelButtons = ['btnTheme', 'btnUserMgmt', 'btnBackup'];
+
+// Initially hide all panels
+panelButtons.forEach(id => {
+  const panel = document.getElementById('panel' + id.slice(3));
+  if (panel) panel.style.display = 'none';
+});
+
+panelButtons.forEach(id => {
+  const btn = document.getElementById(id);
+  btn.addEventListener('click', () => {
+    panelButtons.forEach(otherId => {
+      const panel = document.getElementById('panel' + otherId.slice(3));
+      if (!panel) return;
+      if (otherId === id) {
+        // Toggle clicked panel
+        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+      } else {
+        // Hide all others
+        panel.style.display = 'none';
+      }
+    });
+  });
+});
+
+  </script>
+<script src="colortheme.js"></script>
+<script>
+  initColorTheme(); // ✅ Initializes the color theme system after everything is loaded
+</script>
+
+
+</body>
+</html>

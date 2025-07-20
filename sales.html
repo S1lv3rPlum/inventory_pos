@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sales Records & Analytics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .navButton {
+      margin-left: 0.5rem;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      background-color: #333;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .filters {
+      margin: 1rem 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    #salesContainer {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    #analytics {
+      margin-top: 2rem;
+    }
+    #salesChart {
+      max-width: 600px;
+      height: auto;
+    }
+
+    /* Print styles */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printableArea, #printableArea * {
+        visibility: visible;
+      }
+      #printableArea {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      #salesChart {
+        width: 100%;
+        height: 400px;
+      }
+    }
+
+    /* Hamburger menu wrapper inside container */
+    #menu-toggle-wrapper {
+      position: sticky;
+      top: 1rem;
+      z-index: 1001;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body class="light-theme accent-blue">
+
+  <div class="container">
+
+    <!-- Hamburger Menu Button -->
+    <div id="menu-toggle-wrapper">
+      <button id="menu-toggle" class="menu-button" aria-label="Open menu">☰</button>
+    </div>
+
+    <header>
+      <h2>Sales Records & Analytics</h2>
+      
+    </header>
+
+    <section class="filters">
+      <label>Filter by Event:
+        <input type="text" id="filterEventInput" placeholder="Type event name..." />
+      </label>
+      <label style="margin-left: 20px;">Filter by Date Range:
+        <input type="date" id="startDateInput" /> to
+        <input type="date" id="endDateInput" />
+      </label>
+      <button onclick="filterSales()">Apply Filters</button>
+      <button onclick="exportSalesToExcel()">📤 Export to Excel</button>
+      <button onclick="document.getElementById('importSalesInput').click()">⬇️ Import from Excel</button>
+      <input type="file" id="importSalesInput" accept=".xlsx" style="display:none" onchange="handleSalesImport(event)" />
+      <button onclick="printSales()">🖨️ Print</button>
+    </section>
+
+    <div id="printableArea">
+      <div id="salesContainer">
+        <p>Loading sales...</p>
+      </div>
+
+      <section id="analytics">
+        <h3>Analytics</h3>
+        <label>Show Analytics By:
+          <select id="analyticsScope">
+            <option value="event">Event</option>
+            <option value="dateRange">Date Range</option>
+          </select>
+        </label>
+        <canvas id="salesChart"></canvas>
+      </section>
+    </div>
+
+  </div> <!-- end container -->
+
+  <!-- Slide-in Menu -->
+  <div id="menu-overlay" class="hidden" aria-hidden="true">
+    <div class="side-menu" role="menu">
+        <nav>
+        <button class="menu-navButton" data-target="inventory.html" role="menuitem">Inventory</button>
+        <button class="menu-navButton" data-target="pos.html" role="menuitem">Make a Sale</button>
+        <button class="menu-navButton" data-target="BrowseProducts.html" role="menuitem">Browse Products</button>
+        <button class="menu-navButton" data-target="sales.html" role="menuitem">Sales Records</button>
+        <button class="menu-navButton" data-target="shippingManager.html" role="menuitem">Shipping Manager</button>
+        <button class="menu-navButton" data-target="settings.html" role="menuitem">Settings</button>
+      </nav>
+    </div>
+  </div>
+
+  <script src="sales.js"></script>
+  <script src="menu-overlay.js"></script>
+</body>
+</html>

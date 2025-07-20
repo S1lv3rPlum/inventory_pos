@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Browse Products</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    body {
+      background-color: #f8f8f8;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 2000px;
+      margin: 2rem auto;
+      background: white;
+      padding: 1rem 1.5rem 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+      box-sizing: border-box;
+    }
+
+    #topBar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    /* This matches Inventory.html's menu button wrapper */
+    #menu-toggle-wrapper {
+      position: sticky;
+      top: 1rem;
+      z-index: 1001;
+      margin-bottom: 1rem;
+    }
+
+#menu-toggle {
+  background-color: var(--accent-color, #007bff);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+    #pageTitle {
+      font-size: 1.5rem;
+      margin: 0;
+      color: #333;
+      user-select: none;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr); /* Fixed 4 columns */
+      gap: 1rem;
+      justify-items: center;
+    }
+
+
+    .product-card {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
+      padding: 0.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: box-shadow 0.2s ease;
+    }
+
+    .product-card:hover {
+      box-shadow: 0 0 8px var(--accent-color, #007bff);
+    }
+
+    .product-card img {
+      max-width: 100%;
+      max-height: 120px;
+      object-fit: contain;
+      margin-bottom: 0.4rem;
+      border-radius: 4px;
+      background: #fafafa;
+    }
+
+    .product-name {
+      font-size: 1rem;
+      color: #333;
+      min-height: 2.2em;
+      word-break: break-word;
+    }
+
+  .cart-icon {
+  background: var(--accent-color, #007bff);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative; /* NOT fixed! */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  cursor: pointer;
+  padding: 0;
+}
+
+#menu-cart-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+/* Optional cart badge (shows item count) */
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: red;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 1rem;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    .form-row {
+      margin-bottom: 0.75rem;
+    }
+
+    .form-row label {
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .form-row input,
+    .form-row select {
+      width: 100%;
+      padding: 0.4rem;
+    }
+
+    .modal-buttons {
+      text-align: right;
+    }
+
+    #menu-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.3);
+      display: none;
+      z-index: 10000;
+    }
+
+    #menu-overlay.visible {
+      display: block;
+    }
+
+    .side-menu {
+      background: white;
+      width: 240px;
+      height: 100%;
+      padding: 1rem;
+      box-sizing: border-box;
+      box-shadow: 2px 0 6px rgba(0,0,0,0.15);
+    }
+
+.side-menu nav button.menu-navButton {
+  background-color: var(--accent-color, #007bff);
+  color: white;
+  font-weight: bold;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  width: 100%;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+  .side-menu nav button.menu-navButton:hover {
+  background-color: var(--accent-color-dark, #0056b3);
+  transform: scale(1.03);
+}
+   </style>
+</head>
+<body class="light-theme accent-blue">
+ <div class="container">
+  <div id="menu-cart-bar">
+    <button id="menu-toggle" class="menu-button" aria-label="Open menu">☰</button>
+    <div class="cart-wrapper">
+      <button class="cart-icon">🛒<span id="cartCount" class="cart-badge">0</span></button>
+    </div>
+  </div>
+
+    <!-- HEADER TITLE BAR -->
+    <div id="topBar">
+      <h1 id="pageTitle">Browse Products</h1>
+    </div>
+
+    <div class="gallery" id="productGallery">
+      <!-- Product cards inserted by JS -->
+    </div>
+  </div>
+
+  <!-- Add to cart modal -->
+  <div class="modal" id="productModal" role="dialog" aria-modal="true" aria-labelledby="modalProductName">
+    <div class="modal-content">
+      <h2 id="modalProductName"></h2>
+      <form id="addToCartForm">
+        <div class="form-row" id="sizeRow" style="display:none;">
+          <label for="productSize">Size:</label>
+          <select id="productSize"></select>
+        </div>
+<div class="form-row">
+  <label for="productQty">Quantity:</label>
+  <div class="qty-controls">
+    <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
+    <input type="number" id="productQty" min="1" value="1" />
+    <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+  </div>
+</div>
+
+        <div class="modal-buttons">
+          <button type="button" onclick="closeModal()">Cancel</button>
+          <button type="submit">Add to Cart</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<div class="modal" id="cartModal">
+  <div class="modal-content">
+    <h2>Your Cart</h2>
+    <div id="cartContents"></div>
+
+    
+  </div>
+</div>
+
+
+
+  <!-- Slide-in menu -->
+<div id="menu-overlay" class="hidden" aria-hidden="true">
+    <div class="side-menu" role="menu">
+            <nav>
+        <button class="menu-navButton" data-target="inventory.html" role="menuitem">Inventory</button>
+        <button class="menu-navButton" data-target="pos.html" role="menuitem">Make a Sale</button>
+        <button class="menu-navButton" data-target="BrowseProducts.html" role="menuitem">Browse Products</button>
+        <button class="menu-navButton" data-target="sales.html" role="menuitem">Sales Records</button>
+        <button class="menu-navButton" data-target="shippingManager.html" role="menuitem">Shipping Manager</button>
+        <button class="menu-navButton" data-target="settings.html" role="menuitem">Settings</button>
+        
+      </nav>
+    </div>
+  </div>
+
+<script>
+  document.getElementById("menu-toggle").addEventListener("click", function () {
+    document.getElementById("menu-overlay").classList.add("visible");
+  });
+
+  // Optional: close the menu when clicking outside the side menu
+  document.getElementById("menu-overlay").addEventListener("click", function (e) {
+    if (!e.target.closest(".side-menu")) {
+      document.getElementById("menu-overlay").classList.remove("visible");
+    }
+  });
+
+  // Add navigation support
+  document.querySelectorAll(".menu-navButton").forEach(button => {
+    button.addEventListener("click", () => {
+      const target = button.getAttribute("data-target");
+      if (target) window.location.href = target;
+    });
+  });
+</script>
+
+
+
+<!-- ✅ ADD THIS: Payment Modal -->
+<div class="modal" id="paymentModal">
+  <div class="modal-content">
+    <h2>Select Payment</h2>
+    <label>
+      Method:
+      <select id="paymentMethod">
+        <option value="cash">Cash</option>
+        <option value="card">Card</option>
+        <option value="venmo">Venmo</option>
+        <option value="other">Other</option>
+      </select>
+    </label>
+    <div class="modal-buttons">
+      <button onclick="closePaymentModal()">Cancel</button>
+      <button onclick="finalizeTransaction()">Complete Purchase</button>
+    </div>
+  </div>
+</div>
+
+<!-- 📦 Load Scripts -->
+<script src="browse.js"></script>
+<script src="menu-overlay.js"></script>
+<script src="payment.js"></script> <!-- ✅ Make sure this is here too -->
+
+<!-- 🚚 Shipping Info Modal -->
+<div class="modal" id="shippingModal">
+  <div class="modal-content">
+    <h2>Shipping & Contact Info</h2>
+
+    <label for="customerName">Full Name:</label>
+<input type="text" id="customerName" placeholder="Enter full name" required />
+
+    <label for="shippingMethod">Preferred Contact Method:</label>
+    <select id="shippingMethod">
+      <option value="">-- Select One --</option>
+      <option value="text">Text (SMS)</option>
+      <option value="email">Email</option>
+    </select>
+
+    <label for="shippingDetail">Phone Number or Email:</label>
+    <input type="text" id="shippingDetail" placeholder="1234567890 or name@example.com" />
+
+    <hr />
+
+    <label for="shippingAddress">Street Address / PO Box:</label>
+    <input type="text" id="shippingAddress" placeholder="123 Main St or PO Box 456" />
+
+    <label for="shippingCity">City/Town:</label>
+    <input type="text" id="shippingCity" />
+
+    <label for="shippingState">State:</label>
+    <input type="text" id="shippingState" />
+
+    <label for="shippingZip">Zip Code:</label>
+    <input type="text" id="shippingZip" />
+
+    <div class="modal-buttons">
+      <button onclick="closeShippingModal()">Cancel</button>
+      <button onclick="saveShippingInfo()">Continue to Checkout</button>
+    </div>
+  </div>
+</div>
+
+
+</body>
+
+</html>
