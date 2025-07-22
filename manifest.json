@@ -1,7 +1,7 @@
 {
-  "name": "My App Name",
-  "short_name": "AppShort",
-  "description": "Brief description of what your app does.",
+  "name": "Stock Hammer",
+  "short_name": "StH",
+  "description": "Basic inventory management amd point kf sale tracking.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
