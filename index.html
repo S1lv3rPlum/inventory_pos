@@ -89,11 +89,15 @@
     }, 3000);
 
     // Register service worker if available
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-        .then(() => console.log('Service Worker registered'))
-        .catch(err => console.log('Service Worker registration failed:', err));
-    }
+   <script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+      .then(reg => console.log('SW registered', reg))
+      .catch(err => console.error('SW failed:', err));
+  });
+}
+</script>
   </script>
 </body>
 </html>
