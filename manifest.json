@@ -1,20 +1,45 @@
 {
-  "name": "DataForge",
-  "short_name": "DataForge",
-  "start_url": "index.html",
+  "name": "My App Name",
+  "short_name": "AppShort",
+  "description": "Brief description of what your app does.",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0f2027",
-  "theme_color": "#2c5364",
+  "background_color": "#ffffff",
+  "theme_color": "#317EFB",
+  "orientation": "portrait",
+  "lang": "en",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "./icons/icon-192.png",
       "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./screenshots/screen1.png",
+      "sizes": "540x720",
       "type": "image/png"
     },
     {
-      "src": "icon-512.png",
-      "sizes": "512x512",
+      "src": "./screenshots/screen2.png",
+      "sizes": "540x720",
       "type": "image/png"
     }
-  ]
+  ],
+  "id": "/",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "categories": ["productivity", "utility"],
+  "prefer_related_applications": false,
+  "related_applications": []
 }
