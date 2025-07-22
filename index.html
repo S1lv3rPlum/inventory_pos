@@ -74,30 +74,31 @@
   <p class="subtle">Contact: <a href="mailto:DataForgeApps@gmail.com">DataForgeApps@gmail.com</a></p>
   <p class="subtle"><a href="https://getdataforge.com">getdataforge.com</a></p>
 
-  <script>
-    // Delayed redirect with error fallback
-    setTimeout(() => {
-      fetch('BrowseProducts.html')
-        .then(response => {
-          if (response.ok) {
-            window.location.href = 'BrowseProducts.html';
-          } else {
-            alert("BrowseProducts.html not found.");
-          }
-        })
-        .catch(() => alert("Network error. Couldn't load BrowseProducts.html."));
-    }, 3000);
-
-    // Register service worker if available
+  
    <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
-      .then(reg => console.log('SW registered', reg))
-      .catch(err => console.error('SW failed:', err));
-  });
-}
+  // Delayed redirect with error fallback
+  setTimeout(() => {
+    fetch('BrowseProducts.html')
+      .then(response => {
+        if (response.ok) {
+          window.location.href = 'BrowseProducts.html';
+        } else {
+          alert("BrowseProducts.html not found.");
+        }
+      })
+      .catch(() => alert("Network error. Couldn't load BrowseProducts.html."));
+  }, 3000);
 </script>
-  </script>
+
+<script>
+  // Register service worker if available
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+        .then(reg => console.log('SW registered', reg))
+        .catch(err => console.error('SW failed:', err));
+    });
+  }
+</script>
 </body>
 </html>
