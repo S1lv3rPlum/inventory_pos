@@ -94,10 +94,16 @@
   // Register service worker if available
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
-        .then(reg => console.log('SW registered', reg))
-        .catch(err => console.error('SW failed:', err));
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => {
+          alert("SW registered: " + reg.scope);
+        })
+        .catch(err => {
+          alert("SW failed: " + err);
+        });
     });
+  } else {
+    alert("Service workers not supported");
   }
 </script>
 </body>
