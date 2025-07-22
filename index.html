@@ -1,10 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DataForge Apps</title>
-  <meta http-equiv="refresh" content="3;url=BrowseProducts.html" />
+
+  <!-- Manifest for PWA -->
+  <link rel="manifest" href="manifest.json" />
+
   <style>
     body {
       margin: 0;
@@ -69,5 +73,27 @@
   <p class="subtle">Redirecting to app...</p>
   <p class="subtle">Contact: <a href="mailto:DataForgeApps@gmail.com">DataForgeApps@gmail.com</a></p>
   <p class="subtle"><a href="https://getdataforge.com">getdataforge.com</a></p>
+
+  <script>
+    // Delayed redirect with error fallback
+    setTimeout(() => {
+      fetch('BrowseProducts.html')
+        .then(response => {
+          if (response.ok) {
+            window.location.href = 'BrowseProducts.html';
+          } else {
+            alert("BrowseProducts.html not found.");
+          }
+        })
+        .catch(() => alert("Network error. Couldn't load BrowseProducts.html."));
+    }, 3000);
+
+    // Register service worker if available
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('Service Worker registered'))
+        .catch(err => console.log('Service Worker registration failed:', err));
+    }
+  </script>
 </body>
 </html>
