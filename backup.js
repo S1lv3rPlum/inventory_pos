@@ -72,40 +72,66 @@
     });
   }
 
-  async function importBackup(file) {
-    const userPassword = prompt("Enter password to restore backup:");
-    const correctPassword = "admin"; // Change this
+  async function importZip() {
+  try {
+    // Prompt user to pick a .zip file
+    const [fileHandle] = await window.showOpenFilePicker({
+      types: [{
+        description: 'ZIP Backup',
+        accept: { 'application/zip': ['.zip'] },
+      }],
+      multiple: false
+    });
 
-    if (userPassword !== correctPassword) {
-      alert("Incorrect password. Restore cancelled.");
+    const file = await fileHandle.getFile();
+    const arrayBuffer = await file.arrayBuffer();
+
+    const zip = await JSZip.loadAsync(arrayBuffer);
+
+    // Validate required files exist
+    if (!zip.file("stock.json") || !zip.file("logs.json") || !zip.file("settings.json")) {
+      alert("Invalid backup file. One or more expected files are missing.");
       return;
     }
 
-    const zip = await JSZip.loadAsync(file);
-    const db = await openDB();
+    // Parse JSON content
+    const stockData = JSON.parse(await zip.file("stock.json").async("string"));
+    const logsData = JSON.parse(await zip.file("logs.json").async("string"));
+    const settingsData = JSON.parse(await zip.file("settings.json").async("string"));
 
-    const tx = db.transaction(db.objectStoreNames, "readwrite");
+    // Open the DB
+    const db = await openDB("inventory", 1);
 
-    tx.oncomplete = () => alert("Backup restored successfully");
-    tx.onerror = e => alert("Error restoring backup: " + e.target.error);
+    // Clear existing tables
+    await db.clear("stock");
+    await db.clear("logs");
+    await db.clear("settings");
 
-    for (const storeName of db.objectStoreNames) {
-      const store = tx.objectStore(storeName);
-      store.clear();
+    // Insert new data
+    const tx = db.transaction(["stock", "logs", "settings"], "readwrite");
 
-      const fileInZip = zip.file(`${storeName}.xlsx`);
-      if (!fileInZip) continue;
-
-      const content = await fileInZip.async("arraybuffer");
-      const workbook = XLSX.read(content, { type: "array" });
-      const ws = workbook.Sheets[workbook.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json(ws);
-
-      for (const item of data) {
-        store.add(item);
-      }
+    for (const item of stockData) {
+      await tx.objectStore("stock").put(item);
     }
+
+    for (const log of logsData) {
+      await tx.objectStore("logs").put(log);
+    }
+
+    for (const setting of settingsData) {
+      await tx.objectStore("settings").put(setting);
+    }
+
+    await tx.done;
+
+    alert("Backup restored successfully. The app will now reload.");
+    location.reload();
+    
+  } catch (error) {
+    console.error("Error during import:", error);
+    alert("An error occurred while importing the backup. See console for details.");
   }
+}
 
   // Utility functions to wire up buttons/input on any page
   function setupBackupUI(exportBtnId, importBtnId, importInputId) {
