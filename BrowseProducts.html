@@ -298,7 +298,7 @@
   document.querySelectorAll(".menu-navButton").forEach(button => {
     button.addEventListener("click", () => {
       const target = button.getAttribute("data-target");
-      if (target) window.location.href = target;
+      if (target) window.location.href = new URL(target, window.location.href).href;
     });
   });
 </script>
