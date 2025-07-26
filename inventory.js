@@ -1,138 +1,60 @@
-// Inventory Alert System JS
+// add-product.js
 
-let db;
-let editingKey = null; // Track if editing
+const dbName = "ProductDB"; const dbVersion = 1; let db;
 
-window.onload = function () {
-  const request = indexedDB.open("product-database", 1);
+window.onload = function () { let request = indexedDB.open(dbName, dbVersion);
 
-  request.onerror = function () {
-    alert("Database failed to open");
-  };
+request.onerror = function (event) { console.error("Database error:", event.target.errorCode); };
 
-  request.onsuccess = function () {
-    db = request.result;
-    displayProducts();
-  };
+request.onsuccess = function (event) { db = event.target.result; console.log("Database initialized"); displayProducts(); };
 
-  request.onupgradeneeded = function (e) {
-    db = e.target.result;
-    const objectStore = db.createObjectStore("products", {
-      keyPath: "productId"
-    });
-    objectStore.createIndex("productName", "productName", { unique: false });
-    objectStore.createIndex("quantity", "quantity", { unique: false });
-    objectStore.createIndex("minQuantity", "minQuantity", { unique: false });
-    objectStore.createIndex("location", "location", { unique: false });
-  };
+request.onupgradeneeded = function (event) { db = event.target.result; if (!db.objectStoreNames.contains("products")) { const objectStore = db.createObjectStore("products", { keyPath: "id", autoIncrement: true, }); objectStore.createIndex("name", "name", { unique: false }); objectStore.createIndex("category", "category", { unique: false }); } };
 
-  document.getElementById("product-form").onsubmit = function (e) {
-    e.preventDefault();
-    const form = e.target;
-    const productId = form.productId.value.trim();
-    const productName = form.productName.value.trim();
-    const quantity = parseInt(form.quantity.value.trim());
-    const minQuantity = parseInt(form.minQuantity.value.trim());
-    const location = form.location.value.trim();
+document .getElementById("product-form") .addEventListener("submit", function (e) { e.preventDefault(); addProduct(); }); };
 
-    if (!productId || !productName || isNaN(quantity) || isNaN(minQuantity) || !location) {
-      alert("Please fill out all fields.");
-      return;
-    }
+function addProduct() { const name = document.getElementById("product-name").value.trim(); const category = document.getElementById("product-category").value.trim(); const quantity = parseInt( document.getElementById("product-quantity").value.trim() );
 
-    const transaction = db.transaction(["products"], "readwrite");
-    const store = transaction.objectStore("products");
+if (!name || !category || isNaN(quantity) || quantity < 1) { alert("Please fill in all fields with valid data."); return; }
 
-    if (editingKey) {
-      const getRequest = store.get(editingKey);
-      getRequest.onsuccess = function () {
-        const existing = getRequest.result;
-        existing.productName = productName;
-        existing.quantity += quantity; // Add to quantity
-        existing.minQuantity = minQuantity;
-        existing.location = location;
+const transaction = db.transaction(["products"], "readwrite"); const objectStore = transaction.objectStore("products");
 
-        const updateRequest = store.put(existing);
-        updateRequest.onsuccess = function () {
-          showTempAlert("Product updated successfully!");
-          form.reset();
-          editingKey = null;
-          displayProducts();
-        };
-      };
-    } else {
-      const newItem = {
-        productId,
-        productName,
-        quantity,
-        minQuantity,
-        location
-      };
+const index = objectStore.index("name"); const request = index.getAll();
 
-      const addRequest = store.add(newItem);
-      addRequest.onsuccess = function () {
-        showTempAlert("Product added successfully!");
-        form.reset();
-        displayProducts();
-      };
+request.onsuccess = function (event) { let updated = false; for (let item of event.target.result) { if (item.name === name && item.category === category) { item.quantity += quantity; const updateRequest = objectStore.put(item); updateRequest.onsuccess = function () { alert("Product quantity updated."); displayProducts(); }; updated = true; break; } } if (!updated) { const newProduct = { name, category, quantity }; const addRequest = objectStore.add(newProduct); addRequest.onsuccess = function () { alert("Product added successfully!"); displayProducts(); }; } document.getElementById("product-form").reset(); }; }
 
-      addRequest.onerror = function () {
-        alert("Failed to add product. Product ID might already exist.");
-      };
-    }
-  };
-};
+function displayProducts() { const transaction = db.transaction(["products"], "readonly"); const objectStore = transaction.objectStore("products"); const request = objectStore.getAll();
 
-function displayProducts() {
-  const table = document.getElementById("product-table");
-  table.innerHTML = "<tr><th>ID</th><th>Name</th><th>Qty</th><th>Min</th><th>Location</th><th>Actions</th></tr>";
+request.onsuccess = function (event) { const products = event.target.result; const table = document.getElementById("product-table"); table.innerHTML = "";
 
-  const transaction = db.transaction(["products"], "readonly");
-  const store = transaction.objectStore("products");
-
-  store.openCursor().onsuccess = function (e) {
-    const cursor = e.target.result;
-    if (cursor) {
-      const item = cursor.value;
-      const row = table.insertRow();
-      row.innerHTML = `
-        <td>${item.productId}</td>
-        <td>${item.productName}</td>
-        <td>${item.quantity}</td>
-        <td>${item.minQuantity}</td>
-        <td>${item.location}</td>
-        <td><button onclick="editProduct('${item.productId}')">Edit</button></td>
-      `;
-      cursor.continue();
-    }
-  };
+// Group by category
+const grouped = {};
+for (let product of products) {
+  if (!grouped[product.category]) grouped[product.category] = [];
+  grouped[product.category].push(product);
 }
 
-function editProduct(id) {
-  const transaction = db.transaction(["products"], "readonly");
-  const store = transaction.objectStore("products");
-  const getRequest = store.get(id);
+for (let category in grouped) {
+  const catHeader = document.createElement("tr");
+  catHeader.innerHTML = `<th colspan="4">${category}</th>`;
+  table.appendChild(catHeader);
 
-  getRequest.onsuccess = function () {
-    const item = getRequest.result;
-    if (item) {
-      document.getElementById("productId").value = item.productId;
-      document.getElementById("productName").value = item.productName;
-      document.getElementById("quantity").value = ""; // New quantity to add
-      document.getElementById("minQuantity").value = item.minQuantity;
-      document.getElementById("location").value = item.location;
-      editingKey = item.productId;
-    }
-  };
+  for (let product of grouped[category]) {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${product.name}</td>
+      <td>${product.quantity}</td>
+      <td><button onclick="editProduct(${product.id})">Edit</button></td>
+    `;
+    table.appendChild(row);
+  }
 }
 
-function showTempAlert(msg) {
-  const result = document.getElementById("result-message");
-  result.textContent = msg;
-  setTimeout(() => {
-    result.textContent = "";
-  }, 3000);
-}
+}; }
+
+function editProduct(id) { const newQty = prompt("Enter additional quantity to add:"); const qty = parseInt(newQty); if (isNaN(qty) || qty < 1) { alert("Please enter a valid number."); return; } const transaction = db.transaction(["products"], "readwrite"); const objectStore = transaction.objectStore("products"); const getRequest = objectStore.get(id);
+
+getRequest.onsuccess = function () { const product = getRequest.result; product.quantity += qty; const updateRequest = objectStore.put(product); updateRequest.onsuccess = function () { alert("Product updated."); displayProducts(); }; }; }
+
 
 
 window.exportInventory = exportInventory;
