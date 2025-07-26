@@ -1,58 +1,52 @@
 let db;
-const dbName = "product-database";
-
-const request = indexedDB.open(dbName, 1);
+const request = indexedDB.open("ProductDB", 1);
 
 request.onupgradeneeded = function (event) {
   db = event.target.result;
-  const store = db.createObjectStore("products", {
-    keyPath: "id",
-    autoIncrement: true,
-  });
-  store.createIndex("name", "name", { unique: false });
-  store.createIndex("category", "category", { unique: false });
+  const objectStore = db.createObjectStore("products", { keyPath: "name" });
+  objectStore.createIndex("category", "category", { unique: false });
+  objectStore.createIndex("quantity", "quantity", { unique: false });
 };
 
 request.onsuccess = function (event) {
   db = event.target.result;
-  displayProducts(); // Display all products at startup
+  displayProducts();
 };
 
-request.onerror = function () {
-  alert("Error opening database.");
+request.onerror = function (event) {
+  console.error("Database error:", event.target.errorCode);
 };
 
 document.getElementById("product-form").addEventListener("submit", function (e) {
   e.preventDefault();
 
-  const name = document.getElementById("product-name").value.trim();
-  const category = document.getElementById("product-category").value.trim();
-  const quantity = parseInt(document.getElementById("product-quantity").value);
+  const name = document.getElementById("name").value.trim();
+  const category = document.getElementById("category").value.trim();
+  const quantity = parseInt(document.getElementById("quantity").value.trim());
 
   if (!name || !category || isNaN(quantity)) {
-    alert("Please fill out all fields correctly.");
+    alert("All fields are required.");
     return;
   }
 
-  const tx = db.transaction("products", "readwrite");
-  const store = tx.objectStore("products");
-  const allProducts = store.getAll();
+  const transaction = db.transaction(["products"], "readwrite");
+  const store = transaction.objectStore("products");
 
-  allProducts.onsuccess = function () {
-    const existing = allProducts.result.find(
-      (item) => item.name === name && item.category === category
-    );
+  const getRequest = store.get(name);
+  getRequest.onsuccess = function () {
+    const existing = getRequest.result;
 
     if (existing) {
       existing.quantity += quantity;
       store.put(existing);
+      showMessage("Product quantity updated!");
     } else {
       store.add({ name, category, quantity });
+      showMessage("Product added successfully!");
     }
 
-    tx.oncomplete = function () {
+    transaction.oncomplete = function () {
       document.getElementById("product-form").reset();
-      document.getElementById("result-message").textContent = "Product added!";
       displayProducts();
     };
   };
@@ -62,30 +56,30 @@ function displayProducts() {
   const tbody = document.querySelector("#product-table tbody");
   tbody.innerHTML = "";
 
-  const tx = db.transaction("products", "readonly");
-  const store = tx.objectStore("products");
-  const all = store.getAll();
+  const transaction = db.transaction(["products"], "readonly");
+  const store = transaction.objectStore("products");
 
-  all.onsuccess = function () {
-    const grouped = {};
+  store.openCursor().onsuccess = function (event) {
+    const cursor = event.target.result;
+    if (cursor) {
+      const { name, category, quantity } = cursor.value;
 
-    all.result.forEach((item) => {
-      const key = item.category + "|" + item.name;
-      if (grouped[key]) {
-        grouped[key].quantity += item.quantity;
-      } else {
-        grouped[key] = { ...item };
-      }
-    });
-
-    Object.values(grouped).forEach((item) => {
       const row = document.createElement("tr");
       row.innerHTML = `
-        <td>${item.category}</td>
-        <td>${item.name}</td>
-        <td>${item.quantity}</td>
+        <td>${name}</td>
+        <td>${category}</td>
+        <td>${quantity}</td>
       `;
       tbody.appendChild(row);
-    });
+      cursor.continue();
+    }
   };
+}
+
+function showMessage(msg) {
+  const messageElem = document.getElementById("result-message");
+  messageElem.textContent = msg;
+  setTimeout(() => {
+    messageElem.textContent = "";
+  }, 3000);
 }
