@@ -623,7 +623,9 @@ request.onsuccess = function (event) {
   });
 };
 
-
+function addProduct() {
+  alert("The function ran!");
+}
 
 // --- Make sure these functions are global if needed ---
 window.exportInventory = exportInventory;
