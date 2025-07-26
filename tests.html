@@ -2,46 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Test Add Product Button </title>
+  <title>Inventory</title>
 </head>
 <body>
-  <h1>Test Page2</h1>
+  <h2>Add Product</h2>
+  <form id="product-form">
+    <label>
+      Name: <input type="text" id="product-name" required />
+    </label>
+    <label>
+      Category: <input type="text" id="product-category" required />
+    </label>
+    <label>
+      Quantity: <input type="number" id="product-quantity" required />
+    </label>
+    <button type="submit">Add Product</button>
+  </form>
 
-  <label for="productName">Product Name:</label>
-  <input type="text" id="productName" placeholder="e.g., Red Widget" /><br><br>
+  <p id="result-message"></p>
 
-  <label for="productPrice">Product Price:</label>
-  <input type="number" id="productPrice" placeholder="e.g., 9.99" /><br><br>
+  <h2>Inventory</h2>
+  <table id="product-table" border="1">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Name</th>
+        <th>Quantity</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-  <button id="addProductBtn">Add Product</button>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const addBtn = document.getElementById("addProductBtn");
-      addBtn.addEventListener("click", addProduct);
-      console.log("Script loaded, button hooked");
-    });
-
-    function addProduct() {
-      const name = document.getElementById("productName").value.trim();
-      const price = document.getElementById("productPrice").value.trim();
-
-      if (!name || !price) {
-        alert("Please enter both name and price.");
-        return;
-      }
-
-      alert(`Product added!\nName: ${name}\nPrice: $${price}`);
-    }
-  </script>
-  <!-- Other HTML content above -->
-
-  <!-- Load the JavaScript just before the body closes -->
+  <!-- Add JS file at bottom of body -->
   <script src="tests.js"></script>
-</body>
-</html>
-  
-  
 </body>
 </html>
