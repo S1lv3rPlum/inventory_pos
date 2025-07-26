@@ -571,6 +571,60 @@ function handleDiscountImport(event) {
   event.target.value = "";
 }
 
+// Open (or create) the database
+const request = indexedDB.open("ProductDatabase", 1);
+
+request.onupgradeneeded = function (event) {
+  const db = event.target.result;
+
+  // Create object store if it doesn't exist
+  if (!db.objectStoreNames.contains("products")) {
+    db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
+  }
+};
+
+request.onerror = function () {
+  document.getElementById("result-message").textContent =
+    "Error opening database.";
+};
+
+request.onsuccess = function (event) {
+  const db = event.target.result;
+
+  const form = document.getElementById("product-form");
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const name = document.getElementById("product-name").value;
+    const price = parseFloat(document.getElementById("product-price").value);
+
+    if (!name || isNaN(price)) {
+      document.getElementById("result-message").textContent =
+        "Please enter valid product info.";
+      return;
+    }
+
+    const tx = db.transaction("products", "readwrite");
+    const store = tx.objectStore("products");
+
+    const product = { name: name, price: price };
+    const addRequest = store.add(product);
+
+    addRequest.onsuccess = function () {
+      document.getElementById("result-message").textContent =
+        "Product added successfully!";
+      form.reset();
+    };
+
+    addRequest.onerror = function () {
+      document.getElementById("result-message").textContent =
+        "Failed to add product.";
+    };
+  });
+};
+
+
+
 // --- Make sure these functions are global if needed ---
 window.exportInventory = exportInventory;
 window.handleInventoryImport = handleInventoryImport;
