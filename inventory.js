@@ -73,6 +73,8 @@ getRequest.onsuccess = function () { const item = getRequest.result; if (item) {
 function showTempAlert(msg) { const result = document.getElementById("result-message"); result.textContent = msg; setTimeout(() => { result.textContent = ""; }, 3000); }
 
 
+
+
 // --- Make sure these functions are global if needed ---
 window.exportInventory = exportInventory;
 window.handleInventoryImport = handleInventoryImport;
