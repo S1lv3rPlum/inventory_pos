@@ -610,11 +610,10 @@ request.onsuccess = function (event) {
     const product = { name: name, price: price };
     const addRequest = store.add(product);
 
-    addRequest.onsuccess = function () {
-      document.getElementById("result-message").textContent =
-        "Product added successfully!";
-      form.reset();
-    };
+   addRequest.onsuccess = function () {
+  alert("Product added successfully!");
+  form.reset();
+};
 
     addRequest.onerror = function () {
       document.getElementById("result-message").textContent =
