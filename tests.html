@@ -2,38 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Inventory</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventory Manager</title>
+  <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+    }
+    #result-message {
+      color: green;
+    }
+  </style>
 </head>
 <body>
-  <h2>Add Product</h2>
+  <h1>Inventory Manager</h1>
+  
   <form id="product-form">
-    <label>
-      Name: <input type="text" id="product-name" required />
-    </label>
-    <label>
-      Category: <input type="text" id="product-category" required />
-    </label>
-    <label>
-      Quantity: <input type="number" id="product-quantity" required />
-    </label>
+    <label for="name">Product Name:</label>
+    <input type="text" id="name" required /><br/>
+
+    <label for="category">Category:</label>
+    <input type="text" id="category" required /><br/>
+
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" min="1" required /><br/>
+
     <button type="submit">Add Product</button>
   </form>
 
   <p id="result-message"></p>
 
-  <h2>Inventory</h2>
-  <table id="product-table" border="1">
+  <h2>Inventory Table</h2>
+  <table id="product-table">
     <thead>
       <tr>
+        <th>Product</th>
         <th>Category</th>
-        <th>Name</th>
         <th>Quantity</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
-  <!-- Add JS file at bottom of body -->
-  <script src="tests.js"></script>
+  <script src="add-product.js"></script>
 </body>
 </html>
