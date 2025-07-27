@@ -89,7 +89,7 @@
     <div id="bandNameBanner">&lt;band Name Banner&gt;</div>
 
     <div id="topBar">
-      <h1>Inventory Manager3</h1>
+      <h1>Inventory Manager4</h1>
   
     </div>
 
@@ -196,6 +196,43 @@
       }
     }
   </script>
+  
+ function addProduct() {
+  const nameInput = document.getElementById("productName");
+  const qtyInput = document.getElementById("productQty");
+  const priceInput = document.getElementById("productPrice");
+
+  const name = nameInput.value.trim();
+  const qty = parseInt(qtyInput.value);
+  const price = parseFloat(priceInput.value);
+
+  if (!name || isNaN(qty) || isNaN(price)) {
+    alert("Please fill in all fields correctly.");
+    return;
+  }
+
+  const table = document.getElementById("productTable");
+  if (!table) {
+    alert("Table not found.");
+    return;
+  }
+
+  const tbody = table.querySelector("tbody") || table.appendChild(document.createElement("tbody"));
+  const row = tbody.insertRow();
+
+  const nameCell = row.insertCell(0);
+  const qtyCell = row.insertCell(1);
+  const priceCell = row.insertCell(2);
+
+  nameCell.textContent = name;
+  qtyCell.textContent = qty;
+  priceCell.textContent = "$" + price.toFixed(2);
+
+  nameInput.value = "";
+  qtyInput.value = "";
+  priceInput.value = "";
+} 
+  
   <script src="inventory.js"></script>
   <script src="menu-overlay.js"></script>
   
