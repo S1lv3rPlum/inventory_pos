@@ -538,21 +538,31 @@ function exportDiscounts() {
 }
 
 function addProduct() {
-  const name = document.getElementById("productName").value;
-  const qty = parseInt(document.getElementById("productQty").value);
+  const name = document.getElementById("productName").value.trim();
+  const quantity = parseInt(document.getElementById("productQty").value);
   const price = parseFloat(document.getElementById("productPrice").value);
 
-  if (!name || isNaN(qty) || isNaN(price)) {
+  if (!name || isNaN(quantity) || isNaN(price)) {
     alert("Please fill in all fields correctly.");
     return;
   }
 
-  const table = document.getElementById("productTable").getElementsByTagName('tbody')[0];
-  const row = table.insertRow();
-  row.insertCell(0).innerText = name;
-  row.insertCell(1).innerText = qty;
-  row.insertCell(2).innerText = "$" + price.toFixed(2);
+  const product = { name, quantity, price };
 
+  // Debug alert to confirm product is being added
+  alert("Adding product: " + JSON.stringify(product));
+
+  // Save to localStorage
+  let inventory = JSON.parse(localStorage.getItem("inventory")) || [];
+  inventory.push(product);
+  localStorage.setItem("inventory", JSON.stringify(inventory));
+
+  alert("Product added to localStorage!");
+
+  // Refresh table with full inventory
+  displayInventory();
+
+  // Clear input fields
   document.getElementById("productName").value = '';
   document.getElementById("productQty").value = '';
   document.getElementById("productPrice").value = '';
@@ -598,7 +608,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-
+document.addEventListener('DOMContentLoaded', displayInventory);
 
 // --- Make sure these functions are global if needed ---
 window.exportInventory = exportInventory;
