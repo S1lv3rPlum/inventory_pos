@@ -89,7 +89,7 @@
     <div id="bandNameBanner">&lt;band Name Banner&gt;</div>
 
     <div id="topBar">
-      <h1>Inventory Manager3</h1>
+      <h1>Inventory Manager4</h1>
   
     </div>
 
@@ -235,35 +235,38 @@ function addProduct() {
 <script>
 function displayProducts() {
   const container = document.getElementById("inventoryList");
-  container.innerHTML = "";
+  container.innerHTML = ""; // Clear any existing content
 
   const products = JSON.parse(localStorage.getItem("inventory")) || [];
-
-  if (products.length === 0) {
-    container.textContent = "No products in inventory.";
-    return;
-  }
 
   const table = document.createElement("table");
   table.innerHTML = `
     <thead>
       <tr>
-        <th>Name</th><th>Qty</th><th>Price</th><th>Category</th><th>Has Sizes</th><th>Gender</th>
+        <th>Name</th>
+        <th>Qty</th>
+        <th>Price</th>
+        <th>Category</th>
+        <th>Has Sizes</th>
+        <th>Gender</th>
       </tr>
     </thead>
     <tbody>
-      ${products.map(p => `
-        <tr>
-          <td>${p.name}</td>
-          <td>${p.qty}</td>
-          <td>$${p.price.toFixed(2)}</td>
-          <td>${p.category}</td>
-          <td>${p.hasSizes ? "Yes" : "No"}</td>
-          <td>${p.gender}</td>
-        </tr>
-      `).join("")}
+      ${products.length === 0
+        ? `<tr><td colspan="6" style="text-align:center;">No products in inventory.</td></tr>`
+        : products.map(p => `
+          <tr>
+            <td>${p.name}</td>
+            <td>${p.qty}</td>
+            <td>$${p.price.toFixed(2)}</td>
+            <td>${p.category}</td>
+            <td>${p.hasSizes ? "Yes" : "No"}</td>
+            <td>${p.gender}</td>
+          </tr>
+        `).join("")}
     </tbody>
   `;
+
   container.appendChild(table);
 }
 </script>
