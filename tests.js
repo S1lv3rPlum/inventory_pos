@@ -1,62 +1,76 @@
 let db;
 
 window.onload = function () {
-  const request = indexedDB.open("ProductDB", 1);
+  let request = indexedDB.open("ProductDB", 1);
 
-  request.onerror = function (event) {
-    console.error("Database error:", event.target.error);
+  request.onerror = function () {
+    console.error("Database failed to open");
   };
 
-  request.onsuccess = function (event) {
-    db = event.target.result;
+  request.onsuccess = function () {
+    db = request.result;
+    console.log("Database opened successfully");
     displayProducts();
   };
 
-  request.onupgradeneeded = function (event) {
-    db = event.target.result;
-    const objectStore = db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
-    objectStore.createIndex("name", "name", { unique: false });
-    objectStore.createIndex("price", "price", { unique: false });
+  request.onupgradeneeded = function (e) {
+    let db = e.target.result;
+    let store = db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
+    store.createIndex("name", "name", { unique: false });
+    store.createIndex("qty", "qty", { unique: false });
+    store.createIndex("price", "price", { unique: false });
+    console.log("Database setup complete");
+  };
+
+  document.getElementById("addProductForm").onsubmit = function (e) {
+    e.preventDefault();
+    addProduct();
   };
 };
 
 function addProduct() {
   const name = document.getElementById("productName").value.trim();
-  const price = parseFloat(document.getElementById("productPrice").value.trim());
+  const qty = parseInt(document.getElementById("productQty").value);
+  const price = parseFloat(document.getElementById("productPrice").value);
 
-  if (!name || isNaN(price)) {
-    alert("Please enter a valid name and price.");
+  if (!name || isNaN(qty) || isNaN(price)) {
+    alert("Please fill all fields correctly.");
     return;
   }
 
-  const transaction = db.transaction(["products"], "readwrite");
-  const store = transaction.objectStore("products");
-  const request = store.add({ name, price });
+  let newItem = { name, qty, price };
 
-  request.onsuccess = function () {
-    document.getElementById("productName").value = "";
-    document.getElementById("productPrice").value = "";
+  let transaction = db.transaction(["products"], "readwrite");
+  let store = transaction.objectStore("products");
+  store.add(newItem);
+
+  transaction.oncomplete = function () {
+    console.log("Product added");
+    document.getElementById("addProductForm").reset();
     displayProducts();
   };
 
-  request.onerror = function (event) {
-    console.error("Add failed:", event.target.error);
+  transaction.onerror = function () {
+    console.error("Error adding product");
   };
 }
 
 function displayProducts() {
-  const transaction = db.transaction(["products"], "readonly");
-  const store = transaction.objectStore("products");
+  const tbody = document.getElementById("productTableBody");
+  tbody.innerHTML = "";
 
-  const tableBody = document.getElementById("productTableBody");
-  tableBody.innerHTML = "";
+  let transaction = db.transaction("products", "readonly");
+  let store = transaction.objectStore("products");
 
-  store.openCursor().onsuccess = function (event) {
-    const cursor = event.target.result;
+  store.openCursor().onsuccess = function (e) {
+    let cursor = e.target.result;
     if (cursor) {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td>${cursor.value.name}</td><td>${cursor.value.price.toFixed(2)}</td>`;
-      tableBody.appendChild(row);
+      let row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${cursor.value.name}</td>
+        <td>${cursor.value.qty}</td>
+        <td>${cursor.value.price.toFixed(2)}</td>`;
+      tbody.appendChild(row);
       cursor.continue();
     }
   };
