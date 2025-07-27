@@ -70,6 +70,25 @@
   }
 </script>
 
+<form onsubmit="event.preventDefault(); addProduct(
+  document.getElementById('name').value,
+  document.getElementById('qty').value,
+  document.getElementById('price').value
+)">
+  <input type="text" id="name" placeholder="Name" required />
+  <input type="number" id="qty" placeholder="Qty" required />
+  <input type="number" id="price" placeholder="Price" required />
+  <button type="submit">Add</button>
+</form>
+
+<table border="1">
+  <thead>
+    <tr><th>Name</th><th>Qty</th><th>Price</th></tr>
+  </thead>
+  <tbody id="productTableBody"></tbody>
+</table>
+
+
   <script src="tests.js"></script>
 </body>
 </html>
