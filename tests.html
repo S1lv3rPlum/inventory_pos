@@ -5,7 +5,7 @@
   <title>Product Inventory</title>
 </head>
 <body>
-  <h1>Inventory 2</h1>
+  <h1>Inventory 3</h1>
 
   <form id="addProductForm">
     <input id="productName" type="text" placeholder="Product Name" required />
@@ -23,6 +23,53 @@
     <tbody id="productTableBody"></tbody>
   </table>
 
-  <script src="script.js"></script>
+<script>
+  let db;
+  const request = indexedDB.open("InventoryDB", 1);
+
+  request.onupgradeneeded = function (event) {
+    db = event.target.result;
+    const store = db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
+    store.createIndex("name", "name");
+  };
+
+  request.onsuccess = function (event) {
+    db = event.target.result;
+    displayProducts(); // automatically loads when page opens
+  };
+
+  request.onerror = function () {
+    console.error("Database failed to open");
+  };
+
+  function addProduct(name, qty, price) {
+    const tx = db.transaction("products", "readwrite");
+    const store = tx.objectStore("products");
+    store.add({ name, qty, price });
+    tx.oncomplete = displayProducts;
+  }
+
+  function displayProducts() {
+    const tableBody = document.getElementById("productTableBody");
+    if (!tableBody) return; // do nothing if table not on this page
+
+    tableBody.innerHTML = "";
+    const tx = db.transaction("products", "readonly");
+    const store = tx.objectStore("products");
+
+    store.openCursor().onsuccess = function (event) {
+      const cursor = event.target.result;
+      if (cursor) {
+        const row = tableBody.insertRow();
+        row.insertCell(0).textContent = cursor.value.name;
+        row.insertCell(1).textContent = cursor.value.qty;
+        row.insertCell(2).textContent = cursor.value.price;
+        cursor.continue();
+      }
+    };
+  }
+</script>
+
+  <script src="tests.js"></script>
 </body>
 </html>
