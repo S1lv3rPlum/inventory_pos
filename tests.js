@@ -1,95 +1,63 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const dbName = 'ProductDatabase';
-  const dbVersion = 1;
-  let db;
+let db;
 
-  const form = document.getElementById('product-form');
-  const categoryInput = document.getElementById('category');
-  const nameInput = document.getElementById('name');
-  const quantityInput = document.getElementById('quantity');
-  const productTable = document.getElementById('product-table');
+window.onload = function () {
+  const request = indexedDB.open("ProductDB", 1);
 
-  const request = indexedDB.open(dbName, dbVersion);
-
-  request.onerror = (event) => {
-    console.error('Database error:', event.target.errorCode);
+  request.onerror = function (event) {
+    console.error("Database error:", event.target.error);
   };
 
-  request.onsuccess = (event) => {
+  request.onsuccess = function (event) {
     db = event.target.result;
     displayProducts();
   };
 
-  request.onupgradeneeded = (event) => {
+  request.onupgradeneeded = function (event) {
     db = event.target.result;
-    const objectStore = db.createObjectStore('products', { keyPath: 'id', autoIncrement: true });
-    objectStore.createIndex('category', 'category', { unique: false });
-    objectStore.createIndex('name', 'name', { unique: false });
+    const objectStore = db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
+    objectStore.createIndex("name", "name", { unique: false });
+    objectStore.createIndex("price", "price", { unique: false });
+  };
+};
+
+function addProduct() {
+  const name = document.getElementById("productName").value.trim();
+  const price = parseFloat(document.getElementById("productPrice").value.trim());
+
+  if (!name || isNaN(price)) {
+    alert("Please enter a valid name and price.");
+    return;
+  }
+
+  const transaction = db.transaction(["products"], "readwrite");
+  const store = transaction.objectStore("products");
+  const request = store.add({ name, price });
+
+  request.onsuccess = function () {
+    document.getElementById("productName").value = "";
+    document.getElementById("productPrice").value = "";
+    displayProducts();
   };
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
+  request.onerror = function (event) {
+    console.error("Add failed:", event.target.error);
+  };
+}
 
-    const newProduct = {
-      category: categoryInput.value.trim(),
-      name: nameInput.value.trim(),
-      quantity: parseInt(quantityInput.value, 10)
-    };
+function displayProducts() {
+  const transaction = db.transaction(["products"], "readonly");
+  const store = transaction.objectStore("products");
 
-    const transaction = db.transaction(['products'], 'readwrite');
-    const store = transaction.objectStore('products');
-    store.add(newProduct);
+  const tableBody = document.getElementById("productTableBody");
+  tableBody.innerHTML = "";
 
-    transaction.oncomplete = () => {
-      form.reset();
-      displayProducts();
-    };
-
-    transaction.onerror = (event) => {
-      console.error('Transaction failed:', event.target.error);
-    };
-  });
-
-  function displayProducts() {
-    const transaction = db.transaction(['products'], 'readonly');
-    const store = transaction.objectStore('products');
-
-    const allProducts = [];
-    store.openCursor().onsuccess = (event) => {
-      const cursor = event.target.result;
-      if (cursor) {
-        allProducts.push(cursor.value);
-        cursor.continue();
-      } else {
-        renderGroupedTable(allProducts);
-      }
-    };
-  }
-
-  function renderGroupedTable(products) {
-    productTable.innerHTML = '';
-
-    const grouped = {};
-    for (const product of products) {
-      if (!grouped[product.category]) {
-        grouped[product.category] = [];
-      }
-      grouped[product.category].push(product);
+  store.openCursor().onsuccess = function (event) {
+    const cursor = event.target.result;
+    if (cursor) {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${cursor.value.name}</td><td>${cursor.value.price.toFixed(2)}</td>`;
+      tableBody.appendChild(row);
+      cursor.continue();
     }
-
-    for (const category in grouped) {
-      const categoryRow = document.createElement('tr');
-      categoryRow.innerHTML = `<th colspan="3">${category}</th>`;
-      productTable.appendChild(categoryRow);
-
-      grouped[category].forEach((p) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${p.name}</td>
-          <td>${p.quantity}</td>
-        `;
-        productTable.appendChild(row);
-      });
-    }
-  }
-});
+  };
+}
