@@ -75,3 +75,21 @@ function displayProducts() {
     }
   };
 }
+function loadProductsFromLocalStorage() {
+  const products = JSON.parse(localStorage.getItem("products")) || [];
+
+  const tableBody = document.getElementById("productTableBody");
+  tableBody.innerHTML = ""; // Clear any previous rows
+
+  products.forEach(product => {
+    const row = tableBody.insertRow();
+    row.insertCell(0).innerText = product.name;
+    row.insertCell(1).innerText = product.qty;
+    row.insertCell(2).innerText = "$" + Number(product.price).toFixed(2);
+  });
+}
+
+window.onload = loadProductsFromLocalStorage;
+
+// Call it when the page loads
+window.onload = loadProductsFromLocalStorage;
