@@ -205,19 +205,13 @@
 
   <script>
 document.addEventListener("DOMContentLoaded", function () {
-  // If you used an ID for the button
-  const addBtn = document.getElementById("addProductBtn");
+  const form = document.getElementById("addProductForm");
 
-  // Or use a class if your button doesn't have an ID
-  // const addBtn = document.querySelector(".add-button");
-
-  if (addBtn) {
-    addBtn.addEventListener("click", function () {
-      // Replace this with the actual function call you use
-      addProduct();
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      e.preventDefault(); // prevent page reload
+      addProduct();       // your product-adding logic
     });
-  } else {
-    console.warn("Add Product button not found.");
   }
 });
 </script>
