@@ -2,32 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Product Inventory</title>
-  <style>
-    table {
-      border-collapse: collapse;
-      width: 100%;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-    }
-    th {
-      background: #eee;
-    }
-  </style>
+  <title>IndexedDB Product Test</title>
 </head>
 <body>
-  <h1>Inventory 2</h1>
-  <form id="product-form">
-    <label>Category: <input type="text" id="category" required></label><br>
-    <label>Name: <input type="text" id="name" required></label><br>
-    <label>Quantity: <input type="number" id="quantity" min="1" required></label><br>
-    <button type="submit">Add Product</button>
-  </form>
+  <h1>Product Inventory</h1>
 
-  <h2>Product Table</h2>
-  <div id="table-container"></div>
+  <input type="text" id="productName" placeholder="Product Name" />
+  <input type="number" id="productPrice" placeholder="Price" />
+  <button onclick="addProduct()">Add Product</button>
+
+  <h2>Current Inventory</h2>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Price</th>
+      </tr>
+    </thead>
+    <tbody id="productTableBody"></tbody>
+  </table>
 
   <script src="tests.js"></script>
 </body>
