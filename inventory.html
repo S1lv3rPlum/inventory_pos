@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Band Inventory Manager </title>
+  <title>Band Inventory Manager</title>
 
   <!-- Global styles including menu, themes, and buttons -->
   <link rel="stylesheet" href="styles.css" />
@@ -78,7 +78,7 @@
 </head>
 
 <body class="light-theme accent-blue">
-<div id="statusMessage" style="padding:10px; background-color:#eee; border:1px solid #ccc; margin-bottom:10px;"></div>
+
   <div class="container">
 
     <!-- Hamburger Menu Button (now inside layout) -->
@@ -89,7 +89,7 @@
     <div id="bandNameBanner">&lt;band Name Banner&gt;</div>
 
     <div id="topBar">
-      <h1>Inventory Manager 4</h1>
+      <h1>Inventory Manager</h1>
   
     </div>
 
@@ -168,11 +168,11 @@
     <div class="side-menu" role="menu">
             <nav>
         <button class="menu-navButton" data-target="inventory.html" role="menuitem">Inventory</button>
-        <button class="menu-navButton" data-target="POS.html" role="menuitem">Make a Sale</button>
+        <button class="menu-navButton" data-target="pos.html" role="menuitem">Make a Sale</button>
         <button class="menu-navButton" data-target="BrowseProducts.html" role="menuitem">Browse Products</button>
         <button class="menu-navButton" data-target="sales.html" role="menuitem">Sales Records</button>
         <button class="menu-navButton" data-target="shippingManager.html" role="menuitem">Shipping Manager</button>
-        <button class="menu-navButton" data-target="Settings.html" role="menuitem">Settings</button>
+        <button class="menu-navButton" data-target="settings.html" role="menuitem">Settings</button>
         
       </nav>
     </div>
@@ -199,7 +199,24 @@
   <script src="inventory.js"></script>
   <script src="menu-overlay.js"></script>
   
+  <script>
+document.addEventListener("DOMContentLoaded", function () {
+  // If you used an ID for the button
+  const addBtn = document.getElementById("addProductBtn");
+
+  // Or use a class if your button doesn't have an ID
+  // const addBtn = document.querySelector(".add-button");
+
+  if (addBtn) {
+    addBtn.addEventListener("click", function () {
+      // Replace this with the actual function call you use
+      addProduct();
+    });
+  } else {
+    console.warn("Add Product button not found.");
+  }
+});
+</script>
   
-  <div id="debug" style="background:#eee; padding:10px; font-size:12px;"></div>
 </body>
 </html>
