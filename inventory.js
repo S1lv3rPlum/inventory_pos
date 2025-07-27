@@ -570,6 +570,14 @@ function handleDiscountImport(event) {
   reader.readAsArrayBuffer(file);
   event.target.value = "";
 }
+document.addEventListener("DOMContentLoaded", function () {
+  const addBtn = document.getElementById("addProductBtn");
+  if (addBtn) {
+    addBtn.addEventListener("click", addProduct);
+  }
+});
+
+
 
 // --- Make sure these functions are global if needed ---
 window.exportInventory = exportInventory;
