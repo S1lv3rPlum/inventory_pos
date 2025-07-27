@@ -537,6 +537,27 @@ function exportDiscounts() {
   };
 }
 
+function addProduct() {
+  const name = document.getElementById("productName").value;
+  const qty = parseInt(document.getElementById("productQty").value);
+  const price = parseFloat(document.getElementById("productPrice").value);
+
+  if (!name || isNaN(qty) || isNaN(price)) {
+    alert("Please fill in all fields correctly.");
+    return;
+  }
+
+  const table = document.getElementById("productTable").getElementsByTagName('tbody')[0];
+  const row = table.insertRow();
+  row.insertCell(0).innerText = name;
+  row.insertCell(1).innerText = qty;
+  row.insertCell(2).innerText = "$" + price.toFixed(2);
+
+  document.getElementById("productName").value = '';
+  document.getElementById("productQty").value = '';
+  document.getElementById("productPrice").value = '';
+}
+
 // Import Discounts from Excel
 function handleDiscountImport(event) {
   const file = event.target.files[0];
