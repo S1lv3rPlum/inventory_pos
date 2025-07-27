@@ -89,7 +89,7 @@
     <div id="bandNameBanner">&lt;band Name Banner&gt;</div>
 
     <div id="topBar">
-      <h1>Inventory Manager2</h1>
+      <h1>Inventory Manager3</h1>
   
     </div>
 
@@ -200,44 +200,75 @@
     }
   </script>
 <script>
- function addProduct() {
-   alert("Add Product function called!");
-  const nameInput = document.getElementById("productName");
-  const qtyInput = document.getElementById("productQty");
-  const priceInput = document.getElementById("productPrice");
+function addProduct() {
+  alert("Add Product function called!");
 
-  const name = nameInput.value.trim();
-  const qty = parseInt(qtyInput.value);
-  const price = parseFloat(priceInput.value);
+  const name = document.getElementById("productName").value.trim();
+  const qty = parseInt(document.getElementById("productQty").value);
+  const price = parseFloat(document.getElementById("productPrice").value);
+  const category = document.getElementById("productCategory").value.trim();
+  const hasSizes = document.getElementById("productHasSizes").checked;
+  const genderM = document.getElementById("productGenderMale").checked;
+  const genderF = document.getElementById("productGenderFemale").checked;
 
   if (!name || isNaN(qty) || isNaN(price)) {
-    alert("Please fill in all fields correctly.");
+    alert("Please fill in all required fields correctly.");
     return;
   }
 
-  const table = document.getElementById("bandPOSDB");
-  if (!table) {
-    alert("Table not found.");
-    return;
-  }
+  const gender = genderM ? "M" : (genderF ? "F" : "Unspecified");
 
-  const tbody = table.querySelector("tbody") || table.appendChild(document.createElement("tbody"));
-  const row = tbody.insertRow();
+  const product = { name, qty, price, category, hasSizes, gender };
 
-  const nameCell = row.insertCell(0);
-  const qtyCell = row.insertCell(1);
-  const priceCell = row.insertCell(2);
+  // Save to localStorage
+  let inventory = JSON.parse(localStorage.getItem("inventory")) || [];
+  inventory.push(product);
+  localStorage.setItem("inventory", JSON.stringify(inventory));
 
-  nameCell.textContent = name;
-  qtyCell.textContent = qty;
-  priceCell.textContent = "$" + price.toFixed(2);
+  // Clear form
+  document.getElementById("addProductForm").reset();
 
-  nameInput.value = "";
-  qtyInput.value = "";
-  priceInput.value = "";
-} 
-displayProducts();
+  displayProducts(); // Refresh inventory table
+}
 </script>
+
+<script>
+function displayProducts() {
+  const container = document.getElementById("inventoryList");
+  container.innerHTML = "";
+
+  const products = JSON.parse(localStorage.getItem("inventory")) || [];
+
+  if (products.length === 0) {
+    container.textContent = "No products in inventory.";
+    return;
+  }
+
+  const table = document.createElement("table");
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Name</th><th>Qty</th><th>Price</th><th>Category</th><th>Has Sizes</th><th>Gender</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${products.map(p => `
+        <tr>
+          <td>${p.name}</td>
+          <td>${p.qty}</td>
+          <td>$${p.price.toFixed(2)}</td>
+          <td>${p.category}</td>
+          <td>${p.hasSizes ? "Yes" : "No"}</td>
+          <td>${p.gender}</td>
+        </tr>
+      `).join("")}
+    </tbody>
+  `;
+  container.appendChild(table);
+}
+</script>
+
+
   <script src="inventory.js" defer></script>
   <script src="menu-overlay.js"></script>
   
@@ -246,16 +277,18 @@ displayProducts();
 </script>
 
   <script>
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.getElementById("addProductForm");
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("addProductForm");
 
-  if (form) {
-    form.addEventListener("submit", function (e) {
-      e.preventDefault(); // prevent page reload
-      addProduct();       // your product-adding logic
-    });
-  }
-});
+    if (form) {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault(); // prevent page reload
+        addProduct();
+      });
+    }
+
+    displayProducts(); // Load table from localStorage
+  });
 </script>
   
 </body>
