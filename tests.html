@@ -1,87 +1,76 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Inventory</title>
-  <style>
-    table, th, td {
-      border: 1px solid black;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 6px;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Inventory Table</title>
 </head>
 <body>
+  <h2>Inventory</h2>
+  <table border="1" id="inventoryTable">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Product Name</th>
+        <th>Image</th>
+        <th>Size</th>
+        <th>Quantity</th>
+      </tr>
+    </thead>
+    <tbody id="inventoryTableBody"></tbody>
+  </table>
 
-<h2>Inventory Management 2</h2>
+  <script>
+    // TEMP: Seed sample data so the table has something to show
+    if (!localStorage.getItem("products")) {
+      const exampleData = {
+        "Shirts": {
+          "Polo": {
+            "sizes": {
+              "S": 2,
+              "M": 1
+            },
+            "image": ""  // can paste a real data:image/... here
+          },
+          "Tee": {
+            "sizes": {
+              "L": 4
+            },
+            "image": ""
+          }
+        }
+      };
+      localStorage.setItem("products", JSON.stringify(exampleData));
+    }
 
-<form id="productForm">
-  <input type="text" id="name" placeholder="Name" required>
-  <input type="number" id="qty" placeholder="Quantity" required>
-  <input type="number" step="0.01" id="price" placeholder="Price" required>
-  <input type="text" id="sku" placeholder="SKU">
-  <input type="text" id="location" placeholder="Location">
-  <button type="submit">Add Product</button>
-</form>
+    window.addEventListener('DOMContentLoaded', function () {
+      const inventory = JSON.parse(localStorage.getItem('products')) || {};
+      const tableBody = document.getElementById('inventoryTableBody');
+      tableBody.innerHTML = '';
 
-<h3>Inventory Table</h3>
-<table>
-  <thead>
-    <tr>
-      <th>Name</th><th>Qty</th><th>Price</th><th>SKU</th><th>Location</th>
-    </tr>
-  </thead>
-  <tbody id="productTableBody"></tbody>
-</table>
+      for (const category in inventory) {
+        const products = inventory[category];
 
-<script>
-  function getProducts() {
-    return JSON.parse(localStorage.getItem("products") || "[]");
-  }
+        for (const productName in products) {
+          const product = products[productName];
+          const sizes = product.sizes || {};
+          const imageURL = product.image || '';
 
-  function saveProducts(products) {
-    localStorage.setItem("products", JSON.stringify(products));
-  }
+          for (const size in sizes) {
+            const qty = sizes[size];
 
-  function renderTable() {
-    const tableBody = document.getElementById("productTableBody");
-    tableBody.innerHTML = ""; // clear previous content
-    const products = getProducts();
-
-    products.forEach((product) => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${product.name}</td>
-        <td>${product.qty}</td>
-        <td>${product.price}</td>
-        <td>${product.sku}</td>
-        <td>${product.location}</td>
-      `;
-      tableBody.appendChild(row);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${category}</td>
+              <td>${productName}</td>
+              <td>${imageURL ? `<img src="${imageURL}" style="width:50px;">` : 'No Image'}</td>
+              <td>${size}</td>
+              <td>${qty}</td>
+            `;
+            tableBody.appendChild(row);
+          }
+        }
+      }
     });
-  }
-
-  document.getElementById("productForm").addEventListener("submit", function (e) {
-    e.preventDefault();
-    const product = {
-      name: document.getElementById("name").value,
-      qty: document.getElementById("qty").value,
-      price: document.getElementById("price").value,
-      sku: document.getElementById("sku").value,
-      location: document.getElementById("location").value,
-    };
-
-    const products = getProducts();
-    products.push(product);
-    saveProducts(products);
-    renderTable();
-    this.reset();
-  });
-
-  // Render table on page load
-  renderTable();
-</script>
-
+  </script>
 </body>
 </html>
