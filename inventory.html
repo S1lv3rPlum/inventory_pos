@@ -89,7 +89,7 @@
     <div id="bandNameBanner">&lt;band Name Banner&gt;</div>
 
     <div id="topBar">
-      <h1>Inventory Manager</h1>
+      <h1>Inventory Manager2</h1>
   
     </div>
 
@@ -196,6 +196,44 @@
       }
     }
   </script>
+  
+  <script>
+  window.addEventListener('DOMContentLoaded', function () {
+    const inventory = JSON.parse(localStorage.getItem('products')) || {};
+    const tableBody = document.getElementById('inventoryTableBody');
+    tableBody.innerHTML = '';
+
+    for (const category in inventory) {
+      const products = inventory[category];
+
+      for (const productName in products) {
+        const product = products[productName];
+        const sizes = product.sizes || {};
+        const imageURL = product.image || '';
+
+        for (const size in sizes) {
+          const qty = sizes[size];
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${category}</td>
+            <td>${productName}</td>
+            <td>
+              ${imageURL ? `<img src="${imageURL}" alt="${productName}" style="width:50px;height:auto;">` : 'No Image'}
+            </td>
+            <td>${size}</td>
+            <td>${qty}</td>
+          `;
+          tableBody.appendChild(row);
+        }
+      }
+    }
+  });
+</script>
+  
+  
+  
+  
   <script src="inventory.js"></script>
   <script src="menu-overlay.js"></script>
 </body>
