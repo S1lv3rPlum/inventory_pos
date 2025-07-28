@@ -89,7 +89,7 @@
     <div id="bandNameBanner">&lt;band Name Banner&gt;</div>
 
     <div id="topBar">
-      <h1>Inventory Manager4</h1>
+      <h1>Inventory Manager11</h1>
   
     </div>
 
@@ -201,8 +201,6 @@
   </script>
 <script>
 function addProduct() {
-  alert("Add Product function called!");
-
   const name = document.getElementById("productName").value.trim();
   const qty = parseInt(document.getElementById("productQty").value);
   const price = parseFloat(document.getElementById("productPrice").value);
@@ -225,10 +223,8 @@ function addProduct() {
   inventory.push(product);
   localStorage.setItem("inventory", JSON.stringify(inventory));
 
-  // Clear form
   document.getElementById("addProductForm").reset();
-
-  displayProducts(); // Refresh inventory table
+  displayProducts(); // refresh
 }
 </script>
 
@@ -252,18 +248,20 @@ function displayProducts() {
       </tr>
     </thead>
     <tbody>
-      ${products.length === 0
-        ? `<tr><td colspan="6" style="text-align:center;">No products in inventory.</td></tr>`
-        : products.map(p => `
-          <tr>
-            <td>${p.name}</td>
-            <td>${p.qty}</td>
-            <td>$${p.price.toFixed(2)}</td>
-            <td>${p.category}</td>
-            <td>${p.hasSizes ? "Yes" : "No"}</td>
-            <td>${p.gender}</td>
-          </tr>
-        `).join("")}
+      ${
+        products.length === 0
+          ? `<tr><td colspan="6" style="text-align:center;">No products in inventory.</td></tr>`
+          : products.map(p => `
+            <tr>
+              <td>${p.name}</td>
+              <td>${p.qty}</td>
+              <td>$${parseFloat(p.price).toFixed(2)}</td>
+              <td>${p.category}</td>
+              <td>${p.hasSizes ? "Yes" : "No"}</td>
+              <td>${p.gender}</td>
+            </tr>
+          `).join("")
+      }
     </tbody>
   `;
 
