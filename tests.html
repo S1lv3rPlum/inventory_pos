@@ -1,94 +1,87 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Product Inventory</title>
+  <title>Inventory</title>
+  <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 6px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Inventory 3</h1>
 
-  <form id="addProductForm">
-    <input id="productName" type="text" placeholder="Product Name" required />
-    <input id="productQty" type="number" placeholder="Quantity" required />
-    <input id="productPrice" type="number" placeholder="Price" required />
-    <button type="submit">Add Product</button>
-  </form>
+<h2>Inventory Management 2</h2>
 
-  <table border="1">
-    <thead>
-      <tr>
-        <th>Name</th><th>Qty</th><th>Price</th>
-      </tr>
-    </thead>
-    <tbody id="productTableBody"></tbody>
-  </table>
-
-<script>
-  let db;
-  const request = indexedDB.open("InventoryDB", 1);
-
-  request.onupgradeneeded = function (event) {
-    db = event.target.result;
-    const store = db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
-    store.createIndex("name", "name");
-  };
-
-  request.onsuccess = function (event) {
-    db = event.target.result;
-    displayProducts(); // automatically loads when page opens
-  };
-
-  request.onerror = function () {
-    console.error("Database failed to open");
-  };
-
-  function addProduct(name, qty, price) {
-    const tx = db.transaction("products", "readwrite");
-    const store = tx.objectStore("products");
-    store.add({ name, qty, price });
-    tx.oncomplete = displayProducts;
-  }
-
-  function displayProducts() {
-    const tableBody = document.getElementById("productTableBody");
-    if (!tableBody) return; // do nothing if table not on this page
-
-    tableBody.innerHTML = "";
-    const tx = db.transaction("products", "readonly");
-    const store = tx.objectStore("products");
-
-    store.openCursor().onsuccess = function (event) {
-      const cursor = event.target.result;
-      if (cursor) {
-        const row = tableBody.insertRow();
-        row.insertCell(0).textContent = cursor.value.name;
-        row.insertCell(1).textContent = cursor.value.qty;
-        row.insertCell(2).textContent = cursor.value.price;
-        cursor.continue();
-      }
-    };
-  }
-</script>
-
-<form onsubmit="event.preventDefault(); addProduct(
-  document.getElementById('name').value,
-  document.getElementById('qty').value,
-  document.getElementById('price').value
-)">
-  <input type="text" id="name" placeholder="Name" required />
-  <input type="number" id="qty" placeholder="Qty" required />
-  <input type="number" id="price" placeholder="Price" required />
-  <button type="submit">Add</button>
+<form id="productForm">
+  <input type="text" id="name" placeholder="Name" required>
+  <input type="number" id="qty" placeholder="Quantity" required>
+  <input type="number" step="0.01" id="price" placeholder="Price" required>
+  <input type="text" id="sku" placeholder="SKU">
+  <input type="text" id="location" placeholder="Location">
+  <button type="submit">Add Product</button>
 </form>
 
-<table border="1">
+<h3>Inventory Table</h3>
+<table>
   <thead>
-    <tr><th>Name</th><th>Qty</th><th>Price</th></tr>
+    <tr>
+      <th>Name</th><th>Qty</th><th>Price</th><th>SKU</th><th>Location</th>
+    </tr>
   </thead>
   <tbody id="productTableBody"></tbody>
 </table>
 
+<script>
+  function getProducts() {
+    return JSON.parse(localStorage.getItem("products") || "[]");
+  }
 
-  <script src="tests.js"></script>
+  function saveProducts(products) {
+    localStorage.setItem("products", JSON.stringify(products));
+  }
+
+  function renderTable() {
+    const tableBody = document.getElementById("productTableBody");
+    tableBody.innerHTML = ""; // clear previous content
+    const products = getProducts();
+
+    products.forEach((product) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${product.name}</td>
+        <td>${product.qty}</td>
+        <td>${product.price}</td>
+        <td>${product.sku}</td>
+        <td>${product.location}</td>
+      `;
+      tableBody.appendChild(row);
+    });
+  }
+
+  document.getElementById("productForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const product = {
+      name: document.getElementById("name").value,
+      qty: document.getElementById("qty").value,
+      price: document.getElementById("price").value,
+      sku: document.getElementById("sku").value,
+      location: document.getElementById("location").value,
+    };
+
+    const products = getProducts();
+    products.push(product);
+    saveProducts(products);
+    renderTable();
+    this.reset();
+  });
+
+  // Render table on page load
+  renderTable();
+</script>
+
 </body>
 </html>
