@@ -89,7 +89,7 @@
     <div id="bandNameBanner">&lt;band Name Banner&gt;</div>
 
     <div id="topBar">
-      <h1>Inventory Manager3</h1>
+      <h1>Inventory Manager7</h1>
   
     </div>
 
@@ -112,33 +112,48 @@
 
 
     <div id="inventorySection">
-      <form id="addProductForm">
-        <div class="form-row">
-          <label>Product Name: <input type="text" id="productName" required /></label>
-        </div>
-        <div class="form-row">
-          <label>Category: <input type="text" id="productCategory" /></label>
-        </div>
-        <div class="form-row">
-          <label>Price: $<input type="number" id="productPrice" step="0.01" required /></label>
-        </div>
-        <div class="form-row">
-          <label>Has Sizes? <input type="checkbox" id="productHasSizes" /></label>
-        </div>
-<div class="form-row">
-  <label>Product Image: <input type="file" id="productImage" accept="image/*" /></label>
-</div>
+    <form id="addProductForm" style="max-width: 400px; margin-bottom: 20px;">
+  <div>
+    <label>Product Name (required):<br/>
+      <input type="text" id="productName" required />
+    </label>
+  </div>
 
+  <div>
+    <label>Category (required):<br/>
+      <input type="text" id="productCategory" required />
+    </label>
+  </div>
 
-        <div class="form-row">
-          Gender:
-          <label><input type="checkbox" id="productGenderMale" onclick="toggleGender('M')" /> M</label>
-          <label><input type="checkbox" id="productGenderFemale" onclick="toggleGender('F')" /> F</label>
-        </div>
-        <div class="form-row">
-          <button type="submit">Add Product</button>
-        </div>
-      </form>
+  <div>
+    <label>Price ($) (required):<br/>
+      <input type="number" id="productPrice" step="0.01" required />
+    </label>
+  </div>
+
+  <div>
+    <label>
+      <input type="checkbox" id="productHasSizes" />
+      Has Sizes?
+    </label>
+  </div>
+
+  <div>
+    Gender:<br/>
+    <label><input type="checkbox" id="productGenderMale" /> M</label>
+    <label><input type="checkbox" id="productGenderFemale" /> F</label>
+  </div>
+
+  <div>
+    <label>Product Image:<br/>
+      <input type="file" id="productImage" accept="image/*" />
+    </label>
+  </div>
+
+  <button type="submit" style="margin-top: 10px;">Add Product</button>
+</form>
+
+<div id="inventoryList"></div>
 
       <hr />
       <h2>Current Inventory</h2>
