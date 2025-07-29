@@ -486,7 +486,7 @@ function exportInventory() {
 
 // Import Inventory from Excel
 function handleInventoryImport(event) {
-  const file = event.target.files[0];
+const file = event.target.files[0];
   if (!file) {
     alert("No file selected.");
     return;
