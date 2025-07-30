@@ -538,36 +538,59 @@ function exportDiscounts() {
 }
 
 function addProduct() {
-  const name = document.getElementById("productName").value.trim();
-  const quantity = parseInt(document.getElementById("productQty").value);
-  const price = parseFloat(document.getElementById("productPrice").value);
+  // Ensure the form submit adds to IndexedDB and updates the display
+addProductForm.addEventListener("submit", function (event) {
+  event.preventDefault();
 
-  if (!name || isNaN(quantity) || isNaN(price)) {
-    alert("Please fill in all fields correctly.");
-    return;
+  const productName = document.getElementById("productName").value.trim();
+  const category = document.getElementById("productCategory").value.trim();
+  const quantity = parseInt(document.getElementById("productQuantity").value.trim()) || 0;
+  const price = parseFloat(document.getElementById("productPrice").value.trim()) || 0;
+  const imageInput = document.getElementById("productImage");
+  const imageFile = imageInput.files[0];
+
+  const variantsText = document.getElementById("productVariants").value.trim();
+  const variants = variantsText ? variantsText.split(",").map(v => v.trim()) : [];
+
+  const product = {
+    name: productName,
+    category: category || "(No Category)",
+    quantity,
+    price,
+    variants
+  };
+
+  if (imageFile) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      product.image = e.target.result;
+
+      // Add to IndexedDB after reading image
+      saveProductToIndexedDB(product);
+    };
+    reader.readAsDataURL(imageFile);
+  } else {
+    product.image = null;
+    saveProductToIndexedDB(product);
   }
+});
 
-  const product = { name, quantity, price };
+function saveProductToIndexedDB(product) {
+  const tx = db.transaction("products", "readwrite");
+  const store = tx.objectStore("products");
+  store.add(product);
 
-  // Debug alert to confirm product is being added
-  alert("Adding product: " + JSON.stringify(product));
+  tx.oncomplete = function () {
+    displayInventory();  // Refresh product table
+    addProductForm.reset();  // Clear form fields
+    alert("Product added successfully!");
+  };
 
-  // Save to localStorage
-  let inventory = JSON.parse(localStorage.getItem("inventory")) || [];
-  inventory.push(product);
-  localStorage.setItem("inventory", JSON.stringify(inventory));
-
-  alert("Product added to localStorage!");
-
-  // Refresh table with full inventory
-  displayInventory();
-
-  // Clear input fields
-  document.getElementById("productName").value = '';
-  document.getElementById("productQty").value = '';
-  document.getElementById("productPrice").value = '';
+  tx.onerror = function (event) {
+    console.error("Failed to add product:", event.target.error);
+    alert("Failed to add product. Please try again.");
+  };
 }
-
 // Import Discounts from Excel
 function handleDiscountImport(event) {
   const file = event.target.files[0];
