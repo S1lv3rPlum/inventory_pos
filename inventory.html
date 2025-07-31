@@ -89,7 +89,7 @@
     <div id="bandNameBanner">&lt;band Name Banner&gt;</div>
 
     <div id="topBar">
-      <h1>Inventory Manager3</h1>
+      <h1>Inventory Manager1</h1>
   
     </div>
 
@@ -195,6 +195,23 @@
 
   <!-- Page Scripts -->
   <script>
+    function toggleView(view) {
+      document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
+      document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
+      if (view === "discounts") loadDiscounts();
+    }
+
+    function toggleGender(selected) {
+      const male = document.getElementById("productGenderMale");
+      const female = document.getElementById("productGenderFemale");
+      if (selected === "M" && male.checked) {
+        female.checked = false;
+      } else if (selected === "F" && female.checked) {
+        male.checked = false;
+      }
+    }
+  </script>
+   <script>
     function toggleView(view) {
       document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
       document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
