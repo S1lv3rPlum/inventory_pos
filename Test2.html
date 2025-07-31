@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Inventory Management</title>
+  <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px;
+    }
+    img {
+      width: 50px;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <button onclick="toggleView('inventory')">Inventory</button>
+    <button onclick="toggleView('discounts')">Discounts</button>
+  </nav>
+
+  <section id="inventorySection">
+    <h2>Inventory</h2>
+    <form id="productForm">
+      <input type="text" id="productCategory" placeholder="Category" required>
+      <input type="text" id="productName" placeholder="Product Name" required>
+      <input type="text" id="productSize" placeholder="Size" required>
+      <input type="number" id="productQty" placeholder="Quantity" required>
+      <input type="url" id="productImage" placeholder="Image URL">
+      <label><input type="checkbox" id="productGenderMale" onclick="toggleGender('M')"> Male</label>
+      <label><input type="checkbox" id="productGenderFemale" onclick="toggleGender('F')"> Female</label>
+      <button type="submit">Add Product</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Name</th>
+          <th>Image</th>
+          <th>Size</th>
+          <th>Qty</th>
+        </tr>
+      </thead>
+      <tbody id="inventoryTableBody"></tbody>
+    </table>
+  </section>
+
+  <section id="discountSection" style="display: none;">
+    <h2>Discounts</h2>
+    <p>Coming soon...</p>
+  </section>
+
+  <script>
+    function toggleView(view) {
+      document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
+      document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
+    }
+
+    function toggleGender(selected) {
+      const male = document.getElementById("productGenderMale");
+      const female = document.getElementById("productGenderFemale");
+      if (selected === "M" && male.checked) female.checked = false;
+      if (selected === "F" && female.checked) male.checked = false;
+    }
+
+    function loadInventory() {
+      const inventory = JSON.parse(localStorage.getItem('products')) || {};
+      const tableBody = document.getElementById('inventoryTableBody');
+      tableBody.innerHTML = '';
+
+      for (const category in inventory) {
+        for (const name in inventory[category]) {
+          const product = inventory[category][name];
+          const sizes = product.sizes || {};
+          const image = product.image || '';
+
+          for (const size in sizes) {
+            const qty = sizes[size];
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${category}</td>
+              <td>${name}</td>
+              <td>${image ? `<img src="${image}" alt="${name}">` : 'No Image'}</td>
+              <td>${size}</td>
+              <td>${qty}</td>
+            `;
+            tableBody.appendChild(row);
+          }
+        }
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadInventory();
+
+      document.getElementById('productForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const category = document.getElementById('productCategory').value.trim();
+        const name = document.getElementById('productName').value.trim();
+        const size = document.getElementById('productSize').value.trim();
+        const qty = parseInt(document.getElementById('productQty').value.trim(), 10);
+        const image = document.getElementById('productImage').value.trim();
+
+        if (!category || !name || !size || isNaN(qty)) return;
+
+        const products = JSON.parse(localStorage.getItem('products')) || {};
+
+        if (!products[category]) products[category] = {};
+        if (!products[category][name]) products[category][name] = { sizes: {}, image: image };
+        products[category][name].sizes[size] = qty;
+        if (image) products[category][name].image = image;
+
+        localStorage.setItem('products', JSON.stringify(products));
+        loadInventory();
+        this.reset();
+      });
+    });
+  </script>
+</body>
+</html>
