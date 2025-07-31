@@ -89,7 +89,7 @@
     <div id="bandNameBanner">&lt;band Name Banner&gt;</div>
 
     <div id="topBar">
-      <h1>Inventory Manager1</h1>
+      <h1>Inventory Manager2</h1>
   
     </div>
 
@@ -211,55 +211,91 @@
       }
     }
   </script>
-   <script>
-    function toggleView(view) {
-      document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
-      document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
-      if (view === "discounts") loadDiscounts();
-    }
-
-    function toggleGender(selected) {
-      const male = document.getElementById("productGenderMale");
-      const female = document.getElementById("productGenderFemale");
-      if (selected === "M" && male.checked) {
-        female.checked = false;
-      } else if (selected === "F" && female.checked) {
-        male.checked = false;
-      }
-    }
-  </script>
-  
   <script>
-  window.addEventListener('DOMContentLoaded', function () {
-    const inventory = JSON.parse(localStorage.getItem('products')) || {};
-    const tableBody = document.getElementById('inventoryTableBody');
-    tableBody.innerHTML = '';
+  // Keep your existing toggleView and toggleGender functions
+  function toggleView(view) {
+    document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
+    document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
+    if (view === "discounts") loadDiscounts();
+  }
 
-    for (const category in inventory) {
-      const products = inventory[category];
-
-      for (const productName in products) {
-        const product = products[productName];
-        const sizes = product.sizes || {};
-        const imageURL = product.image || '';
-
-        for (const size in sizes) {
-          const qty = sizes[size];
-
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${category}</td>
-            <td>${productName}</td>
-            <td>
-              ${imageURL ? `<img src="${imageURL}" alt="${productName}" style="width:50px;height:auto;">` : 'No Image'}
-            </td>
-            <td>${size}</td>
-            <td>${qty}</td>
-          `;
-          tableBody.appendChild(row);
-        }
-      }
+  function toggleGender(selected) {
+    const male = document.getElementById("productGenderMale");
+    const female = document.getElementById("productGenderFemale");
+    if (selected === "M" && male.checked) {
+      female.checked = false;
+    } else if (selected === "F" && female.checked) {
+      male.checked = false;
     }
+  }
+
+  // Use IndexedDB instead of localStorage
+  window.addEventListener('DOMContentLoaded', () => {
+    const dbRequest = indexedDB.open('InventoryDB', 1);
+
+    dbRequest.onupgradeneeded = function (event) {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('products')) {
+        db.createObjectStore('products', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+
+    dbRequest.onsuccess = function (event) {
+      const db = event.target.result;
+      const tx = db.transaction('products', 'readonly');
+      const store = tx.objectStore('products');
+      const getAllRequest = store.getAll();
+
+      getAllRequest.onsuccess = function () {
+        const allProducts = getAllRequest.result;
+        const inventory = {};
+
+        // Convert array format into nested object grouped by category
+        for (const item of allProducts) {
+          const { category, name, size, qty, image } = item;
+          if (!inventory[category]) inventory[category] = {};
+          if (!inventory[category][name]) inventory[category][name] = { sizes: {}, image };
+          inventory[category][name].sizes[size] = qty;
+        }
+
+        const tableBody = document.getElementById('inventoryTableBody');
+        tableBody.innerHTML = '';
+
+        for (const category in inventory) {
+          const products = inventory[category];
+
+          for (const productName in products) {
+            const product = products[productName];
+            const sizes = product.sizes || {};
+            const imageURL = product.image || '';
+
+            for (const size in sizes) {
+              const qty = sizes[size];
+
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${category}</td>
+                <td>${productName}</td>
+                <td>
+                  ${imageURL ? `<img src="${imageURL}" alt="${productName}" style="width:50px;height:auto;">` : 'No Image'}
+                </td>
+                <td>${size}</td>
+                <td>${qty}</td>
+              `;
+              tableBody.appendChild(row);
+            }
+          }
+        }
+      };
+
+      getAllRequest.onerror = function () {
+        console.error('Error reading products from IndexedDB');
+      };
+    };
+
+    dbRequest.onerror = function () {
+      console.error('Error opening IndexedDB');
+    };
   });
 </script>
   
