@@ -1,76 +1,183 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Inventory Table</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Band POS</title>
+  <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+      padding: 8px;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+    }
+    td input[type="text"], td input[type="number"] {
+      width: 90%;
+    }
+  </style>
 </head>
 <body>
-  <h2>Inventory</h2>
-  <table border="1" id="inventoryTable">
+  <h1>Product Entry</h1>  <form id="productForm">
+    <label>Product Name (required):<br/>
+      <input type="text" id="productName" required />
+    </label><br/><label>Category (required):<br/>
+  <input type="text" id="productCategory" required />
+</label><br/>
+
+<label>Price ($) (required):<br/>
+  <input type="number" id="productPrice" step="0.01" required />
+</label><br/>
+
+<label><input type="checkbox" id="productHasSizes" /> Has Sizes?</label><br/>
+
+Gender:<br/>
+<label><input type="checkbox" id="productGenderMale" /> M</label>
+<label><input type="checkbox" id="productGenderFemale" /> F</label><br/>
+
+<label>Product Image:<br/>
+  <input type="file" id="productImage" accept="image/*" />
+</label><br/>
+
+<button type="submit" id="addProductBtn">Add Product</button>
+
+  </form>  <h2>Product Table</h2>
+  <table id="productTable">
     <thead>
       <tr>
+        <th>Name</th>
         <th>Category</th>
-        <th>Product Name</th>
+        <th>Price</th>
+        <th>Sizes</th>
+        <th>Gender</th>
         <th>Image</th>
-        <th>Size</th>
-        <th>Quantity</th>
+        <th>Actions</th>
       </tr>
     </thead>
-    <tbody id="inventoryTableBody"></tbody>
-  </table>
+    <tbody></tbody>
+  </table>  <script>
+    let db;
+    const request = indexedDB.open("BandPOSDB", 2);
 
-  <script>
-    // TEMP: Seed sample data so the table has something to show
-    if (!localStorage.getItem("products")) {
-      const exampleData = {
-        "Shirts": {
-          "Polo": {
-            "sizes": {
-              "S": 2,
-              "M": 1
-            },
-            "image": ""  // can paste a real data:image/... here
-          },
-          "Tee": {
-            "sizes": {
-              "L": 4
-            },
-            "image": ""
-          }
-        }
+    request.onupgradeneeded = function (event) {
+      db = event.target.result;
+      if (!db.objectStoreNames.contains("products"))
+        db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
+    };
+
+    request.onsuccess = function (event) {
+      db = event.target.result;
+      loadProducts();
+    };
+
+    function loadProducts() {
+      const tx = db.transaction("products", "readonly");
+      const store = tx.objectStore("products");
+      const request = store.getAll();
+
+      request.onsuccess = function () {
+        const tbody = document.querySelector("#productTable tbody");
+        tbody.innerHTML = "";
+
+        request.result.forEach(product => {
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+            <td contenteditable>${product.name}</td>
+            <td contenteditable>${product.category}</td>
+            <td contenteditable>${product.price.toFixed(2)}</td>
+            <td>${product.hasSizes ? generateSizeInputs(product.sizes) : 'N/A'}</td>
+            <td>${product.gender}</td>
+            <td>${product.image ? '<img src="' + product.image + '" height="40" />' : 'None'}</td>
+            <td>
+              <button onclick="updateProduct(${product.id}, this)">Save</button>
+              <button onclick="deleteProduct(${product.id})">Delete</button>
+            </td>
+          `;
+
+          tbody.appendChild(row);
+        });
       };
-      localStorage.setItem("products", JSON.stringify(exampleData));
     }
 
-    window.addEventListener('DOMContentLoaded', function () {
-      const inventory = JSON.parse(localStorage.getItem('products')) || {};
-      const tableBody = document.getElementById('inventoryTableBody');
-      tableBody.innerHTML = '';
+    function generateSizeInputs(sizes) {
+      if (!sizes) return '';
+      return Object.entries(sizes).map(([size, qty]) => `
+        ${size}: <input type="number" value="${qty}" data-size="${size}" style="width: 50px" />
+      `).join("<br>");
+    }
 
-      for (const category in inventory) {
-        const products = inventory[category];
+    function updateProduct(id, btn) {
+      const row = btn.closest("tr");
+      const cells = row.querySelectorAll("td");
+      const sizeInputs = row.querySelectorAll("input[type='number'][data-size]");
+      let sizes = {};
 
-        for (const productName in products) {
-          const product = products[productName];
-          const sizes = product.sizes || {};
-          const imageURL = product.image || '';
+      sizeInputs.forEach(input => {
+        sizes[input.dataset.size] = parseInt(input.value);
+      });
 
-          for (const size in sizes) {
-            const qty = sizes[size];
+      const updatedProduct = {
+        id,
+        name: cells[0].innerText.trim(),
+        category: cells[1].innerText.trim(),
+        price: parseFloat(cells[2].innerText.trim()),
+        sizes,
+        hasSizes: sizeInputs.length > 0,
+        gender: cells[4].innerText.trim(),
+        image: '' // Not editable from table
+      };
 
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${category}</td>
-              <td>${productName}</td>
-              <td>${imageURL ? `<img src="${imageURL}" style="width:50px;">` : 'No Image'}</td>
-              <td>${size}</td>
-              <td>${qty}</td>
-            `;
-            tableBody.appendChild(row);
-          }
-        }
+      const tx = db.transaction("products", "readwrite");
+      const store = tx.objectStore("products");
+      store.put(updatedProduct);
+      tx.oncomplete = () => loadProducts();
+    }
+
+    function deleteProduct(id) {
+      const tx = db.transaction("products", "readwrite");
+      const store = tx.objectStore("products");
+      store.delete(id);
+      tx.oncomplete = () => loadProducts();
+    }
+
+    document.getElementById("productForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("productName").value.trim();
+      const category = document.getElementById("productCategory").value.trim();
+      const price = parseFloat(document.getElementById("productPrice").value);
+      const hasSizes = document.getElementById("productHasSizes").checked;
+      const gender = document.getElementById("productGenderMale").checked ? "M" :
+                     document.getElementById("productGenderFemale").checked ? "F" : "";
+      const imageInput = document.getElementById("productImage");
+
+      const reader = new FileReader();
+      reader.onload = function () {
+        const newProduct = {
+          name,
+          category,
+          price,
+          hasSizes,
+          gender,
+          image: reader.result,
+          sizes: hasSizes ? { XS: 0, S: 0, M: 0, L: 0, XL: 0 } : null
+        };
+
+        const tx = db.transaction("products", "readwrite");
+        const store = tx.objectStore("products");
+        store.add(newProduct);
+        tx.oncomplete = () => loadProducts();
+      };
+
+      if (imageInput.files[0]) {
+        reader.readAsDataURL(imageInput.files[0]);
+      } else {
+        reader.onload(); // proceed without image
       }
+
+      this.reset();
     });
-  </script>
-</body>
+  </script></body>
 </html>
