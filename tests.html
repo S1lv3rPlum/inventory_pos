@@ -2,51 +2,76 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Product Manager2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Band POS</title>
   <style>
-    table, th, td {
-      border: 1px solid black;
+    table {
+      width: 100%;
       border-collapse: collapse;
-      padding: 6px;
+      margin-top: 20px;
     }
-    input[type="number"] {
-      width: 60px;
+
+    table, th, td {
+      border: 1px solid #999;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: center;
+    }
+
+    input[type="text"], input[type="number"] {
+      width: 100%;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <h1>Add Product</h1>
-  <form id="productForm">
-    <label>Product Name (required):<br/>
-      <input type="text" id="productName" required />
-    </label><br/><br/>
-    
-    <label>Category (required):<br/>
-      <input type="text" id="productCategory" required />
-    </label><br/><br/>
+  <h1>Band POS</h1>
 
-    <label>Price ($) (required):<br/>
+  <form id="productForm">
+    <label>Product Name (required):
+      <input type="text" id="productName" required />
+    </label>
+
+    <label>Category (required):
+      <input type="text" id="productCategory" required />
+    </label>
+
+    <label>Price ($) (required):
       <input type="number" id="productPrice" step="0.01" required />
-    </label><br/><br/>
+    </label>
 
     <label>
       <input type="checkbox" id="productHasSizes" />
       Has Sizes?
-    </label><br/><br/>
+    </label>
 
     Gender:<br/>
     <label><input type="checkbox" id="productGenderMale" /> M</label>
-    <label><input type="checkbox" id="productGenderFemale" /> F</label><br/><br/>
+    <label><input type="checkbox" id="productGenderFemale" /> F</label>
 
-    <button type="submit">Add Product</button>
+    <label>Product Image:
+      <input type="file" id="productImage" accept="image/*" />
+    </label>
+
+    <button type="submit" id="addProductBtn" style="margin-top: 10px;">Add Product</button>
   </form>
 
-  <h2>Product List</h2>
+  <h2>Product List2</h2>
   <table id="productTable">
     <thead>
       <tr>
-        <th>Name</th><th>Category</th><th>Price</th>
-        <th>Sizes</th><th>Gender</th><th>Actions</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Price</th>
+        <th>Sizes</th>
+        <th>Gender</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -56,19 +81,20 @@
     let db;
     const request = indexedDB.open("BandPOSDB", 2);
 
+    request.onerror = function (event) {
+      console.error("Database error:", event.target.error);
+    };
+
     request.onupgradeneeded = function (event) {
       db = event.target.result;
-      if (!db.objectStoreNames.contains("products"))
+      if (!db.objectStoreNames.contains("products")) {
         db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
+      }
     };
 
     request.onsuccess = function (event) {
       db = event.target.result;
       displayProducts();
-    };
-
-    request.onerror = function (event) {
-      console.error("Database error:", event.target.error);
     };
 
     document.getElementById("productForm").addEventListener("submit", function (e) {
@@ -78,98 +104,70 @@
       const category = document.getElementById("productCategory").value.trim();
       const price = parseFloat(document.getElementById("productPrice").value);
       const hasSizes = document.getElementById("productHasSizes").checked;
-      const gender = document.getElementById("productGenderMale").checked
-                      ? "M" : document.getElementById("productGenderFemale").checked
-                      ? "F" : "Unisex";
+      const genderM = document.getElementById("productGenderMale").checked;
+      const genderF = document.getElementById("productGenderFemale").checked;
 
       if (!name || !category || isNaN(price)) {
-        alert("Please fill all required fields.");
+        alert("Please fill in all required fields.");
         return;
       }
 
+      const gender = genderM ? "M" : genderF ? "F" : "Unisex";
+
       const tx = db.transaction("products", "readwrite");
       const store = tx.objectStore("products");
-      store.add({ name, category, price, hasSizes, gender, sizes: {} });
 
-      tx.oncomplete = () => {
-        e.target.reset();
-        displayProducts();
+      const product = {
+        name,
+        category,
+        price,
+        hasSizes,
+        gender
       };
 
-      tx.onerror = function (event) {
+      const requestAdd = store.add(product);
+
+      requestAdd.onsuccess = function () {
+        displayProducts();
+        document.getElementById("productForm").reset();
+      };
+
+      requestAdd.onerror = function (event) {
         console.error("Failed to add product:", event.target.error);
         alert("Failed to add product. Please try again.");
       };
     });
 
     function displayProducts() {
-      const tbody = document.querySelector("#productTable tbody");
-      tbody.innerHTML = "";
-
       const tx = db.transaction("products", "readonly");
       const store = tx.objectStore("products");
+      const requestGet = store.getAll();
 
-      store.openCursor().onsuccess = function (event) {
-        const cursor = event.target.result;
-        if (cursor) {
-          const product = cursor.value;
+      requestGet.onsuccess = function () {
+        const tbody = document.getElementById("productTable").querySelector("tbody");
+        tbody.innerHTML = "";
+
+        requestGet.result.forEach((product) => {
           const tr = document.createElement("tr");
 
           tr.innerHTML = `
-            <td contenteditable="true">${product.name}</td>
-            <td contenteditable="true">${product.category}</td>
-            <td><input type="number" value="${product.price.toFixed(2)}" /></td>
-            <td>${product.hasSizes ? "✔️ (Edit later)" : ""}</td>
+            <td>${product.name}</td>
+            <td>${product.category}</td>
+            <td>$${product.price.toFixed(2)}</td>
+            <td>${product.hasSizes ? "Yes" : "No"}</td>
+            <td>${product.gender}</td>
             <td>
-              <select>
-                <option value="Unisex"${product.gender === "Unisex" ? " selected" : ""}>Unisex</option>
-                <option value="M"${product.gender === "M" ? " selected" : ""}>M</option>
-                <option value="F"${product.gender === "F" ? " selected" : ""}>F</option>
-              </select>
-            </td>
-            <td>
-              <button onclick="saveProduct(${product.id}, this)">Save</button>
+              <button onclick="editProduct(${product.id})">Edit</button>
             </td>
           `;
 
           tbody.appendChild(tr);
-          cursor.continue();
-        }
+        });
       };
     }
 
-    function saveProduct(id, btn) {
-      const row = btn.closest("tr");
-      const [nameCell, categoryCell, priceInputCell, , genderCell] = row.children;
-
-      const name = nameCell.innerText.trim();
-      const category = categoryCell.innerText.trim();
-      const price = parseFloat(priceInputCell.querySelector("input").value);
-      const gender = genderCell.querySelector("select").value;
-
-      if (!name || !category || isNaN(price)) {
-        alert("Please enter valid product info.");
-        return;
-      }
-
-      const tx = db.transaction("products", "readwrite");
-      const store = tx.objectStore("products");
-      const request = store.get(id);
-
-      request.onsuccess = () => {
-        const product = request.result;
-        product.name = name;
-        product.category = category;
-        product.price = price;
-        product.gender = gender;
-
-        store.put(product);
-        tx.oncomplete = displayProducts;
-      };
-
-      request.onerror = () => {
-        alert("Failed to update product.");
-      };
+    function editProduct(id) {
+      alert("Edit functionality is coming soon! Product ID: " + id);
     }
   </script>
 </body>
