@@ -3,176 +3,135 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Band POS</title>
-  <style>
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #aaa;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #ddd;
-    }
-  </style>
+  <title>Inventory POS</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>Band POS</h1>
-
-  <div>
-    <label>Product Name (required):<br/>
-      <input type="text" id="productName" required />
-    </label>
+  <div id="menuToggle">&#9776;</div>
+  <div id="menuOverlay">
+    <button onclick="toggleView('inventory')">Inventory</button>
+    <button onclick="toggleView('discounts')">Discounts</button>
   </div>
 
-  <div>
-    <label>Category (required):<br/>
-      <input type="text" id="productCategory" required />
-    </label>
-  </div>
+  <section id="inventorySection">
+    <h1>Add Product</h1>
+    <form id="productForm">
+      <input type="text" id="productCategory" placeholder="Category" required>
+      <input type="text" id="productName" placeholder="Name" required>
+      <input type="url" id="productImage" placeholder="Image URL">
+      <input type="text" id="productSize" placeholder="Size" required>
+      <input type="number" id="productQty" placeholder="Qty" required>
+      <label>
+        <input type="checkbox" id="productGenderMale" onchange="toggleGender('M')"> Male
+      </label>
+      <label>
+        <input type="checkbox" id="productGenderFemale" onchange="toggleGender('F')"> Female
+      </label>
+      <button type="submit">Add Product</button>
+    </form>
 
-  <div>
-    <label>Price ($) (required):<br/>
-      <input type="number" id="productPrice" step="0.01" required />
-    </label>
-  </div>
+    <h2>Inventor2y</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Name</th>
+          <th>Image</th>
+          <th>Size</th>
+          <th>Qty</th>
+        </tr>
+      </thead>
+      <tbody id="inventoryTableBody"></tbody>
+    </table>
+  </section>
 
-  <div>
-    <label>
-      <input type="checkbox" id="productHasSizes" />
-      Has Sizes?
-    </label>
-  </div>
-
-  <div>
-    Gender:<br/>
-    <label><input type="checkbox" id="productGenderMale" /> M</label>
-    <label><input type="checkbox" id="productGenderFemale" /> F</label>
-  </div>
-
-  <div>
-    <label>Product Image:<br/>
-      <input type="file" id="productImage" accept="image/*" />
-    </label>
-  </div>
-
-  <button id="addProductBtn" style="margin-top: 10px;">Add Product</button>
-
-  <h2>Product List</h2>
-  <table id="productTable">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Category</th>
-        <th>Price</th>
-        <th>Has Sizes?</th>
-        <th>Gender</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="productTableBody">
-      <!-- Products go here -->
-    </tbody>
-  </table>
+  <section id="discountSection" style="display:none;">
+    <h1>Discounts</h1>
+    <div id="discountList">Coming soon...</div>
+  </section>
 
   <script>
-    let db;
-    const request = indexedDB.open("BandPOSDB", 1);
+    function toggleView(view) {
+      document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
+      document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
+    }
 
-    request.onupgradeneeded = function (event) {
-      db = event.target.result;
-      if (!db.objectStoreNames.contains("products")) {
-        db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
+    function toggleGender(selected) {
+      const male = document.getElementById("productGenderMale");
+      const female = document.getElementById("productGenderFemale");
+      if (selected === "M" && male.checked) {
+        female.checked = false;
+      } else if (selected === "F" && female.checked) {
+        male.checked = false;
       }
-    };
+    }
 
-    request.onsuccess = function (event) {
-      db = event.target.result;
-      loadProducts();
-    };
-
-    request.onerror = function (event) {
-      console.error("IndexedDB error:", event.target.errorCode);
-    };
-
-    document.getElementById("addProductBtn").addEventListener("click", function () {
-      const name = document.getElementById("productName").value.trim();
-      const category = document.getElementById("productCategory").value.trim();
-      const price = parseFloat(document.getElementById("productPrice").value);
-      const hasSizes = document.getElementById("productHasSizes").checked;
-      const isMale = document.getElementById("productGenderMale").checked;
-      const isFemale = document.getElementById("productGenderFemale").checked;
-
-      let gender = "";
-      if (isMale && !isFemale) gender = "M";
-      else if (!isMale && isFemale) gender = "F";
-      else if (!isMale && !isFemale) gender = "";
-
-      if (!name || !category || isNaN(price)) {
-        alert("Please fill all required fields.");
-        return;
-      }
-
-      const product = { name, category, price, hasSizes, gender };
-
-      const tx = db.transaction(["products"], "readwrite");
-      const store = tx.objectStore("products");
-      store.add(product);
-
-      tx.oncomplete = function () {
-        loadProducts();
-        clearForm();
-      };
-
-      tx.onerror = function (event) {
-        console.error("Failed to add product:", event.target.error);
-        alert("Failed to add product.");
-      };
+    // Menu overlay
+    document.getElementById("menuToggle").addEventListener("click", () => {
+      const menu = document.getElementById("menuOverlay");
+      menu.style.display = menu.style.display === "block" ? "none" : "block";
     });
 
-    function clearForm() {
-      document.getElementById("productName").value = "";
-      document.getElementById("productCategory").value = "";
-      document.getElementById("productPrice").value = "";
-      document.getElementById("productHasSizes").checked = false;
-      document.getElementById("productGenderMale").checked = false;
-      document.getElementById("productGenderFemale").checked = false;
-    }
+    // Load inventory from localStorage
+    window.addEventListener('DOMContentLoaded', function () {
+      const inventory = JSON.parse(localStorage.getItem('products')) || {};
+      const tableBody = document.getElementById('inventoryTableBody');
+      tableBody.innerHTML = '';
 
-    function loadProducts() {
-      const tx = db.transaction(["products"], "readonly");
-      const store = tx.objectStore("products");
-      const request = store.getAll();
+      for (const category in inventory) {
+        const products = inventory[category];
 
-      request.onsuccess = function () {
-        const products = request.result;
-        const tbody = document.getElementById("productTableBody");
-        tbody.innerHTML = "";
+        for (const productName in products) {
+          const product = products[productName];
+          const sizes = product.sizes || {};
+          const imageURL = product.image || '';
 
-        products.forEach(product => {
-          const row = document.createElement("tr");
+          for (const size in sizes) {
+            const qty = sizes[size];
 
-          row.innerHTML = `
-            <td>${product.name}</td>
-            <td>${product.category}</td>
-            <td>$${product.price.toFixed(2)}</td>
-            <td>${product.hasSizes ? "Yes" : "No"}</td>
-            <td>${product.gender}</td>
-            <td><button onclick="editProduct(${product.id})">Edit</button></td>
-          `;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${category}</td>
+              <td>${productName}</td>
+              <td>
+                ${imageURL ? `<img src="${imageURL}" alt="${productName}" style="width:50px;height:auto;">` : 'No Image'}
+              </td>
+              <td>${size}</td>
+              <td>${qty}</td>
+            `;
+            tableBody.appendChild(row);
+          }
+        }
+      }
+    });
 
-          tbody.appendChild(row);
-        });
-      };
-    }
+    // Add product logic
+    document.getElementById("productForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const category = document.getElementById("productCategory").value.trim();
+      const name = document.getElementById("productName").value.trim();
+      const image = document.getElementById("productImage").value.trim();
+      const size = document.getElementById("productSize").value.trim();
+      const qty = parseInt(document.getElementById("productQty").value.trim());
+      const male = document.getElementById("productGenderMale").checked;
+      const female = document.getElementById("productGenderFemale").checked;
 
-    function editProduct(id) {
-      alert("Edit feature coming soon for ID: " + id);
-    }
+      if (!category || !name || !size || isNaN(qty)) return;
+
+      const inventory = JSON.parse(localStorage.getItem("products")) || {};
+      if (!inventory[category]) inventory[category] = {};
+      if (!inventory[category][name]) {
+        inventory[category][name] = {
+          sizes: {},
+          image: image,
+          gender: male ? "M" : female ? "F" : ""
+        };
+      }
+
+      inventory[category][name].sizes[size] = (inventory[category][name].sizes[size] || 0) + qty;
+      localStorage.setItem("products", JSON.stringify(inventory));
+      location.reload(); // reload so the table updates
+    });
   </script>
 </body>
 </html>
