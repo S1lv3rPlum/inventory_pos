@@ -3,11 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Product Inventory</title>
+  <title>Inventory Manager</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
+    }
+    button {
+      margin-right: 5px;
+      cursor: pointer;
     }
     table {
       width: 100%;
@@ -26,16 +30,23 @@
       background-color: #ddd;
       font-weight: bold;
     }
-    button {
-      margin-right: 5px;
+    .tab-buttons {
+      margin-bottom: 15px;
     }
-    .gender-select {
-      width: 100%;
-      box-sizing: border-box;
+    .hidden {
+      display: none;
     }
     input.size-input {
       width: 4ch;
       box-sizing: border-box;
+    }
+    .gender-select, .discount-type-select {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .form-section {
+      margin-top: 10px;
+      margin-bottom: 20px;
     }
   </style>
 </head>
@@ -43,93 +54,204 @@
 
   <h1>Inventory Manager</h1>
 
-  <!-- Import/Export Buttons -->
-  <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-    <button id="importInventoryBtn">Import Inventory</button>
-    <button id="exportInventoryBtn">Export Inventory</button>
-    <input type="file" id="importInventoryFile" accept=".csv" style="display: none;" />
+  <div class="tab-buttons">
+    <button id="btnInventory" type="button">Inventory</button>
+    <button id="btnDiscounts" type="button">Discounts</button>
   </div>
 
-  <h2>Add Product</h2>
-  <form id="productForm">
-    <div>
-      <label>Category:
+  <!-- Inventory Section -->
+  <section id="inventorySection">
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+      <button id="importInventoryBtn" type="button">Import Inventory</button>
+      <button id="exportInventoryBtn" type="button">Export Inventory</button>
+      <input type="file" id="importInventoryFile" accept=".csv" style="display:none" />
+    </div>
+
+    <h2>Add Product</h2>
+    <form id="productForm" class="form-section">
+      <label>
+        Category:
         <input type="text" id="category" required />
       </label>
-    </div>
-
-    <div>
-      <label>Product Name:
+      <br />
+      <label>
+        Product Name:
         <input type="text" id="productName" required />
       </label>
+      <br />
+      <label>
+        Gender:
+        <select id="gender" required>
+          <option value="">-- Select --</option>
+          <option value="M">M</option>
+          <option value="F">F</option>
+          <option value="Unisex">Unisex</option>
+        </select>
+      </label>
+      <br />
+      <button type="submit">Add Product</button>
+    </form>
+
+    <table id="inventoryTable">
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>Gender</th>
+          <th>Size XS</th>
+          <th>Size S</th>
+          <th>Size M</th>
+          <th>Size L</th>
+          <th>Size XL</th>
+          <th>Size 2XL</th>
+          <th>Size 3XL</th>
+          <th>Size 4XL</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- Discounts Section -->
+  <section id="discountSection" class="hidden">
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+      <button id="importDiscountsBtn" type="button">Import Discounts</button>
+      <button id="exportDiscountsBtn" type="button">Export Discounts</button>
+      <input type="file" id="importDiscountsFile" accept=".csv" style="display:none" />
     </div>
 
-   <div>
-  <label>Gender:
-    <select id="gender" required>
-      <option value="">-- Select --</option>
-      <option value="M">M</option>
-      <option value="F">F</option>
-      <option value="Unisex">Unisex</option>
-    </select>
-  </label>
-</div>
-    <button type="submit">Add Product</button>
-  </form>
+    <h2>Add Discount</h2>
+    <form id="discountForm" class="form-section">
+      <label>
+        Type:
+        <select id="discountType" class="discount-type-select" required>
+          <option value="">-- Select --</option>
+          <option value="Seasonal">Seasonal</option>
+          <option value="Clearance">Clearance</option>
+          <option value="Promotional">Promotional</option>
+          <option value="Bulk">Bulk</option>
+        </select>
+      </label>
+      <br />
+      <label>
+        Discount Name:
+        <input type="text" id="discountName" required />
+      </label>
+      <br />
+      <label>
+        Amount (%):
+        <input type="number" id="discountAmount" min="0" max="100" step="0.1" required />
+      </label>
+      <br />
+      <button type="submit">Add Discount</button>
+    </form>
 
-  <table id="inventoryTable">
-    <thead>
-      <tr>
-        <th>Product Name</th>
-        <th>Gender</th>
-        <th>Size XS</th>
-        <th>Size S</th>
-        <th>Size M</th>
-        <th>Size L</th>
-        <th>Size XL</th>
-        <th>Size 2XL</th>
-        <th>Size 3XL</th>
-        <th>Size 4XL</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    <table id="discountTable">
+      <thead>
+        <tr>
+          <th>Discount Name</th>
+          <th>Amount (%)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
 
   <script>
+    // --- Data storage ---
     let inventory = {};
-    const form = document.getElementById('productForm');
-    const tableBody = document.querySelector('#inventoryTable tbody');
-    const importBtn = document.getElementById('importInventoryBtn');
-    const exportBtn = document.getElementById('exportInventoryBtn');
-    const importFileInput = document.getElementById('importInventoryFile');
+    let discounts = {};
 
-    const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
-
-    window.addEventListener('DOMContentLoaded', () => {
-      const data = localStorage.getItem('inventoryData');
-      if (data) {
-        inventory = JSON.parse(data);
-        renderTable();
-      }
-    });
-
-    function saveToLocalStorage() {
-      localStorage.setItem('inventoryData', JSON.stringify(inventory));
+    // --- Common ---
+    function escapeHTML(text) {
+      return text.replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[m]);
     }
 
-    function renderTable() {
-      tableBody.innerHTML = '';
+    // --- Sizes for inventory ---
+    const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
+
+    // --- Elements ---
+    const btnInventory = document.getElementById('btnInventory');
+    const btnDiscounts = document.getElementById('btnDiscounts');
+
+    const inventorySection = document.getElementById('inventorySection');
+    const discountSection = document.getElementById('discountSection');
+
+    // Inventory form/table elements
+    const productForm = document.getElementById('productForm');
+    const inventoryTableBody = document.querySelector('#inventoryTable tbody');
+    const importInventoryBtn = document.getElementById('importInventoryBtn');
+    const exportInventoryBtn = document.getElementById('exportInventoryBtn');
+    const importInventoryFile = document.getElementById('importInventoryFile');
+
+    // Discount form/table elements
+    const discountForm = document.getElementById('discountForm');
+    const discountTableBody = document.querySelector('#discountTable tbody');
+    const importDiscountsBtn = document.getElementById('importDiscountsBtn');
+    const exportDiscountsBtn = document.getElementById('exportDiscountsBtn');
+    const importDiscountsFile = document.getElementById('importDiscountsFile');
+
+    // --- Initialization ---
+    window.addEventListener('DOMContentLoaded', () => {
+      const invData = localStorage.getItem('inventoryData');
+      if (invData) {
+        inventory = JSON.parse(invData);
+      }
+      const discData = localStorage.getItem('discountsData');
+      if (discData) {
+        discounts = JSON.parse(discData);
+      }
+      renderInventoryTable();
+      renderDiscountTable();
+    });
+
+    // --- Tab toggling ---
+    btnInventory.addEventListener('click', () => {
+      inventorySection.classList.remove('hidden');
+      discountSection.classList.add('hidden');
+      btnInventory.disabled = true;
+      btnDiscounts.disabled = false;
+    });
+    btnDiscounts.addEventListener('click', () => {
+      discountSection.classList.remove('hidden');
+      inventorySection.classList.add('hidden');
+      btnInventory.disabled = false;
+      btnDiscounts.disabled = true;
+    });
+
+    // Initialize with Inventory tab active
+    btnInventory.click();
+
+    // --- Save functions ---
+    function saveInventory() {
+      localStorage.setItem('inventoryData', JSON.stringify(inventory));
+    }
+    function saveDiscounts() {
+      localStorage.setItem('discountsData', JSON.stringify(discounts));
+    }
+
+    // --- Inventory Table Render ---
+    function renderInventoryTable() {
+      inventoryTableBody.innerHTML = '';
 
       Object.keys(inventory).sort().forEach(category => {
+        // Category header row
         const headerRow = document.createElement('tr');
         const headerCell = document.createElement('td');
         headerCell.colSpan = 11;
         headerCell.className = 'category-header';
         headerCell.textContent = category;
         headerRow.appendChild(headerCell);
-        tableBody.appendChild(headerRow);
+        inventoryTableBody.appendChild(headerRow);
 
+        // Products
         inventory[category].sort((a, b) => a.productName.localeCompare(b.productName)).forEach(product => {
           const row = document.createElement('tr');
           row.innerHTML = `
@@ -141,33 +263,25 @@
               <button class="delete-btn">Delete</button>
             </td>
           `;
-          tableBody.appendChild(row);
+          inventoryTableBody.appendChild(row);
 
-          row.querySelector('.edit-btn').addEventListener('click', () => toggleEdit(row, product, category));
+          row.querySelector('.edit-btn').addEventListener('click', () => toggleInventoryEdit(row, product, category));
           row.querySelector('.delete-btn').addEventListener('click', () => {
             inventory[category] = inventory[category].filter(p => p !== product);
             if (inventory[category].length === 0) delete inventory[category];
-            saveToLocalStorage();
-            renderTable();
+            saveInventory();
+            renderInventoryTable();
           });
         });
       });
     }
 
-    function escapeHTML(text) {
-      return text.replace(/[&<>"']/g, m => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      }[m]));
-    }
-
-    function toggleEdit(row, product, category) {
+    // --- Inventory Edit ---
+    function toggleInventoryEdit(row, product, category) {
       const isEditing = row.classList.toggle('editing');
 
       if (isEditing) {
+        // Replace cells with inputs
         const prodNameCell = row.querySelector('.prod-name');
         prodNameCell.innerHTML = `<input type="text" value="${escapeHTML(product.productName)}" />`;
 
@@ -185,6 +299,7 @@
           td.innerHTML = `<input type="number" min="0" class="size-input" value="${product.sizes[size]}" />`;
         });
 
+        // Action buttons switch
         const actionCell = row.querySelector('td:last-child');
         actionCell.innerHTML = `
           <button class="save-btn">Save</button>
@@ -208,31 +323,30 @@
             product.sizes[size] = isNaN(val) || val < 0 ? 0 : val;
           });
 
-          saveToLocalStorage();
-          renderTable();
+          saveInventory();
+          renderInventoryTable();
         });
 
         actionCell.querySelector('.cancel-btn').addEventListener('click', () => {
-          renderTable();
+          renderInventoryTable();
         });
-
       } else {
-        renderTable();
+        renderInventoryTable();
       }
     }
 
-    form.addEventListener('submit', e => {
+    // --- Inventory Form submit ---
+    productForm.addEventListener('submit', e => {
       e.preventDefault();
 
       const category = document.getElementById('category').value.trim();
       const productName = document.getElementById('productName').value.trim();
-
       const gender = document.getElementById('gender').value;
-if (!gender) {
-  alert('Please select a gender.');
-  return;
-}
 
+      if (!gender) {
+        alert('Please select a gender.');
+        return;
+      }
       if (!category || !productName) return;
 
       if (!inventory[category]) inventory[category] = [];
@@ -240,22 +354,17 @@ if (!gender) {
       inventory[category].push({
         productName,
         gender,
-        sizes: sizes.reduce((acc, size) => {
-          acc[size] = 0;
-          return acc;
-        }, {})
+        sizes: sizes.reduce((acc, size) => { acc[size] = 0; return acc; }, {})
       });
 
-      form.reset();
-      saveToLocalStorage();
-      renderTable();
+      productForm.reset();
+      saveInventory();
+      renderInventoryTable();
     });
 
-    exportBtn.addEventListener('click', () => {
-      const rows = [
-        ['Category','Product Name','Gender', ...sizes]
-      ];
-
+    // --- Inventory Import/Export ---
+    exportInventoryBtn.addEventListener('click', () => {
+      const rows = [['Category', 'Product Name', 'Gender', ...sizes]];
       Object.keys(inventory).forEach(category => {
         inventory[category].forEach(product => {
           rows.push([
@@ -266,33 +375,20 @@ if (!gender) {
           ]);
         });
       });
-
-      const csvContent = rows.map(row => row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',')).join('\n');
-      const blob = new Blob([csvContent], {type: 'text/csv'});
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'inventory.csv';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      downloadCSV(rows, 'inventory.csv');
     });
 
-    importBtn.addEventListener('click', () => {
-      importFileInput.value = '';
-      importFileInput.click();
+    importInventoryBtn.addEventListener('click', () => {
+      importInventoryFile.value = '';
+      importInventoryFile.click();
     });
 
-    importFileInput.addEventListener('change', e => {
+    importInventoryFile.addEventListener('change', e => {
       const file = e.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = evt => {
-        const text = evt.target.result;
-        parseCSVAndLoadInventory(text);
+        parseCSVAndLoadInventory(evt.target.result);
       };
       reader.readAsText(file);
     });
@@ -303,12 +399,9 @@ if (!gender) {
         alert('CSV file appears empty or invalid.');
         return;
       }
-
       inventory = {};
-
       const headerCols = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
       const expectedHeaders = ['Category','Product Name','Gender', ...sizes];
-
       for (let i = 1; i < lines.length; i++) {
         const cols = parseCSVLine(lines[i]);
         if (cols.length < expectedHeaders.length) continue;
@@ -331,8 +424,8 @@ if (!gender) {
         });
       }
 
-      saveToLocalStorage();
-      renderTable();
+      saveInventory();
+      renderInventoryTable();
       alert('Inventory imported successfully!');
     }
 
@@ -361,7 +454,192 @@ if (!gender) {
 
       return result;
     }
-  </script>
 
+    function downloadCSV(rows, filename) {
+      const csvContent = rows.map(row => row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csvContent], {type: 'text/csv'});
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // --- Discounts ---
+
+    function renderDiscountTable() {
+      discountTableBody.innerHTML = '';
+      const discountTypes = Object.keys(discounts).sort();
+
+      discountTypes.forEach(type => {
+        // Header row for discount type
+        const headerRow = document.createElement('tr');
+        const headerCell = document.createElement('td');
+        headerCell.colSpan = 3;
+        headerCell.className = 'category-header';
+        headerCell.textContent = type;
+        headerRow.appendChild(headerCell);
+        discountTableBody.appendChild(headerRow);
+
+        discounts[type].forEach(discount => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td class="discount-name">${escapeHTML(discount.name)}</td>
+            <td class="discount-amount">${discount.amount}</td>
+            <td>
+              <button class="edit-discount-btn">Edit</button>
+              <button class="delete-discount-btn">Delete</button>
+            </td>
+          `;
+          discountTableBody.appendChild(row);
+
+          row.querySelector('.edit-discount-btn').addEventListener('click', () => toggleDiscountEdit(row, discount, type));
+          row.querySelector('.delete-discount-btn').addEventListener('click', () => {
+            discounts[type] = discounts[type].filter(d => d !== discount);
+            if (discounts[type].length === 0) delete discounts[type];
+            saveDiscounts();
+            renderDiscountTable();
+          });
+        });
+      });
+    }
+
+    function toggleDiscountEdit(row, discount, type) {
+      const isEditing = row.classList.toggle('editing');
+
+      if (isEditing) {
+        const nameCell = row.querySelector('.discount-name');
+        nameCell.innerHTML = `<input type="text" value="${escapeHTML(discount.name)}" />`;
+
+        const amountCell = row.querySelector('.discount-amount');
+        amountCell.innerHTML = `<input type="number" min="0" max="100" step="0.1" value="${discount.amount}" />`;
+
+        const actionCell = row.querySelector('td:last-child');
+        actionCell.innerHTML = `
+          <button class="save-discount-btn">Save</button>
+          <button class="cancel-discount-btn">Cancel</button>
+        `;
+
+        actionCell.querySelector('.save-discount-btn').addEventListener('click', () => {
+          const newName = nameCell.querySelector('input').value.trim();
+          const newAmount = parseFloat(amountCell.querySelector('input').value);
+          if (!newName) {
+            alert('Discount name cannot be empty.');
+            return;
+          }
+          if (isNaN(newAmount) || newAmount < 0 || newAmount > 100) {
+            alert('Discount amount must be between 0 and 100.');
+            return;
+          }
+          discount.name = newName;
+          discount.amount = newAmount;
+
+          saveDiscounts();
+          renderDiscountTable();
+        });
+
+        actionCell.querySelector('.cancel-discount-btn').addEventListener('click', () => {
+          renderDiscountTable();
+        });
+
+      } else {
+        renderDiscountTable();
+      }
+    }
+
+    // --- Discount form submit ---
+    discountForm.addEventListener('submit', e => {
+      e.preventDefault();
+
+      const type = document.getElementById('discountType').value;
+      const name = document.getElementById('discountName').value.trim();
+      const amount = parseFloat(document.getElementById('discountAmount').value);
+
+      if (!type) {
+        alert('Please select a discount type.');
+        return;
+      }
+      if (!name) {
+        alert('Please enter a discount name.');
+        return;
+      }
+      if (isNaN(amount) || amount < 0 || amount > 100) {
+        alert('Please enter a valid discount amount (0-100).');
+        return;
+      }
+
+      if (!discounts[type]) discounts[type] = [];
+
+      discounts[type].push({name, amount});
+
+      discountForm.reset();
+      saveDiscounts();
+      renderDiscountTable();
+    });
+
+    // --- Discount Import/Export ---
+    exportDiscountsBtn.addEventListener('click', () => {
+      // CSV headers: Type,Name,Amount
+      const rows = [['Type', 'Name', 'Amount']];
+      Object.keys(discounts).forEach(type => {
+        discounts[type].forEach(discount => {
+          rows.push([type, discount.name, discount.amount]);
+        });
+      });
+      downloadCSV(rows, 'discounts.csv');
+    });
+
+    importDiscountsBtn.addEventListener('click', () => {
+      importDiscountsFile.value = '';
+      importDiscountsFile.click();
+    });
+
+    importDiscountsFile.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = evt => {
+        parseCSVAndLoadDiscounts(evt.target.result);
+      };
+      reader.readAsText(file);
+    });
+
+    function parseCSVAndLoadDiscounts(csvText) {
+      const lines = csvText.trim().split('\n');
+      if (lines.length < 2) {
+        alert('CSV file appears empty or invalid.');
+        return;
+      }
+      discounts = {};
+      const headerCols = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      const expectedHeaders = ['Type', 'Name', 'Amount'];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseCSVLine(lines[i]);
+        if (cols.length < expectedHeaders.length) continue;
+
+        const [type, name, amountStr] = cols;
+
+        if (!type || !name) continue;
+
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount)) continue;
+
+        if (!discounts[type]) discounts[type] = [];
+
+        discounts[type].push({
+          name: name.trim(),
+          amount
+        });
+      }
+
+      saveDiscounts();
+      renderDiscountTable();
+      alert('Discounts imported successfully!');
+    }
+  </script>
 </body>
 </html>
