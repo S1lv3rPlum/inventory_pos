@@ -84,6 +84,65 @@
   </table>
 
   <script>
+   // 1. Trigger file input when button clicked
+document.getElementById('importInventoryBtn').addEventListener('click', function () {
+  document.getElementById('importInventoryFile').click();
+});
+
+// 2. Handle file selection and read it
+document.getElementById('importInventoryFile').addEventListener('change', function (event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const text = e.target.result;
+    importInventoryFromCSV(text);
+  };
+  reader.readAsText(file);
+});
+
+// 3. Parse CSV and add to table
+function importInventoryFromCSV(csvText) {
+  const lines = csvText.trim().split('\n');
+
+  // Assuming first line is header: Category,Product Name,Gender,Size,Quantity
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+  for (let i = 1; i < lines.length; i++) {
+    const row = lines[i].split(',').map(cell => cell.trim());
+    const product = {
+      category: row[headers.indexOf("category")] || '',
+      name: row[headers.indexOf("product name")] || '',
+      gender: row[headers.indexOf("gender")] || '',
+      size: row[headers.indexOf("size")] || '',
+      quantity: row[headers.indexOf("quantity")] || ''
+    };
+
+    // Add to table
+    addInventoryRow(product);
+  }
+}
+
+// 4. Add row to inventory table (adjust table ID and structure if needed)
+function addInventoryRow(product) {
+  const table = document.getElementById('inventoryTable').getElementsByTagName('tbody')[0];
+  const newRow = table.insertRow();
+
+  const categoryCell = newRow.insertCell(0);
+  const nameCell = newRow.insertCell(1);
+  const genderCell = newRow.insertCell(2);
+  const sizeCell = newRow.insertCell(3);
+  const quantityCell = newRow.insertCell(4);
+
+  categoryCell.textContent = product.category;
+  nameCell.textContent = product.name;
+  genderCell.textContent = product.gender;
+  sizeCell.textContent = product.size;
+  quantityCell.textContent = product.quantity;
+} 
+    
+    
   const exportBtn = document.getElementById('exportInventoryBtn');
 const importBtn = document.getElementById('importInventoryBtn');
 const importFileInput = document.getElementById('importInventoryFile');
