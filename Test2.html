@@ -4,176 +4,214 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inventory Manager</title>
   <style>
-    body { font-family: sans-serif; padding: 1rem; }
-    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-    h2 { margin-top: 2rem; }
-    button, select, input { margin: 0.25rem; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
-    .tabs button.active { font-weight: bold; }
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 4px;
+    }
+    .hidden {
+      display: none;
+    }
+    input.qty-input {
+      width: 4ch;
+    }
   </style>
 </head>
 <body>
   <h1>Inventory Manager</h1>
-  <div class="tabs">
-    <button onclick="showTab('inventory')" class="active">Inventory</button>
-    <button onclick="showTab('discounts')">Discounts</button>
-  </div>
-  <div id="inventoryTab">
+  <button onclick="exportToCSV()">Export</button>
+  <button onclick="importFromCSV()">Import</button>
+  <button onclick="showInventorySection()">Inventory</button>
+  <button onclick="showDiscountSection()">Discounts</button>  <section id="inventory-section">
     <h2>Add Product</h2>
-    <form id="productForm">
-      <input placeholder="Product Name" name="name" required />
-      <select name="gender">
-        <option>Male</option>
-        <option>Female</option>
-        <option>Unisex</option>
+    <form id="product-form">
+      <input type="text" id="product-name" placeholder="Product Name" required />
+      <select id="product-gender">
+        <option value="Men">Men</option>
+        <option value="Women">Women</option>
+        <option value="Unisex">Unisex</option>
       </select>
-      <input placeholder="XS" name="XS" type="number" />
-      <input placeholder="S" name="S" type="number" />
-      <input placeholder="M" name="M" type="number" />
-      <input placeholder="L" name="L" type="number" />
-      <input placeholder="XL" name="XL" type="number" />
+      <select id="product-category">
+        <option value="Tops">Tops</option>
+        <option value="Bottoms">Bottoms</option>
+        <option value="Accessories">Accessories</option>
+      </select>
       <button type="submit">Add Product</button>
-    </form>
-    <table id="productTable"></table>
-  </div>
-  <div id="discountsTab" style="display:none">
+    </form><div id="product-table"></div>
+
+  </section>  <section id="discount-section" class="hidden">
     <h2>Add Discount</h2>
-    <form id="discountForm">
-      <input placeholder="Discount Name" name="name" required />
-      <input placeholder="Type (e.g. Seasonal)" name="type" required />
+    <form id="discount-form">
+      <input type="text" id="discount-name" placeholder="Discount Name" required />
+      <select id="discount-type">
+        <option value="Percentage">Percentage</option>
+        <option value="Flat">Flat</option>
+      </select>
+      <input type="number" id="discount-value" placeholder="Value" required />
       <button type="submit">Add Discount</button>
-    </form>
-    <table id="discountTable"></table>
-  </div>
-  <script>
-    const inventoryTab = document.getElementById('inventoryTab');
-    const discountsTab = document.getElementById('discountsTab');
-    const tabs = document.querySelectorAll('.tabs button');function showTab(tab) {
-  tabs.forEach(btn => btn.classList.remove('active'));
-  document.querySelector(`.tabs button[onclick="showTab('${tab}')"]`).classList.add('active');
-  inventoryTab.style.display = tab === 'inventory' ? '' : 'none';
-  discountsTab.style.display = tab === 'discounts' ? '' : 'none';
-}
+    </form><div id="discount-table"></div>
 
-const productForm = document.getElementById('productForm');
-const productTable = document.getElementById('productTable');
-let products = [];
+  </section>  <script>
+    let products = [];
+    let discounts = [];
 
-productForm.onsubmit = e => {
-  e.preventDefault();
-  const formData = new FormData(productForm);
-  const product = Object.fromEntries(formData.entries());
-  product.id = Date.now();
-  products.push(product);
-  productForm.reset();
-  renderProducts();
-};
+    const sizeList = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
 
-function renderProducts() {
-  let html = `<tr><th>Product Name</th><th>Gender</th><th>XS</th><th>S</th><th>M</th><th>L</th><th>XL</th><th>Actions</th></tr>`;
-  for (let p of products) {
-    if (p.editing) {
-      html += `<tr>
-        <td><input value="${p.name}" onchange="updateField(${p.id}, 'name', this.value)" /></td>
-        <td>
-          <select onchange="updateField(${p.id}, 'gender', this.value)">
-            <option${p.gender === 'Male' ? ' selected' : ''}>Male</option>
-            <option${p.gender === 'Female' ? ' selected' : ''}>Female</option>
-            <option${p.gender === 'Unisex' ? ' selected' : ''}>Unisex</option>
-          </select>
-        </td>
-        ${['XS','S','M','L','XL'].map(size => `<td><input type='number' value='${p[size] || ''}' onchange="updateField(${p.id}, '${size}', this.value)"/></td>`).join('')}
-        <td><button onclick="saveProduct(${p.id})">Save</button><button onclick="deleteProduct(${p.id})">Delete</button></td>
-      </tr>`;
-    } else {
-      html += `<tr>
-        <td>${p.name}</td>
-        <td>${p.gender}</td>
-        ${['XS','S','M','L','XL'].map(size => `<td>${p[size] || ''}</td>`).join('')}
-        <td><button onclick="editProduct(${p.id})">Edit</button><button onclick="deleteProduct(${p.id})">Delete</button></td>
-      </tr>`;
+    function renderProductTable() {
+      const grouped = products.reduce((acc, cur) => {
+        if (!acc[cur.category]) acc[cur.category] = [];
+        acc[cur.category].push(cur);
+        return acc;
+      }, {});
+
+      let html = '';
+      for (const cat in grouped) {
+        html += `<h3>${cat}</h3><table><tr><th>Product</th><th>Gender</th>${sizeList.map(s => `<th>${s}</th>`).join('')}<th>Actions</th></tr>`;
+        grouped[cat].forEach((p, i) => {
+          const sizes = sizeList.map(s => `<td><input class="qty-input" type="number" value="${p.sizes[s] || ''}" data-size="${s}" data-id="${p.id}" onchange="updateSize(event)"></td>`).join('');
+          const genderOptions = ['Men', 'Women', 'Unisex'].map(opt => `<option value="${opt}" ${opt === p.gender ? 'selected' : ''}>${opt}</option>`).join('');
+          html += `<tr data-id="${p.id}">
+            <td><span class="name-display">${p.name}</span><input class="hidden name-edit" value="${p.name}"/></td>
+            <td><span class="gender-display">${p.gender}</span><select class="hidden gender-edit">${genderOptions}</select></td>
+            ${sizes}
+            <td>
+              <button onclick="toggleEdit(this)">Edit</button>
+              <button class="hidden" onclick="saveEdit(this)">Save</button>
+              <button onclick="deleteProduct(${p.id})">Delete</button>
+            </td>
+          </tr>`;
+        });
+        html += '</table>';
+      }
+      document.getElementById('product-table').innerHTML = html;
     }
-  }
-  productTable.innerHTML = html;
-}
 
-function updateField(id, key, value) {
-  const p = products.find(p => p.id === id);
-  if (p) p[key] = value;
-}
+    function renderDiscountTable() {
+      const grouped = discounts.reduce((acc, cur) => {
+        if (!acc[cur.type]) acc[cur.type] = [];
+        acc[cur.type].push(cur);
+        return acc;
+      }, {});
 
-function editProduct(id) {
-  products.forEach(p => p.editing = p.id === id);
-  renderProducts();
-}
-
-function saveProduct(id) {
-  const p = products.find(p => p.id === id);
-  if (p) p.editing = false;
-  renderProducts();
-}
-
-function deleteProduct(id) {
-  products = products.filter(p => p.id !== id);
-  renderProducts();
-}
-
-const discountForm = document.getElementById('discountForm');
-const discountTable = document.getElementById('discountTable');
-let discounts = [];
-
-discountForm.onsubmit = e => {
-  e.preventDefault();
-  const formData = new FormData(discountForm);
-  const discount = Object.fromEntries(formData.entries());
-  discount.id = Date.now();
-  discounts.push(discount);
-  discountForm.reset();
-  renderDiscounts();
-};
-
-function renderDiscounts() {
-  let html = `<tr><th>Type</th><th>Discount Name</th><th>Actions</th></tr>`;
-  for (let d of discounts) {
-    if (d.editing) {
-      html += `<tr>
-        <td><input value="${d.type}" onchange="updateDiscount(${d.id}, 'type', this.value)" /></td>
-        <td><input value="${d.name}" onchange="updateDiscount(${d.id}, 'name', this.value)" /></td>
-        <td><button onclick="saveDiscount(${d.id})">Save</button><button onclick="deleteDiscount(${d.id})">Delete</button></td>
-      </tr>`;
-    } else {
-      html += `<tr>
-        <td>${d.type}</td>
-        <td>${d.name}</td>
-        <td><button onclick="editDiscount(${d.id})">Edit</button><button onclick="deleteDiscount(${d.id})">Delete</button></td>
-      </tr>`;
+      let html = '';
+      for (const type in grouped) {
+        html += `<h3>${type}</h3><table><tr><th>Name</th><th>Value</th><th>Actions</th></tr>`;
+        grouped[type].forEach((d, i) => {
+          html += `<tr>
+            <td><span class="name-display">${d.name}</span><input class="hidden name-edit" value="${d.name}"/></td>
+            <td><span class="value-display">${d.value}</span><input class="hidden value-edit" type="number" value="${d.value}"/></td>
+            <td>
+              <button onclick="toggleDiscountEdit(this)">Edit</button>
+              <button class="hidden" onclick="saveDiscountEdit(this)">Save</button>
+              <button onclick="deleteDiscount(${d.id})">Delete</button>
+            </td>
+          </tr>`;
+        });
+        html += '</table>';
+      }
+      document.getElementById('discount-table').innerHTML = html;
     }
-  }
-  discountTable.innerHTML = html;
-}
 
-function updateDiscount(id, key, value) {
-  const d = discounts.find(d => d.id === id);
-  if (d) d[key] = value;
-}
+    function toggleEdit(btn) {
+      const row = btn.closest('tr');
+      row.querySelector('.name-display').classList.add('hidden');
+      row.querySelector('.name-edit').classList.remove('hidden');
+      row.querySelector('.gender-display').classList.add('hidden');
+      row.querySelector('.gender-edit').classList.remove('hidden');
+      btn.classList.add('hidden');
+      row.querySelector('button:nth-child(2)').classList.remove('hidden');
+    }
 
-function editDiscount(id) {
-  discounts.forEach(d => d.editing = d.id === id);
-  renderDiscounts();
-}
+    function saveEdit(btn) {
+      const row = btn.closest('tr');
+      const id = parseInt(row.dataset.id);
+      const name = row.querySelector('.name-edit').value;
+      const gender = row.querySelector('.gender-edit').value;
+      const prod = products.find(p => p.id === id);
+      prod.name = name;
+      prod.gender = gender;
+      renderProductTable();
+    }
 
-function saveDiscount(id) {
-  const d = discounts.find(d => d.id === id);
-  if (d) d.editing = false;
-  renderDiscounts();
-}
+    function updateSize(e) {
+      const size = e.target.dataset.size;
+      const id = parseInt(e.target.dataset.id);
+      const val = parseInt(e.target.value);
+      const prod = products.find(p => p.id === id);
+      prod.sizes[size] = val;
+    }
 
-function deleteDiscount(id) {
-  discounts = discounts.filter(d => d.id !== id);
-  renderDiscounts();
-}
+    function deleteProduct(id) {
+      products = products.filter(p => p.id !== id);
+      renderProductTable();
+    }
 
-  </script>
-</body>
+    function deleteDiscount(id) {
+      discounts = discounts.filter(d => d.id !== id);
+      renderDiscountTable();
+    }
+
+    function toggleDiscountEdit(btn) {
+      const row = btn.closest('tr');
+      row.querySelector('.name-display').classList.add('hidden');
+      row.querySelector('.name-edit').classList.remove('hidden');
+      row.querySelector('.value-display').classList.add('hidden');
+      row.querySelector('.value-edit').classList.remove('hidden');
+      btn.classList.add('hidden');
+      row.querySelector('button:nth-child(2)').classList.remove('hidden');
+    }
+
+    function saveDiscountEdit(btn) {
+      const row = btn.closest('tr');
+      const name = row.querySelector('.name-edit').value;
+      const value = parseFloat(row.querySelector('.value-edit').value);
+      const id = parseInt(discounts.find(d => d.name === row.querySelector('.name-display').textContent).id);
+      const disc = discounts.find(d => d.id === id);
+      disc.name = name;
+      disc.value = value;
+      renderDiscountTable();
+    }
+
+    document.getElementById('product-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('product-name').value;
+      const gender = document.getElementById('product-gender').value;
+      const category = document.getElementById('product-category').value;
+      const id = Date.now();
+      products.push({ id, name, gender, category, sizes: {} });
+      e.target.reset();
+      renderProductTable();
+    });
+
+    document.getElementById('discount-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('discount-name').value;
+      const type = document.getElementById('discount-type').value;
+      const value = parseFloat(document.getElementById('discount-value').value);
+      const id = Date.now();
+      discounts.push({ id, name, type, value });
+      e.target.reset();
+      renderDiscountTable();
+    });
+
+    function showInventorySection() {
+      document.getElementById('inventory-section').classList.remove('hidden');
+      document.getElementById('discount-section').classList.add('hidden');
+    }
+
+    function showDiscountSection() {
+      document.getElementById('discount-section').classList.remove('hidden');
+      document.getElementById('inventory-section').classList.add('hidden');
+    }
+
+    function exportToCSV() {
+      alert('Export not implemented yet.');
+    }
+
+    function importFromCSV() {
+      alert('Import not implemented yet.');
+    }
+  </script></body>
 </html>
