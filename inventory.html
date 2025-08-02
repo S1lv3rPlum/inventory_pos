@@ -2,307 +2,183 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Band Inventory Manager</title>
-
-  <!-- Global styles including menu, themes, and buttons -->
-  <link rel="stylesheet" href="styles.css" />
-
-  <!-- Inventory-specific styles -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventory</title>
   <style>
-    .container {
-      max-width: 1000px;
-      margin: 2rem auto;
-      padding: 0 1rem;
+    input[type="number"] {
+      width: 60px;
     }
-    #inventorySection, #discountSection {
-      border: 1px solid #888;
-      border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      background: #fff;
+
+    .qty-input {
+      width: 50px;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
+      margin-top: 20px;
     }
+
     th, td {
       border: 1px solid #ccc;
-      padding: 8px 12px;
+      padding: 4px;
       text-align: left;
-      vertical-align: top;
-    }
-    th {
-      background-color: #eee;
-    }
-    button {
-      margin: 0 4px;
-      cursor: pointer;
-    }
-    input[type="text"], input[type="number"] {
-      padding: 4px 6px;
-      box-sizing: border-box;
-    }
-    .form-row {
-      margin: 12px 0;
-    }
-    #topBar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-    #navButtons {
-      display: flex;
-      gap: 10px;
-    }
-    #bandNameBanner {
-      font-size: 1.2rem;
-      color: #999;
-      margin-bottom: 0.5rem;
-      text-align: center;
     }
 
-    /* NEW: Adjusted hamburger wrapper to stay inside layout */
-    #menu-toggle-wrapper {
-      position: sticky;
-      top: 1rem;
-      z-index: 1001;
-      margin-bottom: 1rem;
+    .category-header {
+      background-color: #f0f0f0;
+      font-weight: bold;
+    }
+
+    .action-btn {
+      margin: 0 2px;
     }
   </style>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
 </head>
+<body>
+  <h1>Inventory</h1>
 
-<body class="light-theme accent-blue">
+  <button id="importBtn">Import</button>
+  <button id="exportBtn">Export</button>
+  <button id="syncBtn">Sync</button>
+  <button id="viewBtn">View</button>
 
-  <div class="container">
-
-    <!-- Hamburger Menu Button (now inside layout) -->
-    <div id="menu-toggle-wrapper">
-      <button id="menu-toggle" class="menu-button" aria-label="Open menu">☰</button>
-    </div>
-
-    <div id="bandNameBanner">&lt;band Name Banner&gt;</div>
-
-    <div id="topBar">
-      <h1>Inventory Manager3</h1>
-  
-    </div>
-
-    <div style="margin-bottom: 1rem;">
-    <button type="button" onclick="toggleView('inventory')">Manage Inventory</button>
-    <button type="button" onclick="toggleView('discounts')">Manage Discounts</button>
-    </div>
-
-<div style="margin-bottom: 1rem; display: flex; gap: 10px;">
-  <button type="button" style="flex: 1;" onclick="exportInventory()">⬆️ Export Inventory to Excel</button>
-  <button type="button" style="flex: 1;" onclick="document.getElementById('importFileInput').click()">⬇️ Import Inventory from Excel</button>
-  <input type="file" id="importFileInput" accept=".xlsx" style="display: none;" onchange="handleInventoryImport(event)" />
-</div>
-
-<div style="margin-bottom: 1rem; display: flex; gap: 10px;">
-  <button type="button" style="flex: 1;" onclick="exportDiscounts()">⬆️ Export Discounts to Excel</button>
-  <button type="button" style="flex: 1;" onclick="document.getElementById('importDiscountFileInput').click()">⬇️ Import Discount from Excel</button>
-  <input type="file" id="importDiscountFileInput" accept=".xlsx" style="display: none;" onchange="handleDiscountImport(event)" />
-</div>
-
-
-    <div id="inventorySection">
+  <div id="inventorySection">
     <form id="addProductForm" style="max-width: 400px; margin-bottom: 20px;">
-  <div>
-    <label>Product Name (required):<br/>
-      <input type="text" id="productName" required />
-    </label>
+      <div>
+        <label>Product Name (required):<br/>
+          <input type="text" id="productName" required />
+        </label>
+      </div>
+
+      <div>
+        <label>Category (required):<br/>
+          <input type="text" id="productCategory" required />
+        </label>
+      </div>
+
+      <div>
+        <label>Price ($) (required):<br/>
+          <input type="number" id="productPrice" step="0.01" required />
+        </label>
+      </div>
+
+      <div>
+        Gender:<br/>
+        <label><input type="checkbox" id="productGenderMale" /> M</label>
+        <label><input type="checkbox" id="productGenderFemale" /> F</label>
+      </div>
+
+      <div>
+        <label>Product Image:<br/>
+          <input type="file" id="productImage" accept="image/*" />
+        </label>
+      </div>
+
+      <button type="submit" style="margin-top: 10px;" id="addproductBtn">Add Product</button>
+    </form>
+
+    <div id="inventoryList"></div>
   </div>
 
-  <div>
-    <label>Category (required):<br/>
-      <input type="text" id="productCategory" required />
-    </label>
-  </div>
-
-  <div>
-    <label>Price ($) (required):<br/>
-      <input type="number" id="productPrice" step="0.01" required />
-    </label>
-  </div>
-
-  <div>
-    <label>
-      <input type="checkbox" id="productHasSizes" />
-      Has Sizes?
-    </label>
-  </div>
-
-  <div>
-    Gender:<br/>
-    <label><input type="checkbox" id="productGenderMale" /> M</label>
-    <label><input type="checkbox" id="productGenderFemale" /> F</label>
-  </div>
-
-  <div>
-    <label>Product Image:<br/>
-      <input type="file" id="productImage" accept="image/*" />
-    </label>
-  </div>
-
-  <button type="submit" style="margin-top: 10px;" id="addproductBtn">Add Product</button>
-</form>
-
-<div id="inventoryList"></div>
-
-      <hr />
-      <h2>Current Inventory</h2>
-      <div id="inventoryList"></div>
-    </div>
-
-    <div id="discountSection" style="display:none;">
-      <h2>Discount Settings</h2>
-      <form id="discountForm">
-        <label>Reason: <input type="text" id="discountName" required /></label><br />
-        <label>Type:
-          <select id="discountType">
-            <option value="flat">Flat $ off</option>
-            <option value="percent">% off</option>
-          </select>
-        </label><br />
-        <label>Value: <input type="number" id="discountValue" step="0.01" required /></label><br />
-        <button type="submit">Add/Update Discount</button>
-      </form>
-      <ul id="discountList"></ul>
-      <hr>
-    </div>
-  </div>
-
-  <!-- Slide-in Menu (stays outside container for full-screen coverage) -->
-  <div id="menu-overlay" class="hidden" aria-hidden="true">
-    <div class="side-menu" role="menu">
-            <nav>
-        <button class="menu-navButton" data-target="inventory.html" role="menuitem">Inventory</button>
-        <button class="menu-navButton" data-target="pos.html" role="menuitem">Make a Sale</button>
-        <button class="menu-navButton" data-target="BrowseProducts.html" role="menuitem">Browse Products</button>
-        <button class="menu-navButton" data-target="sales.html" role="menuitem">Sales Records</button>
-        <button class="menu-navButton" data-target="shippingManager.html" role="menuitem">Shipping Manager</button>
-        <button class="menu-navButton" data-target="settings.html" role="menuitem">Settings</button>
-        
-      </nav>
-    </div>
-  </div>
-
-  <!-- Page Scripts -->
   <script>
-    function toggleView(view) {
-      document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
-      document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
-      if (view === "discounts") loadDiscounts();
+    let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+
+    document.getElementById('addProductForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('productName').value.trim();
+      const category = document.getElementById('productCategory').value.trim();
+      const price = parseFloat(document.getElementById('productPrice').value.trim());
+      const gender = [];
+
+      if (document.getElementById('productGenderMale').checked) gender.push('M');
+      if (document.getElementById('productGenderFemale').checked) gender.push('F');
+
+      const product = {
+        name,
+        category,
+        price,
+        gender: gender.join(', '),
+        sizes: {
+          XS: 0,
+          S: 0,
+          M: 0,
+          L: 0,
+          XL: 0
+        }
+      };
+
+      inventory.push(product);
+      localStorage.setItem('inventory', JSON.stringify(inventory));
+      renderInventory();
+      this.reset();
+    });
+
+    function renderInventory() {
+      const container = document.getElementById('inventoryList');
+      container.innerHTML = '';
+
+      const grouped = {};
+      inventory.forEach(product => {
+        if (!grouped[product.category]) {
+          grouped[product.category] = [];
+        }
+        grouped[product.category].push(product);
+      });
+
+      const table = document.createElement('table');
+
+      Object.keys(grouped).forEach(category => {
+        const headerRow = document.createElement('tr');
+        const headerCell = document.createElement('td');
+        headerCell.colSpan = 9;
+        headerCell.textContent = category;
+        headerCell.className = 'category-header';
+        headerRow.appendChild(headerCell);
+        table.appendChild(headerRow);
+
+        const titlesRow = document.createElement('tr');
+        ['Name', 'Price', 'Gender', 'XS', 'S', 'M', 'L', 'XL', 'Actions'].forEach(title => {
+          const th = document.createElement('th');
+          th.textContent = title;
+          titlesRow.appendChild(th);
+        });
+        table.appendChild(titlesRow);
+
+        grouped[category].forEach((product, idx) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${product.name}</td>
+            <td>$${product.price.toFixed(2)}</td>
+            <td contenteditable="true">${product.gender}</td>
+            ${['XS','S','M','L','XL'].map(size => 
+              `<td><input type="number" class="qty-input" value="${product.sizes[size]}" 
+              onchange="updateSize('${product.name}', '${category}', '${size}', this.value)" /></td>`).join('')}
+            <td><button class="action-btn" onclick="deleteProduct('${product.name}', '${category}')">Delete</button></td>
+          `;
+          table.appendChild(row);
+        });
+      });
+
+      container.appendChild(table);
     }
 
-    function toggleGender(selected) {
-      const male = document.getElementById("productGenderMale");
-      const female = document.getElementById("productGenderFemale");
-      if (selected === "M" && male.checked) {
-        female.checked = false;
-      } else if (selected === "F" && female.checked) {
-        male.checked = false;
+    function updateSize(name, category, size, value) {
+      const prod = inventory.find(p => p.name === name && p.category === category);
+      if (prod) {
+        prod.sizes[size] = parseInt(value) || 0;
+        localStorage.setItem('inventory', JSON.stringify(inventory));
       }
     }
+
+    function deleteProduct(name, category) {
+      inventory = inventory.filter(p => !(p.name === name && p.category === category));
+      localStorage.setItem('inventory', JSON.stringify(inventory));
+      renderInventory();
+    }
+
+    window.onload = renderInventory;
   </script>
-  <script>
-  // Keep your existing toggleView and toggleGender functions
-  function toggleView(view) {
-    document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
-    document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
-    if (view === "discounts") loadDiscounts();
-  }
-
-  function toggleGender(selected) {
-    const male = document.getElementById("productGenderMale");
-    const female = document.getElementById("productGenderFemale");
-    if (selected === "M" && male.checked) {
-      female.checked = false;
-    } else if (selected === "F" && female.checked) {
-      male.checked = false;
-    }
-  }
-
-  // Use IndexedDB instead of localStorage
-  window.addEventListener('DOMContentLoaded', () => {
-    const dbRequest = indexedDB.open('InventoryDB', 1);
-
-    dbRequest.onupgradeneeded = function (event) {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains('products')) {
-        db.createObjectStore('products', { keyPath: 'id', autoIncrement: true });
-      }
-    };
-
-    dbRequest.onsuccess = function (event) {
-      const db = event.target.result;
-      const tx = db.transaction('products', 'readonly');
-      const store = tx.objectStore('products');
-      const getAllRequest = store.getAll();
-
-      getAllRequest.onsuccess = function () {
-        const allProducts = getAllRequest.result;
-        const inventory = {};
-
-        // Convert array format into nested object grouped by category
-        for (const item of allProducts) {
-          const { category, name, size, qty, image } = item;
-          if (!inventory[category]) inventory[category] = {};
-          if (!inventory[category][name]) inventory[category][name] = { sizes: {}, image };
-          inventory[category][name].sizes[size] = qty;
-        }
-
-        const tableBody = document.getElementById('inventoryTableBody');
-        tableBody.innerHTML = '';
-
-        for (const category in inventory) {
-          const products = inventory[category];
-
-          for (const productName in products) {
-            const product = products[productName];
-            const sizes = product.sizes || {};
-            const imageURL = product.image || '';
-
-            for (const size in sizes) {
-              const qty = sizes[size];
-
-              const row = document.createElement('tr');
-              row.innerHTML = `
-                <td>${category}</td>
-                <td>${productName}</td>
-                <td>
-                  ${imageURL ? `<img src="${imageURL}" alt="${productName}" style="width:50px;height:auto;">` : 'No Image'}
-                </td>
-                <td>${size}</td>
-                <td>${qty}</td>
-              `;
-              tableBody.appendChild(row);
-            }
-          }
-        }
-      };
-
-      getAllRequest.onerror = function () {
-        console.error('Error reading products from IndexedDB');
-      };
-    };
-
-    dbRequest.onerror = function () {
-      console.error('Error opening IndexedDB');
-    };
-  });
-</script>
-  
-  
-  
-  
-  <script src="inventory.js"></script>
-  <script src="menu-overlay.js"></script>
 </body>
 </html>
