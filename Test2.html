@@ -1,131 +1,179 @@
 <!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Product Inventory</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory Manager</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-    .category-header {
-      background-color: #ddd;
-      font-weight: bold;
-    }
-    button {
-      margin-right: 5px;
-    }
-    .gender-select {
-      width: 100%;
-      box-sizing: border-box;
-    }
-    input.size-input {
-      width: 4ch;
-      box-sizing: border-box;
-    }
-    .tab-buttons {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .tab-buttons button.active {
-      background-color: #007bff;
-      color: white;
-    }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
+    body { font-family: sans-serif; padding: 1rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    h2 { margin-top: 2rem; }
+    button, select, input { margin: 0.25rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    .tabs button.active { font-weight: bold; }
   </style>
 </head>
-<body>  <h1>Inventory Manager</h1>  <!-- Tabs -->  <div class="tab-buttons">
-    <button id="inventoryTabBtn" class="active">Inventory</button>
-    <button id="discountsTabBtn">Discounts</button>
-  </div>  <!-- Inventory Tab Content -->  <div id="inventoryTab" class="tab-content active">
-    <!-- Import/Export Buttons -->
-    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-      <button id="importInventoryBtn">Import Inventory</button>
-      <button id="exportInventoryBtn">Export Inventory</button>
-      <input type="file" id="importInventoryFile" accept=".csv" style="display: none;" />
-    </div><h2>Add Product</h2>
-<form id="productForm">
-  <div>
-    <label>Category:
-      <input type="text" id="category" required />
-    </label>
+<body>
+  <h1>Inventory Manager</h1>
+  <div class="tabs">
+    <button onclick="showTab('inventory')" class="active">Inventory</button>
+    <button onclick="showTab('discounts')">Discounts</button>
   </div>
-
-  <div>
-    <label>Product Name:
-      <input type="text" id="productName" required />
-    </label>
+  <div id="inventoryTab">
+    <h2>Add Product</h2>
+    <form id="productForm">
+      <input placeholder="Product Name" name="name" required />
+      <select name="gender">
+        <option>Male</option>
+        <option>Female</option>
+        <option>Unisex</option>
+      </select>
+      <input placeholder="XS" name="XS" type="number" />
+      <input placeholder="S" name="S" type="number" />
+      <input placeholder="M" name="M" type="number" />
+      <input placeholder="L" name="L" type="number" />
+      <input placeholder="XL" name="XL" type="number" />
+      <button type="submit">Add Product</button>
+    </form>
+    <table id="productTable"></table>
   </div>
-
-  <fieldset>
-    <legend>Gender:</legend>
-    <label><input type="checkbox" name="gender" value="M" /> M</label>
-    <label><input type="checkbox" name="gender" value="F" /> F</label>
-    <label><input type="checkbox" name="gender" value="Unisex" /> Unisex</label>
-  </fieldset>
-  <button type="submit">Add Product</button>
-</form>
-
-<table id="inventoryTable">
-  <thead>
-    <tr>
-      <th>Product Name</th>
-      <th>Gender</th>
-      <th>Size XS</th>
-      <th>Size S</th>
-      <th>Size M</th>
-      <th>Size L</th>
-      <th>Size XL</th>
-      <th>Size 2XL</th>
-      <th>Size 3XL</th>
-      <th>Size 4XL</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-  </div>  <!-- Discounts Tab Content -->  <div id="discountsTab" class="tab-content">
-    <h2>Discounts</h2>
-    <p>Discount section coming soon...</p>
-  </div>  <script>
-    // Tab switching
-    const inventoryTabBtn = document.getElementById('inventoryTabBtn');
-    const discountsTabBtn = document.getElementById('discountsTabBtn');
+  <div id="discountsTab" style="display:none">
+    <h2>Add Discount</h2>
+    <form id="discountForm">
+      <input placeholder="Discount Name" name="name" required />
+      <input placeholder="Type (e.g. Seasonal)" name="type" required />
+      <button type="submit">Add Discount</button>
+    </form>
+    <table id="discountTable"></table>
+  </div>
+  <script>
     const inventoryTab = document.getElementById('inventoryTab');
     const discountsTab = document.getElementById('discountsTab');
+    const tabs = document.querySelectorAll('.tabs button');function showTab(tab) {
+  tabs.forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`.tabs button[onclick="showTab('${tab}')"]`).classList.add('active');
+  inventoryTab.style.display = tab === 'inventory' ? '' : 'none';
+  discountsTab.style.display = tab === 'discounts' ? '' : 'none';
+}
 
-    inventoryTabBtn.addEventListener('click', () => {
-      inventoryTabBtn.classList.add('active');
-      discountsTabBtn.classList.remove('active');
-      inventoryTab.classList.add('active');
-      discountsTab.classList.remove('active');
-    });
+const productForm = document.getElementById('productForm');
+const productTable = document.getElementById('productTable');
+let products = [];
 
-    discountsTabBtn.addEventListener('click', () => {
-      discountsTabBtn.classList.add('active');
-      inventoryTabBtn.classList.remove('active');
-      discountsTab.classList.add('active');
-      inventoryTab.classList.remove('active');
-    });
-  </script></body>
+productForm.onsubmit = e => {
+  e.preventDefault();
+  const formData = new FormData(productForm);
+  const product = Object.fromEntries(formData.entries());
+  product.id = Date.now();
+  products.push(product);
+  productForm.reset();
+  renderProducts();
+};
+
+function renderProducts() {
+  let html = `<tr><th>Product Name</th><th>Gender</th><th>XS</th><th>S</th><th>M</th><th>L</th><th>XL</th><th>Actions</th></tr>`;
+  for (let p of products) {
+    if (p.editing) {
+      html += `<tr>
+        <td><input value="${p.name}" onchange="updateField(${p.id}, 'name', this.value)" /></td>
+        <td>
+          <select onchange="updateField(${p.id}, 'gender', this.value)">
+            <option${p.gender === 'Male' ? ' selected' : ''}>Male</option>
+            <option${p.gender === 'Female' ? ' selected' : ''}>Female</option>
+            <option${p.gender === 'Unisex' ? ' selected' : ''}>Unisex</option>
+          </select>
+        </td>
+        ${['XS','S','M','L','XL'].map(size => `<td><input type='number' value='${p[size] || ''}' onchange="updateField(${p.id}, '${size}', this.value)"/></td>`).join('')}
+        <td><button onclick="saveProduct(${p.id})">Save</button><button onclick="deleteProduct(${p.id})">Delete</button></td>
+      </tr>`;
+    } else {
+      html += `<tr>
+        <td>${p.name}</td>
+        <td>${p.gender}</td>
+        ${['XS','S','M','L','XL'].map(size => `<td>${p[size] || ''}</td>`).join('')}
+        <td><button onclick="editProduct(${p.id})">Edit</button><button onclick="deleteProduct(${p.id})">Delete</button></td>
+      </tr>`;
+    }
+  }
+  productTable.innerHTML = html;
+}
+
+function updateField(id, key, value) {
+  const p = products.find(p => p.id === id);
+  if (p) p[key] = value;
+}
+
+function editProduct(id) {
+  products.forEach(p => p.editing = p.id === id);
+  renderProducts();
+}
+
+function saveProduct(id) {
+  const p = products.find(p => p.id === id);
+  if (p) p.editing = false;
+  renderProducts();
+}
+
+function deleteProduct(id) {
+  products = products.filter(p => p.id !== id);
+  renderProducts();
+}
+
+const discountForm = document.getElementById('discountForm');
+const discountTable = document.getElementById('discountTable');
+let discounts = [];
+
+discountForm.onsubmit = e => {
+  e.preventDefault();
+  const formData = new FormData(discountForm);
+  const discount = Object.fromEntries(formData.entries());
+  discount.id = Date.now();
+  discounts.push(discount);
+  discountForm.reset();
+  renderDiscounts();
+};
+
+function renderDiscounts() {
+  let html = `<tr><th>Type</th><th>Discount Name</th><th>Actions</th></tr>`;
+  for (let d of discounts) {
+    if (d.editing) {
+      html += `<tr>
+        <td><input value="${d.type}" onchange="updateDiscount(${d.id}, 'type', this.value)" /></td>
+        <td><input value="${d.name}" onchange="updateDiscount(${d.id}, 'name', this.value)" /></td>
+        <td><button onclick="saveDiscount(${d.id})">Save</button><button onclick="deleteDiscount(${d.id})">Delete</button></td>
+      </tr>`;
+    } else {
+      html += `<tr>
+        <td>${d.type}</td>
+        <td>${d.name}</td>
+        <td><button onclick="editDiscount(${d.id})">Edit</button><button onclick="deleteDiscount(${d.id})">Delete</button></td>
+      </tr>`;
+    }
+  }
+  discountTable.innerHTML = html;
+}
+
+function updateDiscount(id, key, value) {
+  const d = discounts.find(d => d.id === id);
+  if (d) d[key] = value;
+}
+
+function editDiscount(id) {
+  discounts.forEach(d => d.editing = d.id === id);
+  renderDiscounts();
+}
+
+function saveDiscount(id) {
+  const d = discounts.find(d => d.id === id);
+  if (d) d.editing = false;
+  renderDiscounts();
+}
+
+function deleteDiscount(id) {
+  discounts = discounts.filter(d => d.id !== id);
+  renderDiscounts();
+}
+
+  </script>
+</body>
 </html>
