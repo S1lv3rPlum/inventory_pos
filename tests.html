@@ -64,12 +64,16 @@
       </label>
     </div>
 
-    <fieldset>
-      <legend>Gender:</legend>
-      <label><input type="checkbox" name="gender" value="M" /> M</label>
-      <label><input type="checkbox" name="gender" value="F" /> F</label>
-      <label><input type="checkbox" name="gender" value="Unisex" /> Unisex</label>
-    </fieldset>
+   <div>
+  <label>Gender:
+    <select id="gender" required>
+      <option value="">-- Select --</option>
+      <option value="M">M</option>
+      <option value="F">F</option>
+      <option value="Unisex">Unisex</option>
+    </select>
+  </label>
+</div>
     <button type="submit">Add Product</button>
   </form>
 
@@ -223,16 +227,11 @@
       const category = document.getElementById('category').value.trim();
       const productName = document.getElementById('productName').value.trim();
 
-      const genderBoxes = Array.from(document.querySelectorAll('input[name="gender"]:checked'));
-      let gender;
-      if (genderBoxes.length === 0) {
-        alert('Please select at least one gender.');
-        return;
-      } else if (genderBoxes.length === 1) {
-        gender = genderBoxes[0].value;
-      } else {
-        gender = genderBoxes.map(cb => cb.value).join('/');
-      }
+      const gender = document.getElementById('gender').value;
+if (!gender) {
+  alert('Please select a gender.');
+  return;
+}
 
       if (!category || !productName) return;
 
