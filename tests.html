@@ -157,472 +157,152 @@
 </table>
   </section>
 <script>
-  const products = [];
-  const discounts = [];
+  let editingRow = null;
+  let editingDiscountRow = null;
 
-  function switchSection(section) {
-    document.getElementById('inventory-section').style.display = section === 'inventory' ? 'block' : 'none';
-    document.getElementById('discounts-section').style.display = section === 'discounts' ? 'block' : 'none';
+  function addProduct() {
+    const name = document.getElementById("productName").value;
+    const category = document.getElementById("productCategory").value;
+    const size = document.getElementById("productSize").value;
+    const color = document.getElementById("productColor").value;
+    const gender = document.getElementById("productGender").value;
+    const stock = document.getElementById("productStock").value;
+
+    if (!name || !stock) {
+      alert("Please fill in product name and stock.");
+      return;
+    }
+
+    const table = document.getElementById("productTable").getElementsByTagName("tbody")[0];
+
+    if (editingRow) {
+      editingRow.cells[0].innerText = name;
+      editingRow.cells[1].innerText = category;
+      editingRow.cells[2].innerText = size;
+      editingRow.cells[3].innerText = color;
+      editingRow.cells[4].innerText = gender;
+      editingRow.cells[5].innerText = stock;
+      editingRow.cells[6].innerHTML = actionButtons(editProduct, deleteProduct);
+      editingRow = null;
+    } else {
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td>${name}</td>
+        <td>${category}</td>
+        <td>${size}</td>
+        <td>${color}</td>
+        <td>${gender}</td>
+        <td>${stock}</td>
+        <td>${actionButtons(editProduct, deleteProduct)}</td>
+      `;
+    }
+
+    resetProductForm();
   }
-  
 
+  function editProduct(button) {
+    editingRow = button.parentNode.parentNode;
+    document.getElementById("productName").value = editingRow.cells[0].innerText;
+    document.getElementById("productCategory").value = editingRow.cells[1].innerText;
+    document.getElementById("productSize").value = editingRow.cells[2].innerText;
+    document.getElementById("productColor").value = editingRow.cells[3].innerText;
+    document.getElementById("productGender").value = editingRow.cells[4].innerText;
+    document.getElementById("productStock").value = editingRow.cells[5].innerText;
+  }
 
-    // Inventory form/table elements
-    const productForm = document.getElementById('productForm');
-    const inventoryTableBody = document.querySelector('#inventoryTable tbody');
-    const importInventoryBtn = document.getElementById('importInventoryBtn');
-    const exportInventoryBtn = document.getElementById('exportInventoryBtn');
-    const importInventoryFile = document.getElementById('importInventoryFile');
+  function deleteProduct(button) {
+    const row = button.parentNode.parentNode;
+    row.remove();
+    if (editingRow === row) resetProductForm();
+  }
 
-    // Discount form/table elements
-    const discountForm = document.getElementById('discountForm');
-    const discountTableBody = document.querySelector('#discountTable tbody');
-    const importDiscountsBtn = document.getElementById('importDiscountsBtn');
-    const exportDiscountsBtn = document.getElementById('exportDiscountsBtn');
-    const importDiscountsFile = document.getElementById('importDiscountsFile');
+  function resetProductForm() {
+    document.getElementById("productName").value = "";
+    document.getElementById("productCategory").value = "";
+    document.getElementById("productSize").value = "";
+    document.getElementById("productColor").value = "";
+    document.getElementById("productGender").value = "";
+    document.getElementById("productStock").value = "";
+    editingRow = null;
+  }
 
-    // --- Initialization ---
-    window.addEventListener('DOMContentLoaded', () => {
-      const invData = localStorage.getItem('inventoryData');
-      if (invData) {
-        inventory = JSON.parse(invData);
-      }
-      const discData = localStorage.getItem('discountsData');
-      if (discData) {
-        discounts = JSON.parse(discData);
-      }
-      renderInventoryTable();
-      renderDiscountTable();
-    });
+  function addDiscount() {
+    const name = document.getElementById("discountName").value;
+    const type = document.getElementById("discountType").value;
+    const amount = document.getElementById("discountAmount").value;
 
-    // --- Tab toggling ---
-    btnInventory.addEventListener('click', () => {
-      inventorySection.classList.remove('hidden');
-      discountSection.classList.add('hidden');
-      btnInventory.disabled = true;
-      btnDiscounts.disabled = false;
-    });
-    btnDiscounts.addEventListener('click', () => {
-      discountSection.classList.remove('hidden');
-      inventorySection.classList.add('hidden');
-      btnInventory.disabled = false;
-      btnDiscounts.disabled = true;
-    });
-
-    // Initialize with Inventory tab active
-    btnInventory.click();
-
-    // --- Save functions ---
-    function saveInventory() {
-      localStorage.setItem('inventoryData', JSON.stringify(inventory));
-    }
-    function saveDiscounts() {
-      localStorage.setItem('discountsData', JSON.stringify(discounts));
+    if (!name || !amount) {
+      alert("Please fill in discount name and amount.");
+      return;
     }
 
-    // --- Inventory Table Render ---
-    function renderInventoryTable() {
-      inventoryTableBody.innerHTML = '';
-
-      Object.keys(inventory).sort().forEach(category => {
-        // Category header row
-        const headerRow = document.createElement('tr');
-        const headerCell = document.createElement('td');
-        headerCell.colSpan = 11;
-        headerCell.className = 'category-header';
-        headerCell.textContent = category;
-        headerRow.appendChild(headerCell);
-        inventoryTableBody.appendChild(headerRow);
-
-        // Products
-        inventory[category].sort((a, b) => a.productName.localeCompare(b.productName)).forEach(product => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td class="prod-name">${escapeHTML(product.productName)}</td>
-            <td class="gender-display">${product.gender}</td>
-            ${sizes.map(size => `<td class="size" data-size="${size}">${product.sizes[size]}</td>`).join('')}
-            <td>
-              <button class="edit-btn">Edit</button>
-              <button class="delete-btn">Delete</button>
-            </td>
-          `;
-          inventoryTableBody.appendChild(row);
-
-          row.querySelector('.edit-btn').addEventListener('click', () => toggleInventoryEdit(row, product, category));
-          row.querySelector('.delete-btn').addEventListener('click', () => {
-            inventory[category] = inventory[category].filter(p => p !== product);
-            if (inventory[category].length === 0) delete inventory[category];
-            saveInventory();
-            renderInventoryTable();
-          });
-        });
-      });
+    if (type === "%" && (amount <= 0 || amount > 100)) {
+      alert("Percentage discount must be between 1 and 100.");
+      return;
     }
 
-    // --- Inventory Edit ---
-    function toggleInventoryEdit(row, product, category) {
-      const isEditing = row.classList.toggle('editing');
-
-      if (isEditing) {
-        // Replace cells with inputs
-        const prodNameCell = row.querySelector('.prod-name');
-        prodNameCell.innerHTML = `<input type="text" value="${escapeHTML(product.productName)}" />`;
-
-        const genderCell = row.querySelector('.gender-display');
-        genderCell.innerHTML = `
-          <select class="gender-select">
-            <option value="M" ${product.gender === 'M' ? 'selected' : ''}>M</option>
-            <option value="F" ${product.gender === 'F' ? 'selected' : ''}>F</option>
-            <option value="Unisex" ${product.gender === 'Unisex' || product.gender === 'U' ? 'selected' : ''}>Unisex</option>
-          </select>
-        `;
-
-        row.querySelectorAll('.size').forEach(td => {
-          const size = td.dataset.size;
-          td.innerHTML = `<input type="number" min="0" class="size-input" value="${product.sizes[size]}" />`;
-        });
-
-        // Action buttons switch
-        const actionCell = row.querySelector('td:last-child');
-        actionCell.innerHTML = `
-          <button class="save-btn">Save</button>
-          <button class="cancel-btn">Cancel</button>
-        `;
-
-        actionCell.querySelector('.save-btn').addEventListener('click', () => {
-          const newName = prodNameCell.querySelector('input').value.trim();
-          if (!newName) {
-            alert('Product name cannot be empty.');
-            return;
-          }
-          product.productName = newName;
-
-          const genderSelect = genderCell.querySelector('select');
-          product.gender = genderSelect.value;
-
-          row.querySelectorAll('.size').forEach(td => {
-            const size = td.dataset.size;
-            let val = parseInt(td.querySelector('input').value);
-            product.sizes[size] = isNaN(val) || val < 0 ? 0 : val;
-          });
-
-          saveInventory();
-          renderInventoryTable();
-        });
-
-        actionCell.querySelector('.cancel-btn').addEventListener('click', () => {
-          renderInventoryTable();
-        });
-      } else {
-        renderInventoryTable();
-      }
+    if (type === "$" && amount <= 0) {
+      alert("Dollar discount must be greater than 0.");
+      return;
     }
 
-    // --- Inventory Form submit ---
-    productForm.addEventListener('submit', e => {
-      e.preventDefault();
+    const table = document.getElementById("discountTable").getElementsByTagName("tbody")[0];
 
-      const category = document.getElementById('category').value.trim();
-      const productName = document.getElementById('productName').value.trim();
-      const gender = document.getElementById('gender').value;
-
-      if (!gender) {
-        alert('Please select a gender.');
-        return;
-      }
-      if (!category || !productName) return;
-
-      if (!inventory[category]) inventory[category] = [];
-
-      inventory[category].push({
-        productName,
-        gender,
-        sizes: sizes.reduce((acc, size) => { acc[size] = 0; return acc; }, {})
-      });
-
-      productForm.reset();
-      saveInventory();
-      renderInventoryTable();
-    });
-
-    // --- Inventory Import/Export ---
-    exportInventoryBtn.addEventListener('click', () => {
-      const rows = [['Category', 'Product Name', 'Gender', ...sizes]];
-      Object.keys(inventory).forEach(category => {
-        inventory[category].forEach(product => {
-          rows.push([
-            category,
-            product.productName,
-            product.gender,
-            ...sizes.map(size => product.sizes[size] ?? 0)
-          ]);
-        });
-      });
-      downloadCSV(rows, 'inventory.csv');
-    });
-
-    importInventoryBtn.addEventListener('click', () => {
-      importInventoryFile.value = '';
-      importInventoryFile.click();
-    });
-
-    importInventoryFile.addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = evt => {
-        parseCSVAndLoadInventory(evt.target.result);
-      };
-      reader.readAsText(file);
-    });
-
-    function parseCSVAndLoadInventory(csvText) {
-      const lines = csvText.trim().split('\n');
-      if (lines.length < 2) {
-        alert('CSV file appears empty or invalid.');
-        return;
-      }
-      inventory = {};
-      const headerCols = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-      const expectedHeaders = ['Category','Product Name','Gender', ...sizes];
-      for (let i = 1; i < lines.length; i++) {
-        const cols = parseCSVLine(lines[i]);
-        if (cols.length < expectedHeaders.length) continue;
-
-        const [category, productName, gender, ...qtys] = cols;
-
-        if (!category || !productName) continue;
-
-        if (!inventory[category]) inventory[category] = [];
-
-        const sizesObj = {};
-        sizes.forEach((size, idx) => {
-          sizesObj[size] = parseInt(qtys[idx]) || 0;
-        });
-
-        inventory[category].push({
-          productName: productName.trim(),
-          gender: gender.trim(),
-          sizes: sizesObj
-        });
-      }
-
-      saveInventory();
-      renderInventoryTable();
-      alert('Inventory imported successfully!');
+    if (editingDiscountRow) {
+      editingDiscountRow.cells[0].innerText = type;
+      editingDiscountRow.cells[1].innerText = name;
+      editingDiscountRow.cells[2].innerText = amount;
+      editingDiscountRow.cells[3].innerHTML = actionButtons(editDiscount, deleteDiscount);
+      editingDiscountRow = null;
+    } else {
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td>${type}</td>
+        <td>${name}</td>
+        <td>${amount}</td>
+        <td>${actionButtons(editDiscount, deleteDiscount)}</td>
+      `;
     }
 
-    function parseCSVLine(line) {
-      const result = [];
-      let current = '';
-      let inQuotes = false;
+    resetDiscountForm();
+  }
 
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
+  function editDiscount(button) {
+    editingDiscountRow = button.parentNode.parentNode;
+    document.getElementById("discountType").value = editingDiscountRow.cells[0].innerText;
+    document.getElementById("discountName").value = editingDiscountRow.cells[1].innerText;
+    document.getElementById("discountAmount").value = editingDiscountRow.cells[2].innerText;
+  }
 
-        if (char === '"' && (i === 0 || line[i-1] !== '\\')) {
-          inQuotes = !inQuotes;
-          continue;
-        }
+  function deleteDiscount(button) {
+    const row = button.parentNode.parentNode;
+    row.remove();
+    if (editingDiscountRow === row) resetDiscountForm();
+  }
 
-        if (char === ',' && !inQuotes) {
-          result.push(current.trim());
-          current = '';
-          continue;
-        }
+  function resetDiscountForm() {
+    document.getElementById("discountName").value = "";
+    document.getElementById("discountType").value = "%";
+    document.getElementById("discountAmount").value = "";
+    editingDiscountRow = null;
+  }
 
-        current += char;
-      }
-      result.push(current.trim());
+  function actionButtons(editFn, deleteFn) {
+    return `
+      <button onclick="(${editFn.name})(this)">Edit</button>
+      <button onclick="(${deleteFn.name})(this)">Delete</button>
+    `;
+  }
 
-      return result;
-    }
+  function toggleTab(tabName) {
+    const tabs = document.querySelectorAll(".tab-content");
+    tabs.forEach(tab => tab.style.display = "none");
+    document.getElementById(tabName).style.display = "block";
+  }
 
-    function downloadCSV(rows, filename) {
-      const csvContent = rows.map(row => row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',')).join('\n');
-      const blob = new Blob([csvContent], {type: 'text/csv'});
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    // --- Discounts ---
-
-    function renderDiscountTable() {
-      discountTableBody.innerHTML = '';
-      const discountTypes = Object.keys(discounts).sort();
-
-      discountTypes.forEach(type => {
-        // Header row for discount type
-        const headerRow = document.createElement('tr');
-        const headerCell = document.createElement('td');
-        headerCell.colSpan = 3;
-        headerCell.className = 'category-header';
-        headerCell.textContent = type;
-        headerRow.appendChild(headerCell);
-        discountTableBody.appendChild(headerRow);
-
-        discounts[type].forEach(discount => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td class="discount-name">${escapeHTML(discount.name)}</td>
-            <td class="discount-amount">${discount.amount}</td>
-            <td>
-              <button class="edit-discount-btn">Edit</button>
-              <button class="delete-discount-btn">Delete</button>
-            </td>
-          `;
-          discountTableBody.appendChild(row);
-
-          row.querySelector('.edit-discount-btn').addEventListener('click', () => toggleDiscountEdit(row, discount, type));
-          row.querySelector('.delete-discount-btn').addEventListener('click', () => {
-            discounts[type] = discounts[type].filter(d => d !== discount);
-            if (discounts[type].length === 0) delete discounts[type];
-            saveDiscounts();
-            renderDiscountTable();
-          });
-        });
-      });
-    }
-
-    function toggleDiscountEdit(row, discount, type) {
-      const isEditing = row.classList.toggle('editing');
-
-      if (isEditing) {
-        const nameCell = row.querySelector('.discount-name');
-        nameCell.innerHTML = `<input type="text" value="${escapeHTML(discount.name)}" />`;
-
-        const amountCell = row.querySelector('.discount-amount');
-        amountCell.innerHTML = `<input type="number" min="0" max="100" step="0.1" value="${discount.amount}" />`;
-
-        const actionCell = row.querySelector('td:last-child');
-        actionCell.innerHTML = `
-          <button class="save-discount-btn">Save</button>
-          <button class="cancel-discount-btn">Cancel</button>
-        `;
-
-        actionCell.querySelector('.save-discount-btn').addEventListener('click', () => {
-          const newName = nameCell.querySelector('input').value.trim();
-          const newAmount = parseFloat(amountCell.querySelector('input').value);
-          if (!newName) {
-            alert('Discount name cannot be empty.');
-            return;
-          }
-          if (isNaN(newAmount) || newAmount < 0 || newAmount > 100) {
-            alert('Discount amount must be between 0 and 100.');
-            return;
-          }
-          discount.name = newName;
-          discount.amount = newAmount;
-
-          saveDiscounts();
-          renderDiscountTable();
-        });
-
-        actionCell.querySelector('.cancel-discount-btn').addEventListener('click', () => {
-          renderDiscountTable();
-        });
-
-      } else {
-        renderDiscountTable();
-      }
-    }
-
-    // --- Discount form submit ---
-    discountForm.addEventListener('submit', e => {
-      e.preventDefault();
-
-      const type = document.getElementById('discountType').value;
-      const name = document.getElementById('discountName').value.trim();
-      const amount = parseFloat(document.getElementById('discountAmount').value);
-
-      if (!type) {
-        alert('Please select a discount type.');
-        return;
-      }
-      if (!name) {
-        alert('Please enter a discount name.');
-        return;
-      }
-      if (isNaN(amount) || amount < 0 || amount > 100) {
-        alert('Please enter a valid discount amount (0-100).');
-        return;
-      }
-
-      if (!discounts[type]) discounts[type] = [];
-
-      discounts[type].push({name, amount});
-
-      discountForm.reset();
-      saveDiscounts();
-      renderDiscountTable();
-    });
-
-    // --- Discount Import/Export ---
-    exportDiscountsBtn.addEventListener('click', () => {
-      // CSV headers: Type,Name,Amount
-      const rows = [['Type', 'Name', 'Amount']];
-      Object.keys(discounts).forEach(type => {
-        discounts[type].forEach(discount => {
-          rows.push([type, discount.name, discount.amount]);
-        });
-      });
-      downloadCSV(rows, 'discounts.csv');
-    });
-
-    importDiscountsBtn.addEventListener('click', () => {
-      importDiscountsFile.value = '';
-      importDiscountsFile.click();
-    });
-
-    importDiscountsFile.addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = evt => {
-        parseCSVAndLoadDiscounts(evt.target.result);
-      };
-      reader.readAsText(file);
-    });
-
-    function parseCSVAndLoadDiscounts(csvText) {
-      const lines = csvText.trim().split('\n');
-      if (lines.length < 2) {
-        alert('CSV file appears empty or invalid.');
-        return;
-      }
-      discounts = {};
-      const headerCols = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-      const expectedHeaders = ['Type', 'Name', 'Amount'];
-      for (let i = 1; i < lines.length; i++) {
-        const cols = parseCSVLine(lines[i]);
-        if (cols.length < expectedHeaders.length) continue;
-
-        const [type, name, amountStr] = cols;
-
-        if (!type || !name) continue;
-
-        const amount = parseFloat(amountStr);
-        if (isNaN(amount)) continue;
-
-        if (!discounts[type]) discounts[type] = [];
-
-        discounts[type].push({
-          name: name.trim(),
-          amount
-        });
-      }
-
-      saveDiscounts();
-      renderDiscountTable();
-      alert('Discounts imported successfully!');
-    }
-  </script>
+  window.onload = () => {
+    toggleTab('inventoryTab');
+  };
+</script>
 </body>
 </html>
