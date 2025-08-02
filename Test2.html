@@ -1,126 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Inventory Management</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Band Inventory Test</title>
   <style>
-    table, th, td {
-      border: 1px solid black;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 8px;
-    }
-    img {
-      width: 50px;
-      height: auto;
-    }
+    body { font-family: Arial, sans-serif; padding: 1rem; }
+    .menu-icon { font-size: 1.5rem; cursor: pointer; }
+    #menuOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; 
+      height: 100%; background: rgba(0,0,0,0.8); color: white; padding: 2rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #444; padding: 6px; text-align: center; }
+    th { background-color: #ddd; }
+    img { width: 50px; height: auto; }
+    form label { display: block; margin: 0.5rem 0; }
   </style>
 </head>
 <body>
-  <nav>
+  <span class="menu-icon" onclick="toggleMenu()">☰ Menu</span>
+  <div id="menuOverlay">
     <button onclick="toggleView('inventory')">Inventory</button>
     <button onclick="toggleView('discounts')">Discounts</button>
-  </nav>
+    <button onclick="toggleMenu()">Close ×</button>
+  </div>
 
-  <section id="inventorySection">
-    <h2>Inventory</h2>
+  <div id="inventorySection">
+    <h2>Add Product</h2>
     <form id="productForm">
-      <input type="text" id="productCategory" placeholder="Category" required>
-      <input type="text" id="productName" placeholder="Product Name" required>
-      <input type="text" id="productSize" placeholder="Size" required>
-      <input type="number" id="productQty" placeholder="Quantity" required>
-      <input type="url" id="productImage" placeholder="Image URL">
-      <label><input type="checkbox" id="productGenderMale" onclick="toggleGender('M')"> Male</label>
-      <label><input type="checkbox" id="productGenderFemale" onclick="toggleGender('F')"> Female</label>
+      <label>Category: <input type="text" id="productCategory" required></label>
+      <label>Name:     <input type="text" id="productName" required></label>
+      <label>Image URL:<input type="url" id="productImage"></label>
+      <label>Size:     <input type="text" id="productSize" required></label>
+      <label>Qty:      <input type="number" id="productQty" required></label>
+      <label>
+        Gender:
+        <input type="checkbox" id="productGenderMale" onchange="toggleGender('M')"> M
+        <input type="checkbox" id="productGenderFemale" onchange="toggleGender('F')"> F
+      </label>
       <button type="submit">Add Product</button>
     </form>
 
+    <h2>Inventory</h2>
     <table>
       <thead>
-        <tr>
-          <th>Category</th>
-          <th>Name</th>
-          <th>Image</th>
-          <th>Size</th>
-          <th>Qty</th>
-        </tr>
+        <tr><th>Category</th><th>Name</th><th>Image</th><th>Size</th><th>Qty</th><th>Actions</th></tr>
       </thead>
       <tbody id="inventoryTableBody"></tbody>
     </table>
-  </section>
+  </div>
 
-  <section id="discountSection" style="display: none;">
+  <div id="discountSection" style="display:none;">
     <h2>Discounts</h2>
-    <p>Coming soon...</p>
-  </section>
+    <p>Discounts section placeholder</p>
+  </div>
 
   <script>
+    function toggleMenu() {
+      const m = document.getElementById("menuOverlay");
+      m.style.display = m.style.display === "block" ? "none" : "block";
+    }
     function toggleView(view) {
       document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
       document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
+      toggleMenu();
+    }
+    function toggleGender(sel) {
+      const m = document.getElementById("productGenderMale"), f = document.getElementById("productGenderFemale");
+      if (sel === "M" && m.checked) f.checked = false;
+      if (sel === "F" && f.checked) m.checked = false;
     }
 
-    function toggleGender(selected) {
-      const male = document.getElementById("productGenderMale");
-      const female = document.getElementById("productGenderFemale");
-      if (selected === "M" && male.checked) female.checked = false;
-      if (selected === "F" && female.checked) male.checked = false;
-    }
+    window.addEventListener("DOMContentLoaded", function(){
+      renderInventory();
+      document.getElementById("productForm").addEventListener("submit", function(e){
+        e.preventDefault();
+        const cat = document.getElementById("productCategory").value.trim();
+        const name = document.getElementById("productName").value.trim();
+        const img  = document.getElementById("productImage").value.trim();
+        const size = document.getElementById("productSize").value.trim();
+        const qty  = parseInt(document.getElementById("productQty").value);
+        const male = document.getElementById("productGenderMale").checked;
+        const female= document.getElementById("productGenderFemale").checked;
+        if (!cat||!name||!size|| isNaN(qty)) return;
+        const inv = JSON.parse(localStorage.getItem("products")|| "{}");
+        if (!inv[cat]) inv[cat]={};
+        if (!inv[cat][name]) inv[cat][name]={sizes:{}, image:img, gender: male?"M":female?"F":""};
+        inv[cat][name].sizes[size] = (inv[cat][name].sizes[size]||0) + qty;
+        inv[cat][name].image = img;
+        inv[cat][name].gender = male?"M":female?"F":"";
+        localStorage.setItem("products", JSON.stringify(inv));
+        renderInventory();
+        this.reset();
+      });
+    });
 
-    function loadInventory() {
-      const inventory = JSON.parse(localStorage.getItem('products')) || {};
-      const tableBody = document.getElementById('inventoryTableBody');
-      tableBody.innerHTML = '';
-
-      for (const category in inventory) {
-        for (const name in inventory[category]) {
-          const product = inventory[category][name];
-          const sizes = product.sizes || {};
-          const image = product.image || '';
-
-          for (const size in sizes) {
-            const qty = sizes[size];
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${category}</td>
-              <td>${name}</td>
-              <td>${image ? `<img src="${image}" alt="${name}">` : 'No Image'}</td>
-              <td>${size}</td>
-              <td>${qty}</td>
-            `;
-            tableBody.appendChild(row);
+    function renderInventory(){
+      const inv = JSON.parse(localStorage.getItem("products")|| "{}"), tbody = document.getElementById("inventoryTableBody");
+      tbody.innerHTML="";
+      for(const cat in inv){
+        for(const nm in inv[cat]){
+          const p = inv[cat][nm];
+          for(const sz in p.sizes){
+            const qty = p.sizes[sz];
+            const tr = document.createElement("tr");
+            tr.innerHTML=`<td>${cat}</td><td>${nm}</td>
+              <td>${p.image?`<img src="${p.image}">`:""}</td>
+              <td>${sz}</td><td>${qty}</td>
+              <td><button>Edit</button><button>Delete</button></td>`;
+            tbody.appendChild(tr);
           }
         }
       }
     }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      loadInventory();
-
-      document.getElementById('productForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        const category = document.getElementById('productCategory').value.trim();
-        const name = document.getElementById('productName').value.trim();
-        const size = document.getElementById('productSize').value.trim();
-        const qty = parseInt(document.getElementById('productQty').value.trim(), 10);
-        const image = document.getElementById('productImage').value.trim();
-
-        if (!category || !name || !size || isNaN(qty)) return;
-
-        const products = JSON.parse(localStorage.getItem('products')) || {};
-
-        if (!products[category]) products[category] = {};
-        if (!products[category][name]) products[category][name] = { sizes: {}, image: image };
-        products[category][name].sizes[size] = qty;
-        if (image) products[category][name].image = image;
-
-        localStorage.setItem('products', JSON.stringify(products));
-        loadInventory();
-        this.reset();
-      });
-    });
   </script>
 </body>
 </html>
