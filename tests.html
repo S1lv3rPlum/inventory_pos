@@ -4,172 +4,198 @@
   <meta charset="UTF-8" />
   <title>Inventory Manager</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    h1, h2 {
-      margin-top: 30px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
     table, th, td {
-      border: 1px solid #ccc;
+      border: 1px solid black;
+      border-collapse: collapse;
     }
-    th, td {
-      padding: 8px;
-      text-align: center;
+    input[type="number"] {
+      width: 4ch;
     }
-    #importInventoryFile {
-      display: none;
+    .category-header {
+      font-weight: bold;
+      background-color: #f0f0f0;
     }
-    .button-group {
-      margin-bottom: 20px;
-    }
-    .button-group button {
-      margin-right: 10px;
+    .btn {
+      margin: 4px;
     }
   </style>
 </head>
 <body>
   <h1>Inventory Manager</h1>
 
-  <div class="button-group">
-    <button id="exportInventory">Export Inventory</button>
-    <button id="importInventory">Import Inventory</button>
-    <input type="file" id="importInventoryFile" accept=".csv" />
-  </div>
+  <button class="btn" onclick="exportInventory()">Export Inventory</button>
+  <button class="btn" onclick="document.getElementById('importInventoryFile').click()">Import Inventory</button>
+  <input type="file" id="importInventoryFile" accept=".csv" style="display: none;" onchange="importInventory()" />
 
   <h2>Add Product</h2>
   <form id="productForm">
-    <div>
-      <label>Category:
-        <input type="text" id="category" required />
-      </label>
-    </div>
-    
-    <div>
-      <label>Product Name:
-        <input type="text" id="productName" required />
-      </label>
-    </div>
-    
+    <label>Category: <input type="text" id="category" required /></label><br />
+    <label>Product Name: <input type="text" id="productName" required /></label><br />
     <fieldset>
       <legend>Gender:</legend>
       <label><input type="checkbox" name="gender" value="Men" /> Men</label>
       <label><input type="checkbox" name="gender" value="Women" /> Women</label>
       <label><input type="checkbox" name="gender" value="Unisex" /> Unisex</label>
     </fieldset>
-
-    <fieldset>
-      <legend>Sizes and Quantities:</legend>
-      <label>XS: <input type="number" class="sizeQty" data-size="XS" min="0" value="0" /></label>
-      <label>S: <input type="number" class="sizeQty" data-size="S" min="0" value="0" /></label>
-      <label>M: <input type="number" class="sizeQty" data-size="M" min="0" value="0" /></label>
-      <label>L: <input type="number" class="sizeQty" data-size="L" min="0" value="0" /></label>
-      <label>XL: <input type="number" class="sizeQty" data-size="XL" min="0" value="0" /></label>
-      <label>2XL: <input type="number" class="sizeQty" data-size="2XL" min="0" value="0" /></label>
-      <label>3XL: <input type="number" class="sizeQty" data-size="3XL" min="0" value="0" /></label>
-      <label>4XL: <input type="number" class="sizeQty" data-size="4XL" min="0" value="0" /></label>
-    </fieldset>
-
     <button type="submit">Add Product</button>
   </form>
 
-  <h2>Inventory Table</h2>
+  <h2>Product Inventory</h2>
   <table id="inventoryTable">
     <thead>
       <tr>
-        <th>Category</th>
         <th>Product Name</th>
         <th>Gender</th>
-        <th>XS</th>
-        <th>S</th>
-        <th>M</th>
-        <th>L</th>
-        <th>XL</th>
-        <th>2XL</th>
-        <th>3XL</th>
-        <th>4XL</th>
+        <th>XS</th><th>S</th><th>M</th><th>L</th><th>XL</th>
+        <th>2XL</th><th>3XL</th><th>4XL</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
   <script>
-    const form = document.getElementById("productForm");
-    const tableBody = document.querySelector("#inventoryTable tbody");
     const sizes = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 
-    form.addEventListener("submit", (e) => {
+    document.getElementById("productForm").addEventListener("submit", function (e) {
       e.preventDefault();
+      const category = document.getElementById("category").value.trim();
+      const productName = document.getElementById("productName").value.trim();
+      const gender = [...document.querySelectorAll('input[name="gender"]:checked')].map(cb => cb.value).join(", ");
 
-      const category = document.getElementById("category").value;
-      const productName = document.getElementById("productName").value;
-      const genderCheckboxes = document.querySelectorAll("input[name='gender']:checked");
-      const gender = Array.from(genderCheckboxes).map(cb => cb.value).join(", ");
+      if (!category || !productName || !gender) {
+        alert("Please fill out all fields.");
+        return;
+      }
 
-      const qtyInputs = document.querySelectorAll(".sizeQty");
-      const quantities = sizes.map(size => {
-        const input = Array.from(qtyInputs).find(input => input.dataset.size === size);
-        return input ? input.value : "0";
-      });
+      let tbody = document.querySelector("#inventoryTable tbody");
+      let lastCategoryRow = [...tbody.querySelectorAll("tr.category-header")].pop();
+      if (!lastCategoryRow || lastCategoryRow.dataset.category !== category) {
+        const catRow = document.createElement("tr");
+        catRow.className = "category-header";
+        catRow.dataset.category = category;
+        const td = document.createElement("td");
+        td.colSpan = sizes.length + 3;
+        td.textContent = category;
+        catRow.appendChild(td);
+        tbody.appendChild(catRow);
+      }
 
       const row = document.createElement("tr");
       row.innerHTML = `
-        <td>${category}</td>
         <td>${productName}</td>
         <td>${gender}</td>
-        ${quantities.map(q => `<td>${q}</td>`).join("")}
+        ${sizes.map(() => `<td><input type="number" min="0" value="0" /></td>`).join("")}
+        <td>
+          <button onclick="editRow(this)">Edit</button>
+          <button onclick="saveRow(this)" disabled>Save</button>
+          <button onclick="deleteRow(this)">Delete</button>
+        </td>
       `;
-      tableBody.appendChild(row);
+      tbody.appendChild(row);
 
-      form.reset();
+      this.reset();
     });
 
-    document.getElementById("exportInventory").addEventListener("click", () => {
-      let csv = "Category,Product Name,Gender," + sizes.join(",") + "\n";
-      const rows = document.querySelectorAll("#inventoryTable tbody tr");
+    function editRow(btn) {
+      const row = btn.closest("tr");
+      row.querySelectorAll("input[type='number']").forEach(input => input.removeAttribute("disabled"));
+      row.querySelector("button[onclick='editRow(this)']").disabled = true;
+      row.querySelector("button[onclick='saveRow(this)']").disabled = false;
+    }
+
+    function saveRow(btn) {
+      const row = btn.closest("tr");
+      row.querySelectorAll("input[type='number']").forEach(input => input.setAttribute("disabled", true));
+      row.querySelector("button[onclick='editRow(this)']").disabled = false;
+      row.querySelector("button[onclick='saveRow(this)']").disabled = true;
+    }
+
+    function deleteRow(btn) {
+      const row = btn.closest("tr");
+      const tbody = row.parentElement;
+      const prev = row.previousElementSibling;
+      row.remove();
+      if (prev && prev.classList.contains("category-header")) {
+        const next = prev.nextElementSibling;
+        if (!next || next.classList.contains("category-header")) {
+          prev.remove();
+        }
+      }
+    }
+
+    function exportInventory() {
+      const rows = document.querySelectorAll("#inventoryTable tr");
+      let csv = [["Category", "Product Name", "Gender", ...sizes, ""]];
+      let currentCategory = "";
+
       rows.forEach(row => {
-        const cells = row.querySelectorAll("td");
-        const rowData = Array.from(cells).map(cell => `"${cell.textContent}"`).join(",");
-        csv += rowData + "\n";
+        if (row.classList.contains("category-header")) {
+          currentCategory = row.textContent.trim();
+        } else if (!row.querySelector("th")) {
+          const cols = row.querySelectorAll("td");
+          const productName = cols[0].textContent.trim();
+          const gender = cols[1].textContent.trim();
+          const qtys = sizes.map((_, i) => cols[i + 2].querySelector("input").value || "0");
+          csv.push([currentCategory, productName, gender, ...qtys, ""]);
+        }
       });
 
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
+      const blob = new Blob([csv.map(e => e.join(",")).join("\n")], { type: "text/csv" });
       const a = document.createElement("a");
-      a.href = url;
+      a.href = URL.createObjectURL(blob);
       a.download = "inventory.csv";
       a.click();
-      URL.revokeObjectURL(url);
-    });
+    }
 
-    document.getElementById("importInventory").addEventListener("click", () => {
-      document.getElementById("importInventoryFile").click();
-    });
-
-    document.getElementById("importInventoryFile").addEventListener("change", function () {
-      const file = this.files[0];
+    function importInventory() {
+      const fileInput = document.getElementById("importInventoryFile");
+      const file = fileInput.files[0];
       if (!file) return;
 
       const reader = new FileReader();
       reader.onload = function (e) {
-        const lines = e.target.result.trim().split("\n");
-        const headers = lines.shift().split(",");
+        const lines = e.target.result.split("\n").filter(line => line.trim());
+        const [header, ...dataRows] = lines;
+        const tbody = document.querySelector("#inventoryTable tbody");
+        tbody.innerHTML = "";
 
-        lines.forEach(line => {
-          const data = line.split(",");
+        let currentCategory = "";
+
+        dataRows.forEach(line => {
+          const cols = line.split(",");
+          const [category, productName, gender, ...qtys] = cols;
+
+          if (currentCategory !== category) {
+            currentCategory = category;
+            const catRow = document.createElement("tr");
+            catRow.className = "category-header";
+            catRow.dataset.category = category;
+            const td = document.createElement("td");
+            td.colSpan = sizes.length + 3;
+            td.textContent = category;
+            catRow.appendChild(td);
+            tbody.appendChild(catRow);
+          }
+
           const row = document.createElement("tr");
-          row.innerHTML = data.map(cell => `<td>${cell.replace(/"/g, "")}</td>`).join("");
-          tableBody.appendChild(row);
+          row.innerHTML = `
+            <td>${productName}</td>
+            <td>${gender}</td>
+            ${sizes.map((_, i) => `<td><input type="number" value="${qtys[i] || 0}" disabled /></td>`).join("")}
+            <td>
+              <button onclick="editRow(this)">Edit</button>
+              <button onclick="saveRow(this)" disabled>Save</button>
+              <button onclick="deleteRow(this)">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(row);
         });
       };
+
       reader.readAsText(file);
-    });
+      fileInput.value = ""; // reset for next upload
+    }
   </script>
 </body>
 </html>
