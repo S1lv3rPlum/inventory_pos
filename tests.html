@@ -157,152 +157,140 @@
 </table>
   </section>
 <script>
+  // ---------- PRODUCT SECTION ----------
+  const productForm = document.getElementById("product-form");
+  const productNameInput = document.getElementById("product-name");
+  const productCategorySelect = document.getElementById("product-category");
+  const productTableBody = document.getElementById("product-table").getElementsByTagName("tbody")[0];
+  const addProductBtn = document.getElementById("add-product-btn");
+
   let editingRow = null;
-  let editingDiscountRow = null;
 
-  function addProduct() {
-    const name = document.getElementById("productName").value;
-    const category = document.getElementById("productCategory").value;
-    const size = document.getElementById("productSize").value;
-    const color = document.getElementById("productColor").value;
-    const gender = document.getElementById("productGender").value;
-    const stock = document.getElementById("productStock").value;
+  addProductBtn.addEventListener("click", () => {
+    const name = productNameInput.value.trim();
+    const category = productCategorySelect.value;
 
-    if (!name || !stock) {
-      alert("Please fill in product name and stock.");
-      return;
-    }
-
-    const table = document.getElementById("productTable").getElementsByTagName("tbody")[0];
+    if (!name) return alert("Please enter a product name.");
 
     if (editingRow) {
-      editingRow.cells[0].innerText = name;
-      editingRow.cells[1].innerText = category;
-      editingRow.cells[2].innerText = size;
-      editingRow.cells[3].innerText = color;
-      editingRow.cells[4].innerText = gender;
-      editingRow.cells[5].innerText = stock;
-      editingRow.cells[6].innerHTML = actionButtons(editProduct, deleteProduct);
+      editingRow.cells[0].textContent = name;
+      editingRow.cells[1].textContent = category;
       editingRow = null;
+      addProductBtn.textContent = "Add Product";
     } else {
-      const row = table.insertRow();
-      row.innerHTML = `
-        <td>${name}</td>
-        <td>${category}</td>
-        <td>${size}</td>
-        <td>${color}</td>
-        <td>${gender}</td>
-        <td>${stock}</td>
-        <td>${actionButtons(editProduct, deleteProduct)}</td>
-      `;
+      const newRow = productTableBody.insertRow();
+      const nameCell = newRow.insertCell(0);
+      const categoryCell = newRow.insertCell(1);
+      const actionsCell = newRow.insertCell(2);
+
+      nameCell.textContent = name;
+      categoryCell.textContent = category;
+
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("click", () => {
+        productNameInput.value = nameCell.textContent;
+        productCategorySelect.value = categoryCell.textContent;
+        editingRow = newRow;
+        addProductBtn.textContent = "Save";
+      });
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Delete";
+      deleteBtn.addEventListener("click", () => {
+        if (editingRow === newRow) {
+          editingRow = null;
+          addProductBtn.textContent = "Add Product";
+        }
+        productTableBody.removeChild(newRow);
+      });
+
+      actionsCell.appendChild(editBtn);
+      actionsCell.appendChild(deleteBtn);
     }
 
-    resetProductForm();
-  }
+    productForm.reset();
+  });
 
-  function editProduct(button) {
-    editingRow = button.parentNode.parentNode;
-    document.getElementById("productName").value = editingRow.cells[0].innerText;
-    document.getElementById("productCategory").value = editingRow.cells[1].innerText;
-    document.getElementById("productSize").value = editingRow.cells[2].innerText;
-    document.getElementById("productColor").value = editingRow.cells[3].innerText;
-    document.getElementById("productGender").value = editingRow.cells[4].innerText;
-    document.getElementById("productStock").value = editingRow.cells[5].innerText;
-  }
+  // ---------- DISCOUNT SECTION ----------
+  const discountForm = document.getElementById("discount-form");
+  const discountTypeSelect = document.getElementById("discount-type");
+  const discountAmountInput = document.getElementById("discount-amount");
+  const discountTableBody = document.getElementById("discount-table").getElementsByTagName("tbody")[0];
+  const addDiscountBtn = document.getElementById("add-discount-btn");
 
-  function deleteProduct(button) {
-    const row = button.parentNode.parentNode;
-    row.remove();
-    if (editingRow === row) resetProductForm();
-  }
+  let editingDiscountRow = null;
 
-  function resetProductForm() {
-    document.getElementById("productName").value = "";
-    document.getElementById("productCategory").value = "";
-    document.getElementById("productSize").value = "";
-    document.getElementById("productColor").value = "";
-    document.getElementById("productGender").value = "";
-    document.getElementById("productStock").value = "";
-    editingRow = null;
-  }
+  addDiscountBtn.addEventListener("click", () => {
+    const type = discountTypeSelect.value;
+    const amountStr = discountAmountInput.value.trim();
+    const amount = parseFloat(amountStr);
 
-  function addDiscount() {
-    const name = document.getElementById("discountName").value;
-    const type = document.getElementById("discountType").value;
-    const amount = document.getElementById("discountAmount").value;
-
-    if (!name || !amount) {
-      alert("Please fill in discount name and amount.");
-      return;
-    }
-
-    if (type === "%" && (amount <= 0 || amount > 100)) {
-      alert("Percentage discount must be between 1 and 100.");
-      return;
-    }
-
-    if (type === "$" && amount <= 0) {
-      alert("Dollar discount must be greater than 0.");
-      return;
-    }
-
-    const table = document.getElementById("discountTable").getElementsByTagName("tbody")[0];
+    if (!type) return alert("Please select a discount type.");
+    if (isNaN(amount) || amount <= 0) return alert("Please enter a valid discount amount.");
 
     if (editingDiscountRow) {
-      editingDiscountRow.cells[0].innerText = type;
-      editingDiscountRow.cells[1].innerText = name;
-      editingDiscountRow.cells[2].innerText = amount;
-      editingDiscountRow.cells[3].innerHTML = actionButtons(editDiscount, deleteDiscount);
+      editingDiscountRow.cells[0].textContent = type;
+      editingDiscountRow.cells[1].textContent = amount.toFixed(2);
       editingDiscountRow = null;
+      addDiscountBtn.textContent = "Add Discount";
     } else {
-      const row = table.insertRow();
-      row.innerHTML = `
-        <td>${type}</td>
-        <td>${name}</td>
-        <td>${amount}</td>
-        <td>${actionButtons(editDiscount, deleteDiscount)}</td>
-      `;
+      const newRow = discountTableBody.insertRow();
+      const typeCell = newRow.insertCell(0);
+      const amountCell = newRow.insertCell(1);
+      const actionsCell = newRow.insertCell(2);
+
+      typeCell.textContent = type;
+      amountCell.textContent = amount.toFixed(2);
+
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("click", () => {
+        discountTypeSelect.value = typeCell.textContent;
+        discountAmountInput.value = amountCell.textContent;
+        editingDiscountRow = newRow;
+        addDiscountBtn.textContent = "Save";
+      });
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Delete";
+      deleteBtn.addEventListener("click", () => {
+        if (editingDiscountRow === newRow) {
+          editingDiscountRow = null;
+          addDiscountBtn.textContent = "Add Discount";
+        }
+        discountTableBody.removeChild(newRow);
+      });
+
+      actionsCell.appendChild(editBtn);
+      actionsCell.appendChild(deleteBtn);
     }
 
-    resetDiscountForm();
-  }
+    discountForm.reset();
+  });
 
-  function editDiscount(button) {
-    editingDiscountRow = button.parentNode.parentNode;
-    document.getElementById("discountType").value = editingDiscountRow.cells[0].innerText;
-    document.getElementById("discountName").value = editingDiscountRow.cells[1].innerText;
-    document.getElementById("discountAmount").value = editingDiscountRow.cells[2].innerText;
-  }
+  // ---------- TAB SWITCHING ----------
+  const inventoryTabBtn = document.getElementById("inventory-tab-btn");
+  const discountsTabBtn = document.getElementById("discounts-tab-btn");
+  const productSection = document.getElementById("product-section");
+  const discountSection = document.getElementById("discount-section");
 
-  function deleteDiscount(button) {
-    const row = button.parentNode.parentNode;
-    row.remove();
-    if (editingDiscountRow === row) resetDiscountForm();
-  }
+  inventoryTabBtn.addEventListener("click", () => {
+    productSection.style.display = "block";
+    discountSection.style.display = "none";
+    inventoryTabBtn.classList.add("active");
+    discountsTabBtn.classList.remove("active");
+  });
 
-  function resetDiscountForm() {
-    document.getElementById("discountName").value = "";
-    document.getElementById("discountType").value = "%";
-    document.getElementById("discountAmount").value = "";
-    editingDiscountRow = null;
-  }
+  discountsTabBtn.addEventListener("click", () => {
+    productSection.style.display = "none";
+    discountSection.style.display = "block";
+    discountsTabBtn.classList.add("active");
+    inventoryTabBtn.classList.remove("active");
+  });
 
-  function actionButtons(editFn, deleteFn) {
-    return `
-      <button onclick="(${editFn.name})(this)">Edit</button>
-      <button onclick="(${deleteFn.name})(this)">Delete</button>
-    `;
-  }
-
-  function toggleTab(tabName) {
-    const tabs = document.querySelectorAll(".tab-content");
-    tabs.forEach(tab => tab.style.display = "none");
-    document.getElementById(tabName).style.display = "block";
-  }
-
-  window.onload = () => {
-    toggleTab('inventoryTab');
-  };
+  // Initialize default view
+  inventoryTabBtn.click();
 </script>
 </body>
 </html>
