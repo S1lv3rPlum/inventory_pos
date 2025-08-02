@@ -1,117 +1,187 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Band Inventory Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory Manager</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 1rem; }
-    .menu-icon { font-size: 1.5rem; cursor: pointer; }
-    #menuOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; 
-      height: 100%; background: rgba(0,0,0,0.8); color: white; padding: 2rem; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #444; padding: 6px; text-align: center; }
-    th { background-color: #ddd; }
-    img { width: 50px; height: auto; }
-    form label { display: block; margin: 0.5rem 0; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1, h2 {
+      margin-top: 0;
+    }
+    .tabs {
+      margin-bottom: 20px;
+    }
+    .tabs button {
+      margin-right: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <span class="menu-icon" onclick="toggleMenu()">☰ Menu</span>
-  <div id="menuOverlay">
-    <button onclick="toggleView('inventory')">Inventory</button>
-    <button onclick="toggleView('discounts')">Discounts</button>
-    <button onclick="toggleMenu()">Close ×</button>
-  </div>
-
-  <div id="inventorySection">
+  <h1>Inventory Manager</h1>
+  <div class="tabs">
+    <button onclick="showSection('inventory')">Inventory</button>
+    <button onclick="showSection('discounts')">Discounts</button>
+  </div>  <!-- Inventory Section -->  <div id="inventorySection">
+    <button>Import Inventory</button>
+    <button>Export Inventory</button>
     <h2>Add Product</h2>
     <form id="productForm">
-      <label>Category: <input type="text" id="productCategory" required></label>
-      <label>Name:     <input type="text" id="productName" required></label>
-      <label>Image URL:<input type="url" id="productImage"></label>
-      <label>Size:     <input type="text" id="productSize" required></label>
-      <label>Qty:      <input type="number" id="productQty" required></label>
-      <label>
-        Gender:
-        <input type="checkbox" id="productGenderMale" onchange="toggleGender('M')"> M
-        <input type="checkbox" id="productGenderFemale" onchange="toggleGender('F')"> F
-      </label>
+      <input type="text" id="productName" placeholder="Product Name" required />
+      <select id="gender">
+        <option value="Men">Men</option>
+        <option value="Women">Women</option>
+        <option value="Unisex">Unisex</option>
+      </select>
+      <div id="sizes">
+        <label><input type="checkbox" value="XS"> XS</label>
+        <label><input type="checkbox" value="S"> S</label>
+        <label><input type="checkbox" value="M"> M</label>
+        <label><input type="checkbox" value="L"> L</label>
+        <label><input type="checkbox" value="XL"> XL</label>
+        <label><input type="checkbox" value="2XL"> 2XL</label>
+        <label><input type="checkbox" value="3XL"> 3XL</label>
+        <label><input type="checkbox" value="4XL"> 4XL</label>
+      </div>
       <button type="submit">Add Product</button>
-    </form>
+    </form><table id="productTable">
+  <thead>
+    <tr>
+      <th>Product Name</th>
+      <th>Gender</th>
+      <th>Sizes</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-    <h2>Inventory</h2>
-    <table>
-      <thead>
-        <tr><th>Category</th><th>Name</th><th>Image</th><th>Size</th><th>Qty</th><th>Actions</th></tr>
-      </thead>
-      <tbody id="inventoryTableBody"></tbody>
-    </table>
-  </div>
+  </div>  <!-- Discounts Section -->  <div id="discountsSection" class="hidden">
+    <button>Import Discounts</button>
+    <button>Export Discounts</button>
+    <h2>Add Discount</h2>
+    <form id="discountForm">
+      <input type="text" id="discountName" placeholder="Discount Name" required />
+      <select id="discountType">
+        <option value="% Off">% Off</option>
+        <option value="$ Off">$ Off</option>
+        <option value="BOGO">BOGO</option>
+      </select>
+      <input type="text" id="discountValue" placeholder="Value" required />
+      <button type="submit">Add Discount</button>
+    </form><table id="discountTable">
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Discount Name</th>
+      <th>Value</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <div id="discountSection" style="display:none;">
-    <h2>Discounts</h2>
-    <p>Discounts section placeholder</p>
-  </div>
-
-  <script>
-    function toggleMenu() {
-      const m = document.getElementById("menuOverlay");
-      m.style.display = m.style.display === "block" ? "none" : "block";
+  </div>  <script>
+    function showSection(section) {
+      document.getElementById('inventorySection').classList.toggle('hidden', section !== 'inventory');
+      document.getElementById('discountsSection').classList.toggle('hidden', section !== 'discounts');
     }
-    function toggleView(view) {
-      document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
-      document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
-      toggleMenu();
-    }
-    function toggleGender(sel) {
-      const m = document.getElementById("productGenderMale"), f = document.getElementById("productGenderFemale");
-      if (sel === "M" && m.checked) f.checked = false;
-      if (sel === "F" && f.checked) m.checked = false;
-    }
 
-    window.addEventListener("DOMContentLoaded", function(){
-      renderInventory();
-      document.getElementById("productForm").addEventListener("submit", function(e){
-        e.preventDefault();
-        const cat = document.getElementById("productCategory").value.trim();
-        const name = document.getElementById("productName").value.trim();
-        const img  = document.getElementById("productImage").value.trim();
-        const size = document.getElementById("productSize").value.trim();
-        const qty  = parseInt(document.getElementById("productQty").value);
-        const male = document.getElementById("productGenderMale").checked;
-        const female= document.getElementById("productGenderFemale").checked;
-        if (!cat||!name||!size|| isNaN(qty)) return;
-        const inv = JSON.parse(localStorage.getItem("products")|| "{}");
-        if (!inv[cat]) inv[cat]={};
-        if (!inv[cat][name]) inv[cat][name]={sizes:{}, image:img, gender: male?"M":female?"F":""};
-        inv[cat][name].sizes[size] = (inv[cat][name].sizes[size]||0) + qty;
-        inv[cat][name].image = img;
-        inv[cat][name].gender = male?"M":female?"F":"";
-        localStorage.setItem("products", JSON.stringify(inv));
-        renderInventory();
-        this.reset();
-      });
+    const productForm = document.getElementById('productForm');
+    const productTableBody = document.querySelector('#productTable tbody');
+
+    productForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const name = document.getElementById('productName').value;
+      const gender = document.getElementById('gender').value;
+      const sizes = Array.from(document.querySelectorAll('#sizes input:checked')).map(cb => cb.value).join(', ');
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><span>${name}</span><input class="hidden" value="${name}" /></td>
+        <td>
+          <span>${gender}</span>
+          <select class="hidden">
+            <option value="Men">Men</option>
+            <option value="Women">Women</option>
+            <option value="Unisex">Unisex</option>
+          </select>
+        </td>
+        <td>${sizes}</td>
+        <td>
+          <button onclick="editRow(this)">Edit</button>
+          <button class="hidden" onclick="saveRow(this)">Save</button>
+          <button onclick="deleteRow(this)">Delete</button>
+        </td>
+      `;
+      row.querySelector('select').value = gender;
+      productTableBody.appendChild(row);
+      productForm.reset();
     });
 
-    function renderInventory(){
-      const inv = JSON.parse(localStorage.getItem("products")|| "{}"), tbody = document.getElementById("inventoryTableBody");
-      tbody.innerHTML="";
-      for(const cat in inv){
-        for(const nm in inv[cat]){
-          const p = inv[cat][nm];
-          for(const sz in p.sizes){
-            const qty = p.sizes[sz];
-            const tr = document.createElement("tr");
-            tr.innerHTML=`<td>${cat}</td><td>${nm}</td>
-              <td>${p.image?`<img src="${p.image}">`:""}</td>
-              <td>${sz}</td><td>${qty}</td>
-              <td><button>Edit</button><button>Delete</button></td>`;
-            tbody.appendChild(tr);
-          }
-        }
-      }
+    function editRow(btn) {
+      const row = btn.closest('tr');
+      row.querySelectorAll('span').forEach(span => span.classList.add('hidden'));
+      row.querySelectorAll('input, select').forEach(el => el.classList.remove('hidden'));
+      row.querySelector('button:nth-child(1)').classList.add('hidden');
+      row.querySelector('button:nth-child(2)').classList.remove('hidden');
     }
-  </script>
-</body>
+
+    function saveRow(btn) {
+      const row = btn.closest('tr');
+      const nameInput = row.querySelector('td:nth-child(1) input');
+      const genderSelect = row.querySelector('td:nth-child(2) select');
+      row.querySelector('td:nth-child(1) span').textContent = nameInput.value;
+      row.querySelector('td:nth-child(2) span').textContent = genderSelect.value;
+      row.querySelectorAll('span').forEach(span => span.classList.remove('hidden'));
+      row.querySelectorAll('input, select').forEach(el => el.classList.add('hidden'));
+      row.querySelector('button:nth-child(1)').classList.remove('hidden');
+      row.querySelector('button:nth-child(2)').classList.add('hidden');
+    }
+
+    function deleteRow(btn) {
+      btn.closest('tr').remove();
+    }
+
+    const discountForm = document.getElementById('discountForm');
+    const discountTableBody = document.querySelector('#discountTable tbody');
+
+    discountForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const name = document.getElementById('discountName').value;
+      const type = document.getElementById('discountType').value;
+      const value = document.getElementById('discountValue').value;
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${type}</td>
+        <td><span>${name}</span><input class="hidden" value="${name}" /></td>
+        <td><span>${value}</span><input class="hidden" value="${value}" /></td>
+        <td>
+          <button onclick="editRow(this)">Edit</button>
+          <button class="hidden" onclick="saveRow(this)">Save</button>
+          <button onclick="deleteRow(this)">Delete</button>
+        </td>
+      `;
+      discountTableBody.appendChild(row);
+      discountForm.reset();
+    });
+  </script></body>
 </html>
