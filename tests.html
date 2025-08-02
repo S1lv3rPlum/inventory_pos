@@ -137,7 +137,7 @@
 
         row.querySelectorAll('.size').forEach(td => {
           const size = td.dataset.size;
-          td.innerHTML = `<input type="number" min="0" value="${product.sizes[size]}" />`;
+          td.innerHTML = `<input type="number" class="size-input" min="0" value="${product.sizes[size]}" />`;
         });
 
         const actionCell = row.querySelector('td:last-child');
