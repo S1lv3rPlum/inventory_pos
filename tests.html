@@ -47,7 +47,7 @@
 
 <input type="file" id="importInventoryFile" accept=".csv" style="display: none;" />
 
-<h2>Add Product2</h2>
+<h2>Add Product32</h2>
   <form id="productForm">
     <div>
     <label>Category:
@@ -86,6 +86,10 @@
   </table>
 
   <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+  alert(`Error: ${message} at ${source}:${lineno}:${colno}`);
+};
+    
    // 1. Trigger file input when button clicked
 document.getElementById('importInventoryBtn').addEventListener('click', function () {
   document.getElementById('importInventoryFile').click();
