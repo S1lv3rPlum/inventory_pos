@@ -3,182 +3,102 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Inventory</title>
+  <title>Inventory Management</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    input[type="number"] {
-      width: 60px;
-    }
-
-    .qty-input {
+    .size-input {
       width: 50px;
     }
-
-    table {
-      width: 100%;
+    .inventory-table {
       border-collapse: collapse;
-      margin-top: 20px;
+      width: 100%;
     }
-
-    th, td {
+    .inventory-table th,
+    .inventory-table td {
       border: 1px solid #ccc;
-      padding: 4px;
-      text-align: left;
+      padding: 6px;
+      text-align: center;
     }
-
     .category-header {
       background-color: #f0f0f0;
       font-weight: bold;
     }
-
-    .action-btn {
-      margin: 0 2px;
-    }
   </style>
 </head>
 <body>
-  <h1>Inventory</h1>
 
-  <button id="importBtn">Import</button>
-  <button id="exportBtn">Export</button>
-  <button id="syncBtn">Sync</button>
-  <button id="viewBtn">View</button>
+<!-- Menu Overlay -->
+<div id="menuOverlay" style="display: none;">
+  <nav>
+    <ul>
+      <li><a href="home.html">Home</a></li>
+      <li><a href="inventory.html">Inventory</a></li>
+      <li><a href="orders.html">Orders</a></li>
+    </ul>
+  </nav>
+</div>
+<button onclick="toggleMenu()">☰ Menu</button>
 
-  <div id="inventorySection">
-    <form id="addProductForm" style="max-width: 400px; margin-bottom: 20px;">
-      <div>
-        <label>Product Name (required):<br/>
-          <input type="text" id="productName" required />
-        </label>
-      </div>
+<!-- Inventory Section -->
+<div id="inventorySection">
+  <form id="addProductForm" style="max-width: 400px; margin-bottom: 20px;">
+    <div>
+      <label>Product Name (required):<br/>
+        <input type="text" id="productName" required />
+      </label>
+    </div>
 
-      <div>
-        <label>Category (required):<br/>
-          <input type="text" id="productCategory" required />
-        </label>
-      </div>
+    <div>
+      <label>Category (required):<br/>
+        <input type="text" id="productCategory" required />
+      </label>
+    </div>
 
-      <div>
-        <label>Price ($) (required):<br/>
-          <input type="number" id="productPrice" step="0.01" required />
-        </label>
-      </div>
+    <div>
+      <label>Price ($) (required):<br/>
+        <input type="number" id="productPrice" step="0.01" required />
+      </label>
+    </div>
 
-      <div>
-        Gender:<br/>
-        <label><input type="checkbox" id="productGenderMale" /> M</label>
-        <label><input type="checkbox" id="productGenderFemale" /> F</label>
-      </div>
+    <div>
+      <label>
+        <input type="checkbox" id="productHasSizes" />
+        Has Sizes?
+      </label>
+    </div>
 
-      <div>
-        <label>Product Image:<br/>
-          <input type="file" id="productImage" accept="image/*" />
-        </label>
-      </div>
+    <div>
+      Gender:<br/>
+      <label><input type="radio" name="gender" value="M" required /> M</label>
+      <label><input type="radio" name="gender" value="F" required /> F</label>
+    </div>
 
-      <button type="submit" style="margin-top: 10px;" id="addproductBtn">Add Product</button>
-    </form>
+    <div>
+      <label>Product Image:<br/>
+        <input type="file" id="productImage" accept="image/*" />
+      </label>
+    </div>
 
-    <div id="inventoryList"></div>
-  </div>
+    <button type="submit" style="margin-top: 10px;" id="addproductBtn">Add Product</button>
+  </form>
 
-  <script>
-    let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+  <div id="inventoryList"></div>
+</div>
 
-    document.getElementById('addProductForm').addEventListener('submit', function(e) {
-      e.preventDefault();
+<!-- Other Non-Product Buttons -->
+<div style="margin-top: 20px;">
+  <button>Edit Discounts</button>
+  <button>Manage Orders</button>
+</div>
 
-      const name = document.getElementById('productName').value.trim();
-      const category = document.getElementById('productCategory').value.trim();
-      const price = parseFloat(document.getElementById('productPrice').value.trim());
-      const gender = [];
+<!-- Script -->
+<script src="inventory.js"></script>
+<script>
+  function toggleMenu() {
+    const overlay = document.getElementById("menuOverlay");
+    overlay.style.display = overlay.style.display === "none" ? "block" : "none";
+  }
+</script>
 
-      if (document.getElementById('productGenderMale').checked) gender.push('M');
-      if (document.getElementById('productGenderFemale').checked) gender.push('F');
-
-      const product = {
-        name,
-        category,
-        price,
-        gender: gender.join(', '),
-        sizes: {
-          XS: 0,
-          S: 0,
-          M: 0,
-          L: 0,
-          XL: 0
-        }
-      };
-
-      inventory.push(product);
-      localStorage.setItem('inventory', JSON.stringify(inventory));
-      renderInventory();
-      this.reset();
-    });
-
-    function renderInventory() {
-      const container = document.getElementById('inventoryList');
-      container.innerHTML = '';
-
-      const grouped = {};
-      inventory.forEach(product => {
-        if (!grouped[product.category]) {
-          grouped[product.category] = [];
-        }
-        grouped[product.category].push(product);
-      });
-
-      const table = document.createElement('table');
-
-      Object.keys(grouped).forEach(category => {
-        const headerRow = document.createElement('tr');
-        const headerCell = document.createElement('td');
-        headerCell.colSpan = 9;
-        headerCell.textContent = category;
-        headerCell.className = 'category-header';
-        headerRow.appendChild(headerCell);
-        table.appendChild(headerRow);
-
-        const titlesRow = document.createElement('tr');
-        ['Name', 'Price', 'Gender', 'XS', 'S', 'M', 'L', 'XL', 'Actions'].forEach(title => {
-          const th = document.createElement('th');
-          th.textContent = title;
-          titlesRow.appendChild(th);
-        });
-        table.appendChild(titlesRow);
-
-        grouped[category].forEach((product, idx) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${product.name}</td>
-            <td>$${product.price.toFixed(2)}</td>
-            <td contenteditable="true">${product.gender}</td>
-            ${['XS','S','M','L','XL'].map(size => 
-              `<td><input type="number" class="qty-input" value="${product.sizes[size]}" 
-              onchange="updateSize('${product.name}', '${category}', '${size}', this.value)" /></td>`).join('')}
-            <td><button class="action-btn" onclick="deleteProduct('${product.name}', '${category}')">Delete</button></td>
-          `;
-          table.appendChild(row);
-        });
-      });
-
-      container.appendChild(table);
-    }
-
-    function updateSize(name, category, size, value) {
-      const prod = inventory.find(p => p.name === name && p.category === category);
-      if (prod) {
-        prod.sizes[size] = parseInt(value) || 0;
-        localStorage.setItem('inventory', JSON.stringify(inventory));
-      }
-    }
-
-    function deleteProduct(name, category) {
-      inventory = inventory.filter(p => !(p.name === name && p.category === category));
-      localStorage.setItem('inventory', JSON.stringify(inventory));
-      renderInventory();
-    }
-
-    window.onload = renderInventory;
-  </script>
 </body>
 </html>
