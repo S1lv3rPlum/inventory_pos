@@ -1,164 +1,127 @@
 <!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inventory Manager</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Management</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 8px; }
-    th { background-color: #f2f2f2; }
-    .form-section, .button-row { margin-top: 20px; }
-    nav { margin-bottom: 20px; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+    }
+    header {
+      background-color: #333;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+    }
+    nav {
+      background-color: #444;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      padding: 5px 10px;
+      background-color: #666;
+      border-radius: 4px;
+    }
+    main {
+      padding: 20px;
+    }
+    form {
+      margin-bottom: 20px;
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #eee;
+    }
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .form-row label {
+      flex: 1 0 100px;
+    }
+    .form-row input[type="text"],
+    .form-row input[type="number"] {
+      flex: 1 1 auto;
+    }
   </style>
 </head>
 <body>
+  <header>
+    <h1>Inventory Management</h1>
+  </header>
   <nav>
-    <a href="#" onclick="editDiscounts()">Edit Discounts</a>
-  </nav>  <h2>Add Product</h2>
-  <div class="form-section">
-    <label>Product Name: <input type="text" id="productName"></label>
-    <label>Category: <input type="text" id="category"></label>
-    <label>Gender:
-      <label><input type="radio" name="gender" value="M"> M</label>
-      <label><input type="radio" name="gender" value="F"> F</label>
-    </label>
-    <label><input type="checkbox" id="hasSizes"> Has Sizes (S - 2XL)</label>
-    <button onclick="addProduct()">Add Product</button>
-  </div>  <div class="button-row">
-    <button onclick="exportTable('inventoryTable', 'inventory.csv')">Export Inventory</button>
-    <input type="file" accept=".csv" onchange="importTable(event, 'inventoryTable')">
-    <button onclick="exportTable('discountTable', 'discounts.csv')">Export Discounts</button>
-    <input type="file" accept=".csv" onchange="importTable(event, 'discountTable')">
-  </div>  <h2>Inventory</h2>
-  <table id="inventoryTable">
-    <thead>
-      <tr>
-        <th>Product Name</th>
-        <th>Category</th>
-        <th>Gender</th>
-        <th class="size-col" style="display:none;">S</th>
-        <th class="size-col" style="display:none;">M</th>
-        <th class="size-col" style="display:none;">L</th>
-        <th class="size-col" style="display:none;">XL</th>
-        <th class="size-col" style="display:none;">2XL</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>  <h2>Discounts</h2>
-  <table id="discountTable">
-    <thead>
-      <tr><th>Discount Name</th><th>Percent</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>Summer Sale</td><td>10%</td></tr>
-    </tbody>
-  </table>  <script>
-    function editDiscounts() {
-      alert("Open discounts editor — coming soon.");
-    }
+    <a href="#">Home</a>
+    <a href="#">Inventory</a>
+    <a href="#">Reports</a>
+  </nav>
+  <main>
+    <h2>Add New Product</h2>
+    <form id="product-form">
+      <div class="form-row">
+        <label for="productName">Product Name:</label>
+        <input type="text" id="productName" required><label for="category">Category:</label>
+    <input type="text" id="category">
 
-    function addProduct() {
-      const name = document.getElementById('productName').value;
-      const category = document.getElementById('category').value;
-      const genderEl = document.querySelector('input[name="gender"]:checked');
-      const gender = genderEl ? genderEl.value : '';
-      const hasSizes = document.getElementById('hasSizes').checked;
+    <label>Gender:</label>
+    <label><input type="radio" name="gender" value="M"> M</label>
+    <label><input type="radio" name="gender" value="F"> F</label>
 
-      if (!name || !category) return alert("Name and category are required.");
+    <label><input type="checkbox" id="hasSizes"> Has Sizes</label>
 
-      const table = document.getElementById('inventoryTable').getElementsByTagName('tbody')[0];
-      const row = table.insertRow();
-      const sizeCols = ['S', 'M', 'L', 'XL', '2XL'];
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" min="0">
+  </div>
+  <button type="submit">Add Product</button>
+</form>
 
-      row.innerHTML = `
-        <td><span>${name}</span><input type="text" value="${name}" style="display:none"></td>
-        <td><span>${category}</span><input type="text" value="${category}" style="display:none"></td>
-        <td>
-          <span>${gender}</span>
-          <div style="display:none">
-            <label><input type="radio" name="genderEdit${table.rows.length}" value="M" ${gender === 'M' ? 'checked' : ''}>M</label>
-            <label><input type="radio" name="genderEdit${table.rows.length}" value="F" ${gender === 'F' ? 'checked' : ''}>F</label>
-          </div>
-        </td>
-        ${sizeCols.map(size => `<td class="size-col" style="display:${hasSizes ? 'table-cell' : 'none'}"><span></span><input type="number" value="" style="display:none"></td>`).join('')}
-        <td>
-          <button onclick="editRow(this)">Edit</button>
-          <button onclick="saveRow(this)" style="display:none">Save</button>
-          <button onclick="deleteRow(this)">Delete</button>
-        </td>
-      `;
-    }
+<h2>Inventory Table</h2>
+<button id="exportCSV">Export CSV</button>
+<input type="file" id="importCSV" accept=".csv">
+<table id="inventory-table">
+  <thead>
+    <tr>
+      <th>Product Name</th>
+      <th>Category</th>
+      <th>Gender</th>
+      <th>Qty</th>
+      <th>S</th>
+      <th>M</th>
+      <th>L</th>
+      <th>XL</th>
+      <th>2XL</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-    function editRow(btn) {
-      const row = btn.closest('tr');
-      [...row.cells].forEach((cell, i) => {
-        const input = cell.querySelector('input, div');
-        const span = cell.querySelector('span');
-        if (input && span) {
-          span.style.display = 'none';
-          input.style.display = '';
-        }
-      });
-      row.querySelector('button[onclick="editRow(this)"]').style.display = 'none';
-      row.querySelector('button[onclick="saveRow(this)"]').style.display = '';
-    }
+<h2>Discount Management</h2>
+<button id="editDiscounts">Edit Discounts</button>
+<button id="exportDiscounts">Export Discounts</button>
+<input type="file" id="importDiscounts" accept=".csv">
 
-    function saveRow(btn) {
-      const row = btn.closest('tr');
-      [...row.cells].forEach((cell) => {
-        const input = cell.querySelector('input');
-        const span = cell.querySelector('span');
-        if (input && span) {
-          span.textContent = input.type === 'radio' ? input.checked ? input.value : span.textContent : input.value;
-          span.style.display = '';
-          input.style.display = 'none';
-        }
-        const radioGroup = cell.querySelector('div');
-        if (radioGroup && span) {
-          const selected = radioGroup.querySelector('input[type=radio]:checked');
-          span.textContent = selected ? selected.value : '';
-          radioGroup.style.display = 'none';
-        }
-      });
-      row.querySelector('button[onclick="editRow(this)"]').style.display = '';
-      row.querySelector('button[onclick="saveRow(this)"]').style.display = 'none';
-    }
-
-    function deleteRow(btn) {
-      const row = btn.closest('tr');
-      row.parentNode.removeChild(row);
-    }
-
-    function exportTable(tableId, filename) {
-      const table = document.getElementById(tableId);
-      const rows = [...table.rows];
-      const csv = rows.map(row => [...row.cells].map(cell => cell.innerText.trim()).join(",")).join("\n");
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
-    }
-
-    function importTable(event, tableId) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const lines = e.target.result.split('\n');
-        const tbody = document.getElementById(tableId).getElementsByTagName('tbody')[0];
-        lines.slice(1).forEach(line => {
-          const values = line.split(',');
-          const row = tbody.insertRow();
-          values.forEach(value => {
-            const cell = row.insertCell();
-            cell.textContent = value.trim();
-          });
-        });
-      };
-      reader.readAsText(file);
-    }
-  </script></body>
+  </main>  <script src="inventory.js"></script></body>
 </html>
