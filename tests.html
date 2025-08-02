@@ -2,136 +2,134 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Inventory Manager</title>
+  <title>Test Inventory Page</title>
   <style>
-    body { font-family: Arial; margin: 20px; }
-    label { display: block; margin-top: 10px; }
-    .size-qty { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-    .size-qty input { width: 60px; }
+    body { font-family: Arial, sans-serif; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    img { width: 50px; height: auto; }
   </style>
 </head>
 <body>
-  <h2>Add Product</h2>
-  <form id="addProductForm">
-    <label>
-      Category:
-      <input type="text" id="category" required>
-    </label>
-    <label>
-      Name:
-      <input type="text" id="name" required>
-    </label>
-    <label>
-      Image URL:
-      <input type="url" id="image">
-    </label>
-    <label>
-      Has Sizes?
-      <input type="checkbox" id="hasSizes">
-    </label>
+  <h1>Inventory Manager3</h1>
 
-    <div id="sizeInputs" class="size-qty" style="display:none;">
-      <label>S: <input type="number" min="0" id="qty_S" value="0"></label>
-      <label>M: <input type="number" min="0" id="qty_M" value="0"></label>
-      <label>L: <input type="number" min="0" id="qty_L" value="0"></label>
-      <label>XL: <input type="number" min="0" id="qty_XL" value="0"></label>
-      <label>2XL: <input type="number" min="0" id="qty_2XL" value="0"></label>
+  <form id="productForm">
+    <label>Category: <input type="text" id="productCategory" required></label><br>
+    <label>Product Name: <input type="text" id="productName" required></label><br>
+    <label>Image URL: <input type="text" id="productImage"></label><br>
+    <label><input type="checkbox" id="hasSizes"> Has Sizes (S-2XL)</label><br>
+    <div id="sizeQuantities" style="display:none;">
+      <label>S: <input type="number" name="sizeQty" data-size="S" min="0" value="0"></label>
+      <label>M: <input type="number" name="sizeQty" data-size="M" min="0" value="0"></label>
+      <label>L: <input type="number" name="sizeQty" data-size="L" min="0" value="0"></label>
+      <label>XL: <input type="number" name="sizeQty" data-size="XL" min="0" value="0"></label>
+      <label>2XL: <input type="number" name="sizeQty" data-size="2XL" min="0" value="0"></label>
     </div>
-
-    <div id="singleQtyContainer">
-      <label>
-        Quantity:
-        <input type="number" min="0" id="singleQty" value="0">
-      </label>
-    </div>
-
     <button type="submit">Add Product</button>
   </form>
 
-  <h2>Inventory</h2>
-  <table border="1">
+  <table>
     <thead>
       <tr>
         <th>Category</th>
-        <th>Name</th>
+        <th>Product Name</th>
         <th>Image</th>
         <th>Size</th>
-        <th>Qty</th>
+        <th>Quantity</th>
       </tr>
     </thead>
     <tbody id="inventoryTableBody"></tbody>
   </table>
 
   <script>
-    const hasSizesCheckbox = document.getElementById("hasSizes");
-    const sizeInputs = document.getElementById("sizeInputs");
-    const singleQtyContainer = document.getElementById("singleQtyContainer");
+    const sizeCheckbox = document.getElementById('hasSizes');
+    const sizeInputsDiv = document.getElementById('sizeQuantities');
 
-    hasSizesCheckbox.addEventListener("change", () => {
-      if (hasSizesCheckbox.checked) {
-        sizeInputs.style.display = "flex";
-        singleQtyContainer.style.display = "none";
-      } else {
-        sizeInputs.style.display = "none";
-        singleQtyContainer.style.display = "block";
-      }
+    sizeCheckbox.addEventListener('change', () => {
+      sizeInputsDiv.style.display = sizeCheckbox.checked ? 'block' : 'none';
     });
 
-    document.getElementById("addProductForm").addEventListener("submit", function (e) {
+    document.getElementById('productForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      const category = document.getElementById("category").value.trim();
-      const name = document.getElementById("name").value.trim();
-      const image = document.getElementById("image").value.trim();
-      const hasSizes = hasSizesCheckbox.checked;
 
-      const inventory = JSON.parse(localStorage.getItem("products") || "{}");
+      const category = document.getElementById('productCategory').value;
+      const name = document.getElementById('productName').value;
+      const image = document.getElementById('productImage').value;
+      const hasSizes = document.getElementById('hasSizes').checked;
 
-      if (!inventory[category]) inventory[category] = {};
-      if (!inventory[category][name]) inventory[category][name] = { sizes: {}, image };
+      const products = JSON.parse(localStorage.getItem('products')) || {};
+      if (!products[category]) products[category] = {};
+
+      const productEntry = { image: image, sizes: {} };
 
       if (hasSizes) {
-        const sizes = ["S", "M", "L", "XL", "2XL"];
-        sizes.forEach(size => {
-          const qty = parseInt(document.getElementById("qty_" + size).value || "0", 10);
-          inventory[category][name].sizes[size] = qty;
+        const sizeInputs = document.querySelectorAll('input[name="sizeQty"]');
+        sizeInputs.forEach(input => {
+          const size = input.getAttribute('data-size');
+          const qty = parseInt(input.value);
+          if (qty > 0) productEntry.sizes[size] = qty;
         });
       } else {
-        const qty = parseInt(document.getElementById("singleQty").value || "0", 10);
-        inventory[category][name].sizes[""] = qty; // store with blank size
+        productEntry.sizes['OneSize'] = 1; // fallback
       }
 
-      localStorage.setItem("products", JSON.stringify(inventory));
-      loadInventoryTable();
+      products[category][name] = productEntry;
+      localStorage.setItem('products', JSON.stringify(products));
       this.reset();
-      sizeInputs.style.display = "none";
-      singleQtyContainer.style.display = "block";
+      sizeInputsDiv.style.display = 'none';
+      loadInventory();
     });
 
-    function loadInventoryTable() {
-      const tableBody = document.getElementById("inventoryTableBody");
-      const inventory = JSON.parse(localStorage.getItem("products") || "{}");
-      tableBody.innerHTML = "";
+    function loadInventory() {
+      const inventory = JSON.parse(localStorage.getItem('products')) || {};
+      const tableBody = document.getElementById('inventoryTableBody');
+      tableBody.innerHTML = '';
 
       for (const category in inventory) {
-        for (const name in inventory[category]) {
-          const product = inventory[category][name];
+        const products = inventory[category];
+
+        for (const productName in products) {
+          const product = products[productName];
           const sizes = product.sizes || {};
-          for (const size in sizes) {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-              <td>${category}</td>
-              <td>${name}</td>
-              <td>${product.image ? `<img src="${product.image}" style="width:50px;">` : "No Image"}</td>
-              <td>${size || "N/A"}</td>
-              <td>${sizes[size]}</td>
-            `;
+          const imageURL = product.image || '';
+          const sizeKeys = Object.keys(sizes);
+          const rowCount = sizeKeys.length;
+
+          sizeKeys.forEach((size, index) => {
+            const row = document.createElement('tr');
+
+            if (index === 0) {
+              const categoryCell = document.createElement('td');
+              categoryCell.rowSpan = rowCount;
+              categoryCell.textContent = category;
+              row.appendChild(categoryCell);
+
+              const nameCell = document.createElement('td');
+              nameCell.rowSpan = rowCount;
+              nameCell.textContent = productName;
+              row.appendChild(nameCell);
+
+              const imgCell = document.createElement('td');
+              imgCell.rowSpan = rowCount;
+              imgCell.innerHTML = imageURL ? `<img src="${imageURL}" alt="${productName}">` : 'No Image';
+              row.appendChild(imgCell);
+            }
+
+            const sizeCell = document.createElement('td');
+            sizeCell.textContent = size;
+            row.appendChild(sizeCell);
+
+            const qtyCell = document.createElement('td');
+            qtyCell.textContent = sizes[size];
+            row.appendChild(qtyCell);
+
             tableBody.appendChild(row);
-          }
+          });
         }
       }
     }
 
-    window.addEventListener("DOMContentLoaded", loadInventoryTable);
+    window.addEventListener('DOMContentLoaded', loadInventory);
   </script>
 </body>
 </html>
