@@ -1,155 +1,156 @@
 <!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inventory Table</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Inventory</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    th { background-color: #f4f4f4; }
-    .category-row { background-color: #e0e0e0; font-weight: bold; }
-    .hidden { display: none; }
-    input[type="number"] { width: 60px; }
-    .edit-btn, .save-btn { padding: 4px 10px; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .category-header {
+      background-color: #ddd;
+      font-weight: bold;
+    }
+    .edit-btn, .delete-btn, .save-btn, .cancel-btn {
+      margin-right: 5px;
+    }
+    .gender-toggle {
+      display: flex;
+      gap: 10px;
+    }
   </style>
 </head>
 <body>
-  <h2>Product Inventory</h2>  <form id="productForm">
-    <input type="text" id="category" placeholder="Category" required>
-    <input type="text" id="productName" placeholder="Product Name" required>
-    <label>
-      <input type="checkbox" name="gender" value="M"> M
+  <h2>Add Product</h2>
+  <form id="productForm">
+    <label>Category:
+      <input type="text" id="category" required />
     </label>
-    <label>
-      <input type="checkbox" name="gender" value="F"> F
+    <label>Product Name:
+      <input type="text" id="productName" required />
     </label>
-    <br>
-    Sizes:
-    <label><input type="checkbox" name="size" value="S"> S</label>
-    <label><input type="checkbox" name="size" value="M"> M</label>
-    <label><input type="checkbox" name="size" value="L"> L</label>
-    <label><input type="checkbox" name="size" value="XL"> XL</label>
-    <label><input type="checkbox" name="size" value="2XL"> 2XL</label>
-    <br>
+    <fieldset>
+      <legend>Gender:</legend>
+      <label><input type="checkbox" name="gender" value="M" /> M</label>
+      <label><input type="checkbox" name="gender" value="F" /> F</label>
+    </fieldset>
     <button type="submit">Add Product</button>
   </form>  <table id="inventoryTable">
     <thead>
       <tr>
-        <th>Product</th>
+        <th>Product Name</th>
         <th>Gender</th>
-        <th>S</th>
-        <th>M</th>
-        <th>L</th>
-        <th>XL</th>
-        <th>2XL</th>
-        <th>Action</th>
+        <th>Size XS</th>
+        <th>Size S</th>
+        <th>Size M</th>
+        <th>Size L</th>
+        <th>Size XL</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>  <script>
-    const form = document.getElementById("productForm");
-    const tableBody = document.querySelector("#inventoryTable tbody");
-    const inventory = [];
+    const form = document.getElementById('productForm');
+    const tableBody = document.querySelector('#inventoryTable tbody');
+    const inventory = {};
 
-    form.addEventListener("submit", function(e) {
+    form.addEventListener('submit', e => {
       e.preventDefault();
-
-      const category = document.getElementById("category").value.trim();
-      const productName = document.getElementById("productName").value.trim();
-      const genderBoxes = form.querySelectorAll("input[name='gender']");
-      const gender = Array.from(genderBoxes).filter(box => box.checked).map(b => b.value).join('');
-      const sizes = Array.from(form.querySelectorAll("input[name='size']:checked")).map(s => s.value);
-
-      // Prevent duplicates
-      if (!productName || inventory.some(item => item.productName === productName && item.category === category)) {
-        alert("Duplicate product or missing name.");
-        return;
-      }
-
-      const sizeQtys = {};
-      ["S", "M", "L", "XL", "2XL"].forEach(size => sizeQtys[size] = sizes.includes(size) ? 0 : null);
-
-      inventory.push({ category, productName, gender, sizes: sizeQtys });
-      renderTable();
+      const category = document.getElementById('category').value.trim();
+      const productName = document.getElementById('productName').value.trim();
+      const gender = Array.from(document.querySelectorAll('input[name="gender"]:checked')).map(cb => cb.value).join('/');
+      if (!productName || !category) return;
+      
+      if (!inventory[category]) inventory[category] = [];
+      inventory[category].push({ productName, gender, sizes: { XS: 0, S: 0, M: 0, L: 0, XL: 0 } });
       form.reset();
+      renderTable();
     });
 
     function renderTable() {
-      tableBody.innerHTML = "";
-      const grouped = {};
-      inventory.forEach(item => {
-        if (!grouped[item.category]) grouped[item.category] = [];
-        grouped[item.category].push(item);
-      });
+      tableBody.innerHTML = '';
+      Object.keys(inventory).sort().forEach(category => {
+        const headerRow = document.createElement('tr');
+        const headerCell = document.createElement('td');
+        headerCell.colSpan = 8;
+        headerCell.className = 'category-header';
+        headerCell.textContent = category;
+        headerRow.appendChild(headerCell);
+        tableBody.appendChild(headerRow);
 
-      Object.keys(grouped).sort().forEach(category => {
-        const catRow = document.createElement("tr");
-        catRow.className = "category-row";
-        const catCell = document.createElement("td");
-        catCell.colSpan = 8;
-        catCell.textContent = category;
-        catRow.appendChild(catCell);
-        tableBody.appendChild(catRow);
-
-        grouped[category].sort((a,b) => a.productName.localeCompare(b.productName)).forEach(item => {
-          const row = document.createElement("tr");
-
+        inventory[category].sort((a, b) => a.productName.localeCompare(b.productName)).forEach(product => {
+          const row = document.createElement('tr');
           row.innerHTML = `
-            <td><span>${item.productName}</span><input type="text" class="hidden" value="${item.productName}"></td>
-            <td>
-              <span>${item.gender}</span>
-              <label class="hidden"><input type="checkbox" value="M">M</label>
-              <label class="hidden"><input type="checkbox" value="F">F</label>
-            </td>
-            ${["S","M","L","XL","2XL"].map(size => `<td><span>${item.sizes[size] ?? ""}</span><input type="number" class="hidden" value="${item.sizes[size] ?? 0}"></td>`).join("")}
+            <td class="prod-name">${product.productName}</td>
+            <td class="gender-toggle">${formatGender(product.gender)}</td>
+            ${['XS', 'S', 'M', 'L', 'XL'].map(size => `<td class="size" data-size="${size}">${product.sizes[size]}</td>`).join('')}
             <td>
               <button class="edit-btn">Edit</button>
-              <button class="save-btn hidden">Save</button>
+              <button class="delete-btn">Delete</button>
             </td>
           `;
+          tableBody.appendChild(row);
 
-          row.querySelector(".edit-btn").addEventListener("click", () => {
-            toggleEdit(row, true);
-          });
-
-          row.querySelector(".save-btn").addEventListener("click", () => {
-            saveRow(row, item);
-            toggleEdit(row, false);
+          row.querySelector('.edit-btn').addEventListener('click', () => toggleEdit(row, product));
+          row.querySelector('.delete-btn').addEventListener('click', () => {
+            inventory[category] = inventory[category].filter(p => p !== product);
+            if (inventory[category].length === 0) delete inventory[category];
             renderTable();
           });
-
-          tableBody.appendChild(row);
         });
       });
     }
 
-    function toggleEdit(row, isEditing) {
-      row.querySelectorAll("span").forEach(span => span.classList.toggle("hidden", isEditing));
-      row.querySelectorAll("input").forEach(input => input.classList.toggle("hidden", !isEditing));
-      row.querySelector(".edit-btn").classList.toggle("hidden", isEditing);
-      row.querySelector(".save-btn").classList.toggle("hidden", !isEditing);
+    function formatGender(genderStr) {
+      const genders = ['M', 'F'];
+      return genders.map(g => `<label><input type="checkbox" value="${g}" ${genderStr.includes(g) ? 'checked' : ''} disabled /> ${g}</label>`).join('');
     }
 
-    function saveRow(row, item) {
-      const [nameInput, mCheck, fCheck, ...qtyInputs] = row.querySelectorAll("input");
-      item.productName = nameInput.value.trim();
-      item.gender = mCheck.checked ? "M" : fCheck.checked ? "F" : "";
-      ["S", "M", "L", "XL", "2XL"].forEach((size, idx) => {
-        const val = qtyInputs[idx].value;
-        item.sizes[size] = val === "" ? 0 : parseInt(val);
-      });
-    }
+    function toggleEdit(row, product) {
+      const isEditing = row.classList.toggle('editing');
+      if (isEditing) {
+        const prodNameCell = row.querySelector('.prod-name');
+        prodNameCell.innerHTML = `<input type="text" value="${product.productName}" />`;
 
-    // Ensure only one gender checkbox at a time
-    form.querySelectorAll("input[name='gender']").forEach(cb => {
-      cb.addEventListener("change", () => {
-        if (cb.checked) {
-          form.querySelectorAll("input[name='gender']").forEach(other => {
-            if (other !== cb) other.checked = false;
+        const genderCell = row.querySelector('.gender-toggle');
+        genderCell.innerHTML = ['M', 'F'].map(g => `<label><input type="checkbox" value="${g}" ${product.gender.includes(g) ? 'checked' : ''} /> ${g}</label>`).join('');
+
+        row.querySelectorAll('.size').forEach(td => {
+          const size = td.dataset.size;
+          td.innerHTML = `<input type="number" min="0" value="${product.sizes[size]}" />`;
+        });
+
+        const actionCell = row.querySelector('td:last-child');
+        actionCell.innerHTML = '<button class="save-btn">Save</button><button class="cancel-btn">Cancel</button>';
+
+        actionCell.querySelector('.save-btn').addEventListener('click', () => {
+          product.productName = prodNameCell.querySelector('input').value.trim();
+          const genderChecks = genderCell.querySelectorAll('input[type="checkbox"]');
+          const selectedGenders = Array.from(genderChecks).filter(cb => cb.checked).map(cb => cb.value);
+          product.gender = selectedGenders.join('/');
+          row.querySelectorAll('.size').forEach(td => {
+            const size = td.dataset.size;
+            product.sizes[size] = parseInt(td.querySelector('input').value || '0');
           });
-        }
-      });
-    });
+          renderTable();
+        });
+
+        actionCell.querySelector('.cancel-btn').addEventListener('click', renderTable);
+      }
+    }
   </script></body>
 </html>
