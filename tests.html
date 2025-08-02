@@ -92,10 +92,7 @@
   </table>
 
   <script>
-    // Globals
     let inventory = {};
-
-    // DOM refs
     const form = document.getElementById('productForm');
     const tableBody = document.querySelector('#inventoryTable tbody');
     const importBtn = document.getElementById('importInventoryBtn');
@@ -104,7 +101,6 @@
 
     const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
 
-    // Load saved inventory on page load
     window.addEventListener('DOMContentLoaded', () => {
       const data = localStorage.getItem('inventoryData');
       if (data) {
@@ -113,17 +109,14 @@
       }
     });
 
-    // Save to localStorage helper
     function saveToLocalStorage() {
       localStorage.setItem('inventoryData', JSON.stringify(inventory));
     }
 
-    // Render the inventory table
     function renderTable() {
       tableBody.innerHTML = '';
 
       Object.keys(inventory).sort().forEach(category => {
-        // Category header row
         const headerRow = document.createElement('tr');
         const headerCell = document.createElement('td');
         headerCell.colSpan = 11;
@@ -134,7 +127,6 @@
 
         inventory[category].sort((a, b) => a.productName.localeCompare(b.productName)).forEach(product => {
           const row = document.createElement('tr');
-
           row.innerHTML = `
             <td class="prod-name">${escapeHTML(product.productName)}</td>
             <td class="gender-display">${product.gender}</td>
@@ -146,10 +138,7 @@
           `;
           tableBody.appendChild(row);
 
-          // Edit button
           row.querySelector('.edit-btn').addEventListener('click', () => toggleEdit(row, product, category));
-
-          // Delete button
           row.querySelector('.delete-btn').addEventListener('click', () => {
             inventory[category] = inventory[category].filter(p => p !== product);
             if (inventory[category].length === 0) delete inventory[category];
@@ -160,52 +149,43 @@
       });
     }
 
-    // Escape HTML for safety in rendering product names
     function escapeHTML(text) {
-      return text.replace(/[&<>"']/g, function (m) {
-        return ({
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#39;'
-        })[m];
-      });
+      return text.replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[m]));
     }
 
-    // Toggle editing a row
     function toggleEdit(row, product, category) {
       const isEditing = row.classList.toggle('editing');
 
       if (isEditing) {
-        // Replace product name cell with input
         const prodNameCell = row.querySelector('.prod-name');
         prodNameCell.innerHTML = `<input type="text" value="${escapeHTML(product.productName)}" />`;
 
-        // Replace gender cell with single-select dropdown
         const genderCell = row.querySelector('.gender-display');
         genderCell.innerHTML = `
           <select class="gender-select">
             <option value="M" ${product.gender === 'M' ? 'selected' : ''}>M</option>
             <option value="F" ${product.gender === 'F' ? 'selected' : ''}>F</option>
-            <option value="M/F" ${product.gender === 'M/F' || product.gender === 'F/M' ? 'selected' : ''}>M/F</option>
+            <option value="M/F" ${product.gender === 'M/F' || product.gender === 'F/M' ? 'selected' : ''}>Unisex</option>
           </select>
         `;
 
-        // Replace size cells with number inputs, 4 chars wide
         row.querySelectorAll('.size').forEach(td => {
           const size = td.dataset.size;
           td.innerHTML = `<input type="number" min="0" class="size-input" value="${product.sizes[size]}" />`;
         });
 
-        // Change buttons to Save and Cancel
         const actionCell = row.querySelector('td:last-child');
         actionCell.innerHTML = `
           <button class="save-btn">Save</button>
           <button class="cancel-btn">Cancel</button>
         `;
 
-        // Save button handler
         actionCell.querySelector('.save-btn').addEventListener('click', () => {
           const newName = prodNameCell.querySelector('input').value.trim();
           if (!newName) {
@@ -227,25 +207,21 @@
           renderTable();
         });
 
-        // Cancel button handler
         actionCell.querySelector('.cancel-btn').addEventListener('click', () => {
           renderTable();
         });
 
       } else {
-        // If toggling off edit without saving, just re-render table
         renderTable();
       }
     }
 
-    // Handle Add Product form submission
     form.addEventListener('submit', e => {
       e.preventDefault();
 
       const category = document.getElementById('category').value.trim();
       const productName = document.getElementById('productName').value.trim();
 
-      // Collect genders from checked checkboxes
       const genderBoxes = Array.from(document.querySelectorAll('input[name="gender"]:checked'));
       let gender;
       if (genderBoxes.length === 0) {
@@ -275,7 +251,6 @@
       renderTable();
     });
 
-    // Export inventory as CSV
     exportBtn.addEventListener('click', () => {
       const rows = [
         ['Category','Product Name','Gender', ...sizes]
@@ -305,9 +280,8 @@
       URL.revokeObjectURL(url);
     });
 
-    // Import inventory from CSV
     importBtn.addEventListener('click', () => {
-      importFileInput.value = ''; // reset so change event fires even if same file chosen
+      importFileInput.value = '';
       importFileInput.click();
     });
 
@@ -330,13 +304,10 @@
         return;
       }
 
-      // Clear current inventory
       inventory = {};
 
-      // Assume first line is header and sizes start at index 3
       const headerCols = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
       const expectedHeaders = ['Category','Product Name','Gender', ...sizes];
-      // Optional: you could validate headerCols here to match expectedHeaders
 
       for (let i = 1; i < lines.length; i++) {
         const cols = parseCSVLine(lines[i]);
@@ -365,7 +336,6 @@
       alert('Inventory imported successfully!');
     }
 
-    // Helper: basic CSV line parser (handles commas inside quotes)
     function parseCSVLine(line) {
       const result = [];
       let current = '';
