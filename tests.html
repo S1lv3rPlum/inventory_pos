@@ -163,11 +163,11 @@ exportBtn.addEventListener('click', () => {
         category,
         product.productName,
         product.gender,
-        product.sizes.XS ?? 0,
         product.sizes.S ?? 0,
         product.sizes.M ?? 0,
         product.sizes.L ?? 0,
         product.sizes.XL ?? 0,
+        product.sizes.2XL ?? 0,
       ]);
     });
   });
@@ -217,7 +217,7 @@ function parseCSVAndLoadInventory(csvText) {
     const cols = lines[i].split(',');
     if (cols.length < 8) continue; // not enough columns
 
-    const [category, productName, gender, XS, S, M, L, XL] = cols;
+    const [category, productName, gender, S, M, L, XL, 2XL] = cols;
     if (!category || !productName) continue;
 
     if (!inventory[category]) inventory[category] = [];
@@ -226,11 +226,11 @@ function parseCSVAndLoadInventory(csvText) {
       productName: productName.trim(),
       gender: gender.trim(),
       sizes: {
-        XS: parseInt(XS) || 0,
         S: parseInt(S) || 0,
         M: parseInt(M) || 0,
         L: parseInt(L) || 0,
-        XL: parseInt(XL) || 0
+        XL: parseInt(XL) || 0,
+        2XL: parseInt(2XL) || 0
       }
     });
   }
@@ -252,7 +252,7 @@ function parseCSVAndLoadInventory(csvText) {
       if (!productName || !category) return;
 
       if (!inventory[category]) inventory[category] = [];
-      inventory[category].push({ productName, gender, sizes: { XS: 0, S: 0, M: 0, L: 0, XL: 0 } });
+      inventory[category].push({ productName, gender, sizes: {S: 0, M: 0, L: 0, XL: 0, 2XL: 0 } });
       form.reset();
       saveToLocalStorage();
       renderTable();
@@ -274,7 +274,7 @@ function parseCSVAndLoadInventory(csvText) {
           row.innerHTML = `
             <td class="prod-name">${product.productName}</td>
             <td class="gender-toggle">${formatGender(product.gender)}</td>
-            ${['XS', 'S', 'M', 'L', 'XL'].map(size => `<td class="size" data-size="${size}">${product.sizes[size]}</td>`).join('')}
+            ${['S', 'M', 'L', 'XL','2XL'].map(size => `<td class="size" data-size="${size}">${product.sizes[size]}</td>`).join('')}
             <td>
               <button class="edit-btn">Edit</button>
               <button class="delete-btn">Delete</button>
