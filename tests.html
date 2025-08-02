@@ -1,49 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inventory with Sizes</title>
   <style>
-    body { font-family: Arial, sans-serif; }
-    .menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999; }
-    .menu-content { background: white; width: 200px; padding: 20px; margin: 100px auto; text-align: center; }
-    .hamburger { position: fixed; top: 10px; left: 10px; font-size: 24px; cursor: pointer; z-index: 1000; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    body { font-family: sans-serif; margin: 0; padding: 0; }
+    header { background: #333; color: white; padding: 10px; position: relative; }
+    .menu-icon { font-size: 24px; cursor: pointer; position: absolute; right: 10px; top: 10px; }
+    #menuOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 20px;
+      z-index: 9999;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    img { width: 50px; height: auto; }
+    .form-group { margin: 10px 0; }
+    .merged-row td { background: #f0f0f0; }
   </style>
 </head>
 <body>
-
-<div class="hamburger" onclick="toggleMenu()">☰</div>
-<div class="menu-overlay" id="menuOverlay">
-  <div class="menu-content">
-    <p>Menu</p>
-    <button onclick="toggleMenu()">Close</button>
-  </div>
-</div>
-
-<h1>Product Entry</h1>
-
-<form id="productForm">
-  <input type="text" id="category" placeholder="Category" required>
-  <input type="text" id="productName" placeholder="Product Name" required>
-  <input type="text" id="imageURL" placeholder="Image URL">
-  <label>
-    <input type="checkbox" id="hasSizes"> Has Sizes (S–2XL)
-  </label>
-  <div id="sizeInputs" style="display:none;">
-    <label>S: <input type="number" min="0" id="size_S" value="0"></label>
-    <label>M: <input type="number" min="0" id="size_M" value="0"></label>
-    <label>L: <input type="number" min="0" id="size_L" value="0"></label>
-    <label>XL: <input type="number" min="0" id="size_XL" value="0"></label>
-    <label>2XL: <input type="number" min="0" id="size_2XL" value="0"></label>
-  </div>
-  <button type="submit">Add Product</button>
-</form>
-
-<table>
+  <header>
+    Inventory2
+    <span class="menu-icon" onclick="toggleMenu()">☰</span>
+  </header>
+  <div id="menuOverlay">
+    <h2>Menu</h2>
+    <p><a href="#" style="color:white" onclick="toggleMenu()">Close</a></p>
+  </div>  <div style="padding: 10px">
+    <h3>Add Product</h3>
+    <form id="addProductForm">
+      <div class="form-group">
+        <label>Category:</label>
+        <input type="text" id="category" required />
+      </div>
+      <div class="form-group">
+        <label>Product:</label>
+        <input type="text" id="product" required />
+      </div>
+      <div class="form-group">
+        <label>Image URL:</label>
+        <input type="text" id="imageUrl" />
+      </div>
+      <div class="form-group">
+        <label><input type="checkbox" id="hasSizes" /> Has Sizes</label>
+      </div>
+      <button type="submit">Add Product</button>
+    </form><h3>Inventory</h3>
+<table id="inventoryTable">
   <thead>
     <tr>
       <th>Category</th>
@@ -54,105 +62,92 @@
       <th>Actions</th>
     </tr>
   </thead>
-  <tbody id="inventoryTableBody"></tbody>
+  <tbody></tbody>
 </table>
 
-<script>
-function toggleMenu() {
-  const overlay = document.getElementById("menuOverlay");
-  overlay.style.display = overlay.style.display === "block" ? "none" : "block";
-}
+  </div>  <script>
+    const inventory = [];
 
-document.getElementById('hasSizes').addEventListener('change', function () {
-  document.getElementById('sizeInputs').style.display = this.checked ? 'block' : 'none';
-});
+    function toggleMenu() {
+      const overlay = document.getElementById("menuOverlay");
+      overlay.style.display = overlay.style.display === "block" ? "none" : "block";
+    }
 
-document.getElementById('productForm').addEventListener('submit', function (e) {
-  e.preventDefault();
-  const category = document.getElementById('category').value.trim();
-  const productName = document.getElementById('productName').value.trim();
-  const imageURL = document.getElementById('imageURL').value.trim();
-  const hasSizes = document.getElementById('hasSizes').checked;
+    function renderInventory() {
+      const tbody = document.querySelector("#inventoryTable tbody");
+      tbody.innerHTML = "";
 
-  let productData = {
-    category,
-    productName,
-    image: imageURL,
-    sizes: {}
-  };
+      inventory.forEach((item, index) => {
+        const sizes = item.sizes || { '': item.qty || 0 };
+        const sizeKeys = Object.keys(sizes);
 
-  if (hasSizes) {
-    ['S', 'M', 'L', 'XL', '2XL'].forEach(size => {
-      const qty = parseInt(document.getElementById(`size_${size}`).value) || 0;
-      if (qty > 0) {
-        productData.sizes[size] = qty;
-      }
-    });
-  } else {
-    productData.sizes[""] = 1;
-  }
+        sizeKeys.forEach((size, i) => {
+          const row = document.createElement("tr");
 
-  const inventory = JSON.parse(localStorage.getItem('products')) || {};
-  if (!inventory[category]) inventory[category] = {};
-  inventory[category][productName] = productData;
-  localStorage.setItem('products', JSON.stringify(inventory));
-  renderInventory();
-  this.reset();
-  document.getElementById('sizeInputs').style.display = 'none';
-});
+          if (i === 0) {
+            row.innerHTML += `<td rowspan="${sizeKeys.length}">${item.category}</td>`;
+            row.innerHTML += `<td rowspan="${sizeKeys.length}">${item.product}</td>`;
+            row.innerHTML += `<td rowspan="${sizeKeys.length}"><img src="${item.imageUrl}" width="50" /></td>`;
+          }
 
-function renderInventory() {
-  const tableBody = document.getElementById('inventoryTableBody');
-  tableBody.innerHTML = '';
-  const inventory = JSON.parse(localStorage.getItem('products')) || {};
+          row.innerHTML += `<td>${size}</td>`;
+          row.innerHTML += `<td>${sizes[size]}</td>`;
 
-  for (const category in inventory) {
-    const products = inventory[category];
-    for (const productName in products) {
-      const product = products[productName];
-      const sizes = product.sizes || {};
-      const sizeKeys = Object.keys(sizes);
-      const rowspan = sizeKeys.length || 1;
+          if (i === 0) {
+            row.innerHTML += `<td rowspan="${sizeKeys.length}">
+              <button onclick="editItem(${index})">Edit</button>
+              <button onclick="deleteItem(${index})">Delete</button>
+            </td>`;
+          }
 
-      sizeKeys.forEach((size, index) => {
-        const row = document.createElement('tr');
-
-        if (index === 0) {
-          row.innerHTML += `<td rowspan="${rowspan}">${category}</td>`;
-          row.innerHTML += `<td rowspan="${rowspan}">${productName}</td>`;
-          row.innerHTML += `<td rowspan="${rowspan}">${product.image ? `<img src="${product.image}" alt="${productName}">` : 'No Image'}</td>`;
-        }
-
-        row.innerHTML += `<td>${size || '—'}</td>`;
-        row.innerHTML += `<td>${sizes[size]}</td>`;
-        if (index === 0) {
-          row.innerHTML += `<td rowspan="${rowspan}">
-            <button onclick="editProduct('${category}','${productName}')">Edit</button>
-            <button onclick="deleteProduct('${category}','${productName}')">Delete</button>
-          </td>`;
-        }
-        tableBody.appendChild(row);
+          tbody.appendChild(row);
+        });
       });
     }
-  }
-}
 
-function editProduct(category, name) {
-  alert(`Edit feature for "${name}" in category "${category}" not implemented yet.`);
-}
+    function deleteItem(index) {
+      inventory.splice(index, 1);
+      renderInventory();
+    }
 
-function deleteProduct(category, name) {
-  const inventory = JSON.parse(localStorage.getItem('products')) || {};
-  if (inventory[category] && inventory[category][name]) {
-    delete inventory[category][name];
-    if (Object.keys(inventory[category]).length === 0) delete inventory[category];
-    localStorage.setItem('products', JSON.stringify(inventory));
-    renderInventory();
-  }
-}
+    function editItem(index) {
+      const item = inventory[index];
+      const newSizes = {};
+      const sizeKeys = Object.keys(item.sizes);
+      let updated = false;
 
-document.addEventListener('DOMContentLoaded', renderInventory);
-</script>
+      sizeKeys.forEach(size => {
+        const qty = prompt(`Qty for ${item.product} size ${size}:`, item.sizes[size]);
+        if (qty !== null) {
+          newSizes[size] = parseInt(qty) || 0;
+          updated = true;
+        }
+      });
 
-</body>
+      if (updated) {
+        inventory[index].sizes = newSizes;
+        renderInventory();
+      }
+    }
+
+    document.getElementById("addProductForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const category = document.getElementById("category").value;
+      const product = document.getElementById("product").value;
+      const imageUrl = document.getElementById("imageUrl").value;
+      const hasSizes = document.getElementById("hasSizes").checked;
+
+      const item = { category, product, imageUrl };
+
+      if (hasSizes) {
+        item.sizes = { S: 0, M: 0, L: 0, XL: 0, '2XL': 0 };
+      } else {
+        item.sizes = { '': 0 };
+      }
+
+      inventory.push(item);
+      renderInventory();
+      e.target.reset();
+    });
+  </script></body>
 </html>
