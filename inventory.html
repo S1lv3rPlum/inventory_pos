@@ -3,203 +3,219 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Inventory Management</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Inventory</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 10px;
-    }
-    header {
-      background: #444;
-      color: white;
-      padding: 10px;
-      text-align: center;
-    }
-    nav {
-      margin: 10px 0;
-    }
-    nav button {
-      margin-right: 5px;
+    /* Quick style for per-size inputs */
+    .size-input {
+      width: 45px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
     }
     th, td {
       border: 1px solid #ccc;
-      padding: 4px;
-      text-align: left;
-    }
-    th {
-      background: #eee;
-    }
-    .category-header {
-      background: #ccc;
-      font-weight: bold;
+      padding: 6px;
       text-align: center;
     }
-    .size-input {
-      width: 40px;
-    }
-    .form-section {
-      max-width: 500px;
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>Inventory Manager</h1>
-</header>
+  <header>
+    <nav>
+      <a href="index.html">Home</a> |
+      <a href="inventory.html">Inventory</a> |
+      <a href="discounts.html">Edit Discounts</a>
+    </nav>
+  </header>
 
-<nav>
-  <button onclick="location.href='home.html'">Home</button>
-  <button onclick="location.href='inventory.html'">Inventory</button>
-  <button onclick="location.href='sales.html'">Sales</button>
-</nav>
+  <main>
+    <h2>Add Product</h2>
+    <form id="addProductForm">
+      <label>
+        Product Name (required):<br/>
+        <input type="text" id="productName" required />
+      </label><br/>
 
-<div class="form-section">
-  <h2>Add Product</h2>
-  <form id="addProductForm">
-    <label>Product Name (required):<br>
-      <input type="text" id="productName" required>
-    </label><br><br>
+      <label>
+        Category (required):<br/>
+        <select id="productCategory" required>
+          <option value="">--Select--</option>
+          <option value="Shirt">Shirt</option>
+          <option value="Hoodie">Hoodie</option>
+          <option value="Hat">Hat</option>
+          <option value="Other">Other</option>
+        </select>
+      </label><br/>
 
-    <label>Category (required):<br>
-      <input type="text" id="productCategory" required>
-    </label><br><br>
+      <label>
+        Price ($) (required):<br/>
+        <input type="number" id="productPrice" step="0.01" required />
+      </label><br/>
 
-    <label>Price ($) (required):<br>
-      <input type="number" id="productPrice" step="0.01" required>
-    </label><br><br>
+      <label>
+        <input type="checkbox" id="productHasSizes" />
+        Has Sizes?
+      </label><br/>
 
-    <label><input type="checkbox" id="productHasSizes"> Has Sizes?</label><br><br>
+      <div>
+        Gender:<br/>
+        <label><input type="radio" name="productGender" value="M"> M</label>
+        <label><input type="radio" name="productGender" value="F"> F</label>
+        <label><input type="radio" name="productGender" value="" checked hidden></label>
+      </div>
 
-    Gender:<br>
-    <label><input type="radio" name="productGender" value="M" required> M</label>
-    <label><input type="radio" name="productGender" value="F" required> F</label><br><br>
+      <label>
+        Product Image:<br/>
+        <input type="file" id="productImage" accept="image/*" />
+      </label><br/>
 
-    <label>Product Image:<br>
-      <input type="file" id="productImage" accept="image/*">
-    </label><br><br>
+      <button type="submit" id="addproductBtn">Add Product</button>
+    </form>
 
-    <button type="submit">Add Product</button>
-  </form>
-</div>
+    <h2>Inventory List</h2>
+    <div id="inventoryList"></div>
+  </main>
 
-<h2>Current Inventory</h2>
-<div id="inventoryList"></div>
+  <script>
+    const addProductForm = document.getElementById('addProductForm');
+    const inventoryList = document.getElementById('inventoryList');
+    const productHasSizesCheckbox = document.getElementById('productHasSizes');
 
-<section>
-  <h2>Manage Discounts</h2>
-  <button>Edit Discounts</button>
-  <button>Apply Promo</button>
-</section>
+    const sizeLabels = ['S', 'M', 'L', 'XL', '2XL'];
 
-<script>
-  const form = document.getElementById('addProductForm');
-  const inventoryList = document.getElementById('inventoryList');
-
-  let products = [];
-
-  function renderInventory() {
-    inventoryList.innerHTML = '';
-
-    const grouped = {};
-    for (const product of products) {
-      if (!grouped[product.category]) grouped[product.category] = [];
-      grouped[product.category].push(product);
-    }
-
-    for (const category in grouped) {
-      const table = document.createElement('table');
-
-      const categoryRow = document.createElement('tr');
-      const categoryCell = document.createElement('td');
-      categoryCell.colSpan = productHasSizes.checked ? 9 : 5;
-      categoryCell.className = 'category-header';
-      categoryCell.textContent = category;
-      categoryRow.appendChild(categoryCell);
-      table.appendChild(categoryRow);
-
-      const header = document.createElement('tr');
-      header.innerHTML = `
-        <th>Product</th>
-        <th>Gender</th>
-        <th>Price</th>
-        ${grouped[category][0].hasSizes ? `
-          <th>S</th><th>M</th><th>L</th><th>XL</th><th>2XL</th>
-        ` : `<th>Qty</th>`}
-        <th>Image</th>
-      `;
-      table.appendChild(header);
-
-      for (const item of grouped[category]) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${item.name}</td>
-          <td>${item.gender}</td>
-          <td>$${item.price.toFixed(2)}</td>
-          ${item.hasSizes ? `
-            <td><input class="size-input" type="number" value="${item.sizes.S || 0}"></td>
-            <td><input class="size-input" type="number" value="${item.sizes.M || 0}"></td>
-            <td><input class="size-input" type="number" value="${item.sizes.L || 0}"></td>
-            <td><input class="size-input" type="number" value="${item.sizes.XL || 0}"></td>
-            <td><input class="size-input" type="number" value="${item.sizes["2XL"] || 0}"></td>
-          ` : `<td><input class="size-input" type="number" value="${item.quantity || 0}"></td>`}
-          <td>${item.image ? `<img src="${item.image}" width="40">` : 'None'}</td>
-        `;
-        table.appendChild(row);
-      }
-
-      inventoryList.appendChild(table);
-    }
-  }
-
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-
-    const name = document.getElementById('productName').value.trim();
-    const category = document.getElementById('productCategory').value.trim();
-    const price = parseFloat(document.getElementById('productPrice').value);
-    const hasSizes = document.getElementById('productHasSizes').checked;
-    const genderInputs = document.querySelectorAll('input[name="productGender"]:checked');
-    const gender = genderInputs.length ? genderInputs[0].value : '';
-    const imageFile = document.getElementById('productImage').files[0];
-
-    if (!name || !category || isNaN(price) || !gender) {
-      alert('Please fill out all required fields.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function () {
-      const newProduct = {
-        name,
-        category,
-        price,
-        hasSizes,
-        gender,
-        image: imageFile ? reader.result : null,
-        sizes: hasSizes ? { S: 0, M: 0, L: 0, XL: 0, "2XL": 0 } : {},
-        quantity: hasSizes ? null : 0
-      };
-      products.push(newProduct);
-      renderInventory();
-      form.reset();
+    const createTableHeader = () => {
+      const header = document.createElement('thead');
+      const row = document.createElement('tr');
+      ['Name', 'Category', 'Price', 'Gender', ...sizeLabels, 'Actions'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        row.appendChild(th);
+      });
+      header.appendChild(row);
+      return header;
     };
 
-    if (imageFile) {
-      reader.readAsDataURL(imageFile);
-    } else {
-      reader.onload();
-    }
-  });
+    const createTableRow = (product) => {
+      const row = document.createElement('tr');
+      const fields = ['name', 'category', 'price', 'gender'];
 
-  renderInventory();
-</script>
+      fields.forEach(field => {
+        const td = document.createElement('td');
+        td.textContent = product[field] || '';
+        row.appendChild(td);
+      });
 
+      sizeLabels.forEach(size => {
+        const td = document.createElement('td');
+        td.textContent = product.sizes?.[size] || '';
+        row.appendChild(td);
+      });
+
+      const actionTd = document.createElement('td');
+
+      const editBtn = document.createElement('button');
+      editBtn.textContent = 'Edit';
+      editBtn.onclick = () => toggleEditMode(row, true);
+
+      const saveBtn = document.createElement('button');
+      saveBtn.textContent = 'Save';
+      saveBtn.classList.add('hidden');
+      saveBtn.onclick = () => toggleEditMode(row, false);
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.onclick = () => row.remove();
+
+      actionTd.append(editBtn, saveBtn, deleteBtn);
+      row.appendChild(actionTd);
+
+      return row;
+    };
+
+    const toggleEditMode = (row, isEditing) => {
+      const cells = row.querySelectorAll('td');
+      const fieldCount = 4 + sizeLabels.length;
+      for (let i = 0; i < fieldCount; i++) {
+        const cell = cells[i];
+        if (isEditing) {
+          const input = document.createElement('input');
+          input.value = cell.textContent;
+          input.className = i >= 4 ? 'size-input' : '';
+          if (i === 3) { // gender
+            const male = document.createElement('input');
+            male.type = 'radio';
+            male.name = `gender-${row.rowIndex}`;
+            male.value = 'M';
+            if (cell.textContent === 'M') male.checked = true;
+
+            const female = document.createElement('input');
+            female.type = 'radio';
+            female.name = `gender-${row.rowIndex}`;
+            female.value = 'F';
+            if (cell.textContent === 'F') female.checked = true;
+
+            cell.innerHTML = '';
+            cell.append('M:', male, ' F:', female);
+          } else {
+            cell.innerHTML = '';
+            cell.appendChild(input);
+          }
+        } else {
+          if (i === 3) { // gender
+            const radios = cells[i].querySelectorAll('input[type=radio]');
+            const selected = [...radios].find(r => r.checked);
+            cells[i].textContent = selected ? selected.value : '';
+          } else {
+            const input = cells[i].querySelector('input');
+            cells[i].textContent = input ? input.value : '';
+          }
+        }
+      }
+
+      const [editBtn, saveBtn] = row.querySelectorAll('button');
+      editBtn.classList.toggle('hidden', isEditing);
+      saveBtn.classList.toggle('hidden', !isEditing);
+    };
+
+    const buildTable = () => {
+      inventoryList.innerHTML = '';
+      const table = document.createElement('table');
+      table.appendChild(createTableHeader());
+      const tbody = document.createElement('tbody');
+      products.forEach(p => tbody.appendChild(createTableRow(p)));
+      table.appendChild(tbody);
+      inventoryList.appendChild(table);
+    };
+
+    const products = [];
+
+    addProductForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('productName').value.trim();
+      const category = document.getElementById('productCategory').value;
+      const price = document.getElementById('productPrice').value.trim();
+      const gender = document.querySelector('input[name="productGender"]:checked')?.value || '';
+
+      const hasSizes = productHasSizesCheckbox.checked;
+      const sizes = {};
+
+      if (hasSizes) {
+        sizeLabels.forEach(size => {
+          const qty = prompt(`Enter quantity for size ${size}:`, '0');
+          sizes[size] = qty || '';
+        });
+      }
+
+      products.push({ name, category, price, gender, sizes });
+      buildTable();
+      addProductForm.reset();
+    });
+  </script>
 </body>
 </html>
