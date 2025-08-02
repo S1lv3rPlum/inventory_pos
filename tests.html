@@ -2,134 +2,157 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Test Inventory Page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventory with Sizes</title>
   <style>
     body { font-family: Arial, sans-serif; }
+    .menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999; }
+    .menu-content { background: white; width: 200px; padding: 20px; margin: 100px auto; text-align: center; }
+    .hamburger { position: fixed; top: 10px; left: 10px; font-size: 24px; cursor: pointer; z-index: 1000; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     img { width: 50px; height: auto; }
   </style>
 </head>
 <body>
-  <h1>Inventory Manager3</h1>
 
-  <form id="productForm">
-    <label>Category: <input type="text" id="productCategory" required></label><br>
-    <label>Product Name: <input type="text" id="productName" required></label><br>
-    <label>Image URL: <input type="text" id="productImage"></label><br>
-    <label><input type="checkbox" id="hasSizes"> Has Sizes (S-2XL)</label><br>
-    <div id="sizeQuantities" style="display:none;">
-      <label>S: <input type="number" name="sizeQty" data-size="S" min="0" value="0"></label>
-      <label>M: <input type="number" name="sizeQty" data-size="M" min="0" value="0"></label>
-      <label>L: <input type="number" name="sizeQty" data-size="L" min="0" value="0"></label>
-      <label>XL: <input type="number" name="sizeQty" data-size="XL" min="0" value="0"></label>
-      <label>2XL: <input type="number" name="sizeQty" data-size="2XL" min="0" value="0"></label>
-    </div>
-    <button type="submit">Add Product</button>
-  </form>
+<div class="hamburger" onclick="toggleMenu()">☰</div>
+<div class="menu-overlay" id="menuOverlay">
+  <div class="menu-content">
+    <p>Menu</p>
+    <button onclick="toggleMenu()">Close</button>
+  </div>
+</div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Category</th>
-        <th>Product Name</th>
-        <th>Image</th>
-        <th>Size</th>
-        <th>Quantity</th>
-      </tr>
-    </thead>
-    <tbody id="inventoryTableBody"></tbody>
-  </table>
+<h1>Product Entry</h1>
 
-  <script>
-    const sizeCheckbox = document.getElementById('hasSizes');
-    const sizeInputsDiv = document.getElementById('sizeQuantities');
+<form id="productForm">
+  <input type="text" id="category" placeholder="Category" required>
+  <input type="text" id="productName" placeholder="Product Name" required>
+  <input type="text" id="imageURL" placeholder="Image URL">
+  <label>
+    <input type="checkbox" id="hasSizes"> Has Sizes (S–2XL)
+  </label>
+  <div id="sizeInputs" style="display:none;">
+    <label>S: <input type="number" min="0" id="size_S" value="0"></label>
+    <label>M: <input type="number" min="0" id="size_M" value="0"></label>
+    <label>L: <input type="number" min="0" id="size_L" value="0"></label>
+    <label>XL: <input type="number" min="0" id="size_XL" value="0"></label>
+    <label>2XL: <input type="number" min="0" id="size_2XL" value="0"></label>
+  </div>
+  <button type="submit">Add Product</button>
+</form>
 
-    sizeCheckbox.addEventListener('change', () => {
-      sizeInputsDiv.style.display = sizeCheckbox.checked ? 'block' : 'none';
-    });
+<table>
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Product</th>
+      <th>Image</th>
+      <th>Size</th>
+      <th>Qty</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="inventoryTableBody"></tbody>
+</table>
 
-    document.getElementById('productForm').addEventListener('submit', function (e) {
-      e.preventDefault();
+<script>
+function toggleMenu() {
+  const overlay = document.getElementById("menuOverlay");
+  overlay.style.display = overlay.style.display === "block" ? "none" : "block";
+}
 
-      const category = document.getElementById('productCategory').value;
-      const name = document.getElementById('productName').value;
-      const image = document.getElementById('productImage').value;
-      const hasSizes = document.getElementById('hasSizes').checked;
+document.getElementById('hasSizes').addEventListener('change', function () {
+  document.getElementById('sizeInputs').style.display = this.checked ? 'block' : 'none';
+});
 
-      const products = JSON.parse(localStorage.getItem('products')) || {};
-      if (!products[category]) products[category] = {};
+document.getElementById('productForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const category = document.getElementById('category').value.trim();
+  const productName = document.getElementById('productName').value.trim();
+  const imageURL = document.getElementById('imageURL').value.trim();
+  const hasSizes = document.getElementById('hasSizes').checked;
 
-      const productEntry = { image: image, sizes: {} };
+  let productData = {
+    category,
+    productName,
+    image: imageURL,
+    sizes: {}
+  };
 
-      if (hasSizes) {
-        const sizeInputs = document.querySelectorAll('input[name="sizeQty"]');
-        sizeInputs.forEach(input => {
-          const size = input.getAttribute('data-size');
-          const qty = parseInt(input.value);
-          if (qty > 0) productEntry.sizes[size] = qty;
-        });
-      } else {
-        productEntry.sizes['OneSize'] = 1; // fallback
+  if (hasSizes) {
+    ['S', 'M', 'L', 'XL', '2XL'].forEach(size => {
+      const qty = parseInt(document.getElementById(`size_${size}`).value) || 0;
+      if (qty > 0) {
+        productData.sizes[size] = qty;
       }
-
-      products[category][name] = productEntry;
-      localStorage.setItem('products', JSON.stringify(products));
-      this.reset();
-      sizeInputsDiv.style.display = 'none';
-      loadInventory();
     });
+  } else {
+    productData.sizes[""] = 1;
+  }
 
-    function loadInventory() {
-      const inventory = JSON.parse(localStorage.getItem('products')) || {};
-      const tableBody = document.getElementById('inventoryTableBody');
-      tableBody.innerHTML = '';
+  const inventory = JSON.parse(localStorage.getItem('products')) || {};
+  if (!inventory[category]) inventory[category] = {};
+  inventory[category][productName] = productData;
+  localStorage.setItem('products', JSON.stringify(inventory));
+  renderInventory();
+  this.reset();
+  document.getElementById('sizeInputs').style.display = 'none';
+});
 
-      for (const category in inventory) {
-        const products = inventory[category];
+function renderInventory() {
+  const tableBody = document.getElementById('inventoryTableBody');
+  tableBody.innerHTML = '';
+  const inventory = JSON.parse(localStorage.getItem('products')) || {};
 
-        for (const productName in products) {
-          const product = products[productName];
-          const sizes = product.sizes || {};
-          const imageURL = product.image || '';
-          const sizeKeys = Object.keys(sizes);
-          const rowCount = sizeKeys.length;
+  for (const category in inventory) {
+    const products = inventory[category];
+    for (const productName in products) {
+      const product = products[productName];
+      const sizes = product.sizes || {};
+      const sizeKeys = Object.keys(sizes);
+      const rowspan = sizeKeys.length || 1;
 
-          sizeKeys.forEach((size, index) => {
-            const row = document.createElement('tr');
+      sizeKeys.forEach((size, index) => {
+        const row = document.createElement('tr');
 
-            if (index === 0) {
-              const categoryCell = document.createElement('td');
-              categoryCell.rowSpan = rowCount;
-              categoryCell.textContent = category;
-              row.appendChild(categoryCell);
-
-              const nameCell = document.createElement('td');
-              nameCell.rowSpan = rowCount;
-              nameCell.textContent = productName;
-              row.appendChild(nameCell);
-
-              const imgCell = document.createElement('td');
-              imgCell.rowSpan = rowCount;
-              imgCell.innerHTML = imageURL ? `<img src="${imageURL}" alt="${productName}">` : 'No Image';
-              row.appendChild(imgCell);
-            }
-
-            const sizeCell = document.createElement('td');
-            sizeCell.textContent = size;
-            row.appendChild(sizeCell);
-
-            const qtyCell = document.createElement('td');
-            qtyCell.textContent = sizes[size];
-            row.appendChild(qtyCell);
-
-            tableBody.appendChild(row);
-          });
+        if (index === 0) {
+          row.innerHTML += `<td rowspan="${rowspan}">${category}</td>`;
+          row.innerHTML += `<td rowspan="${rowspan}">${productName}</td>`;
+          row.innerHTML += `<td rowspan="${rowspan}">${product.image ? `<img src="${product.image}" alt="${productName}">` : 'No Image'}</td>`;
         }
-      }
-    }
 
-    window.addEventListener('DOMContentLoaded', loadInventory);
-  </script>
+        row.innerHTML += `<td>${size || '—'}</td>`;
+        row.innerHTML += `<td>${sizes[size]}</td>`;
+        if (index === 0) {
+          row.innerHTML += `<td rowspan="${rowspan}">
+            <button onclick="editProduct('${category}','${productName}')">Edit</button>
+            <button onclick="deleteProduct('${category}','${productName}')">Delete</button>
+          </td>`;
+        }
+        tableBody.appendChild(row);
+      });
+    }
+  }
+}
+
+function editProduct(category, name) {
+  alert(`Edit feature for "${name}" in category "${category}" not implemented yet.`);
+}
+
+function deleteProduct(category, name) {
+  const inventory = JSON.parse(localStorage.getItem('products')) || {};
+  if (inventory[category] && inventory[category][name]) {
+    delete inventory[category][name];
+    if (Object.keys(inventory[category]).length === 0) delete inventory[category];
+    localStorage.setItem('products', JSON.stringify(inventory));
+    renderInventory();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', renderInventory);
+</script>
+
 </body>
 </html>
