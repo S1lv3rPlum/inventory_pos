@@ -155,7 +155,7 @@ const importFileInput = document.getElementById('importInventoryFile');
 
 // Export inventory as CSV
 exportBtn.addEventListener('click', () => {
-  const rows = [['Category','Product Name','Gender','Size XS','Size S','Size M','Size L','Size XL']];
+  const rows = [['Category','Product Name','Gender','Size S','Size M','Size L','Size XL','Size 2XL']];
   
   Object.keys(inventory).forEach(category => {
     inventory[category].forEach(product => {
