@@ -2,103 +2,257 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Inventory Management</title>
-  <link rel="stylesheet" href="style.css">
   <style>
-    .size-input {
-      width: 50px;
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
     }
-    .inventory-table {
-      border-collapse: collapse;
+
+    nav {
+      background-color: #333;
+      color: white;
+      padding: 10px;
+      margin-bottom: 20px;
+    }
+
+    nav h1 {
+      margin: 0;
+    }
+
+    .button-row {
+      margin-bottom: 20px;
+    }
+
+    button {
+      margin-right: 10px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    #inventorySection, #discountSection {
+      display: none;
+    }
+
+    table {
       width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
     }
-    .inventory-table th,
-    .inventory-table td {
+
+    th, td {
+      padding: 10px;
       border: 1px solid #ccc;
-      padding: 6px;
-      text-align: center;
+      text-align: left;
     }
-    .category-header {
-      background-color: #f0f0f0;
-      font-weight: bold;
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .action-btn {
+      margin-right: 5px;
+      padding: 5px 10px;
+      font-size: 0.9em;
+    }
+
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
 
-<!-- Menu Overlay -->
-<div id="menuOverlay" style="display: none;">
   <nav>
-    <ul>
-      <li><a href="home.html">Home</a></li>
-      <li><a href="inventory.html">Inventory</a></li>
-      <li><a href="orders.html">Orders</a></li>
-    </ul>
+    <h1>Store Manager</h1>
   </nav>
-</div>
-<button onclick="toggleMenu()">☰ Menu</button>
 
-<!-- Inventory Section -->
-<div id="inventorySection">
-  <form id="addProductForm" style="max-width: 400px; margin-bottom: 20px;">
-    <div>
-      <label>Product Name (required):<br/>
-        <input type="text" id="productName" required />
-      </label>
-    </div>
+  <div class="button-row">
+    <button onclick="toggleSection('inventory')">Manage Inventory</button>
+    <button onclick="toggleSection('discount')">Edit Discounts</button>
+  </div>
 
-    <div>
-      <label>Category (required):<br/>
-        <input type="text" id="productCategory" required />
-      </label>
-    </div>
+  <!-- Inventory Section -->
+  <div id="inventorySection">
+    <form id="addProductForm">
+      <div>
+        <label>Product Name (required):<br/>
+          <input type="text" id="productName" required />
+        </label>
+      </div>
 
-    <div>
-      <label>Price ($) (required):<br/>
-        <input type="number" id="productPrice" step="0.01" required />
-      </label>
-    </div>
+      <div>
+        <label>Category (required):<br/>
+          <input type="text" id="productCategory" required />
+        </label>
+      </div>
 
-    <div>
-      <label>
-        <input type="checkbox" id="productHasSizes" />
-        Has Sizes?
-      </label>
-    </div>
+      <div>
+        <label>Price ($) (required):<br/>
+          <input type="number" id="productPrice" step="0.01" required />
+        </label>
+      </div>
 
-    <div>
-      Gender:<br/>
-      <label><input type="radio" name="gender" value="M" required /> M</label>
-      <label><input type="radio" name="gender" value="F" required /> F</label>
-    </div>
+      <div>
+        <label>
+          <input type="checkbox" id="productHasSizes" />
+          Has Sizes?
+        </label>
+      </div>
 
-    <div>
-      <label>Product Image:<br/>
-        <input type="file" id="productImage" accept="image/*" />
-      </label>
-    </div>
+      <div>
+        Gender:<br/>
+        <label><input type="checkbox" id="productGenderMale" /> M</label>
+        <label><input type="checkbox" id="productGenderFemale" /> F</label>
+      </div>
 
-    <button type="submit" style="margin-top: 10px;" id="addproductBtn">Add Product</button>
-  </form>
+      <div>
+        <label>Product Image:<br/>
+          <input type="file" id="productImage" accept="image/*" />
+        </label>
+      </div>
 
-  <div id="inventoryList"></div>
-</div>
+      <button type="submit" style="margin-top: 10px;">Add Product</button>
+    </form>
 
-<!-- Other Non-Product Buttons -->
-<div style="margin-top: 20px;">
-  <button>Edit Discounts</button>
-  <button>Manage Orders</button>
-</div>
+    <table id="inventoryTable">
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th>Price ($)</th>
+          <th>Has Sizes?</th>
+          <th>Gender</th>
+          <th>Image</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Items will populate here -->
+      </tbody>
+    </table>
+  </div>
 
-<!-- Script -->
-<script src="inventory.js"></script>
-<script>
-  function toggleMenu() {
-    const overlay = document.getElementById("menuOverlay");
-    overlay.style.display = overlay.style.display === "none" ? "block" : "none";
-  }
-</script>
+  <!-- Discount Section -->
+  <div id="discountSection">
+    <h2>Edit Discounts</h2>
+    <p>(Discount form goes here.)</p>
+  </div>
 
+  <script>
+    const form = document.getElementById('addProductForm');
+    const tableBody = document.querySelector('#inventoryTable tbody');
+    const localStorageKey = 'inventoryItems';
+
+    function toggleSection(section) {
+      document.getElementById('inventorySection').style.display = section === 'inventory' ? 'block' : 'none';
+      document.getElementById('discountSection').style.display = section === 'discount' ? 'block' : 'none';
+    }
+
+    function getGender() {
+      let gender = [];
+      if (document.getElementById('productGenderMale').checked) gender.push('M');
+      if (document.getElementById('productGenderFemale').checked) gender.push('F');
+      return gender.join('/');
+    }
+
+    function createRow(item, index) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><span class="display">${item.name}</span><input class="edit hidden" value="${item.name}" /></td>
+        <td><span class="display">${item.category}</span><input class="edit hidden" value="${item.category}" /></td>
+        <td><span class="display">${item.price}</span><input class="edit hidden" type="number" value="${item.price}" /></td>
+        <td><span class="display">${item.hasSizes}</span><input class="edit hidden" value="${item.hasSizes}" /></td>
+        <td><span class="display">${item.gender}</span><input class="edit hidden" value="${item.gender}" /></td>
+        <td><span class="display">${item.imageName}</span><input class="edit hidden" value="${item.imageName}" /></td>
+        <td>
+          <button class="action-btn" onclick="editRow(this)">Edit</button>
+          <button class="action-btn hidden" onclick="saveRow(this, ${index})">Save</button>
+          <button class="action-btn hidden" onclick="cancelEdit(this)">Cancel</button>
+          <button class="action-btn" onclick="deleteRow(${index})">Delete</button>
+        </td>
+      `;
+      return row;
+    }
+
+    function loadItems() {
+      const items = JSON.parse(localStorage.getItem(localStorageKey)) || [];
+      tableBody.innerHTML = '';
+      items.forEach((item, index) => {
+        const row = createRow(item, index);
+        tableBody.appendChild(row);
+      });
+    }
+
+    function saveItems(items) {
+      localStorage.setItem(localStorageKey, JSON.stringify(items));
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const item = {
+        name: document.getElementById('productName').value,
+        category: document.getElementById('productCategory').value,
+        price: parseFloat(document.getElementById('productPrice').value).toFixed(2),
+        hasSizes: document.getElementById('productHasSizes').checked ? 'Yes' : 'No',
+        gender: getGender(),
+        imageName: document.getElementById('productImage').files[0]?.name || 'None'
+      };
+      const items = JSON.parse(localStorage.getItem(localStorageKey)) || [];
+      items.push(item);
+      saveItems(items);
+      loadItems();
+      form.reset();
+    });
+
+    function editRow(btn) {
+      const row = btn.closest('tr');
+      row.querySelectorAll('.display').forEach(el => el.classList.add('hidden'));
+      row.querySelectorAll('.edit').forEach(el => el.classList.remove('hidden'));
+      row.querySelector('button:nth-child(1)').classList.add('hidden'); // Edit
+      row.querySelector('button:nth-child(2)').classList.remove('hidden'); // Save
+      row.querySelector('button:nth-child(3)').classList.remove('hidden'); // Cancel
+    }
+
+    function saveRow(btn, index) {
+      const row = btn.closest('tr');
+      const inputs = row.querySelectorAll('.edit');
+      const updatedItem = {
+        name: inputs[0].value,
+        category: inputs[1].value,
+        price: parseFloat(inputs[2].value).toFixed(2),
+        hasSizes: inputs[3].value,
+        gender: inputs[4].value,
+        imageName: inputs[5].value
+      };
+      const items = JSON.parse(localStorage.getItem(localStorageKey)) || [];
+      items[index] = updatedItem;
+      saveItems(items);
+      loadItems();
+    }
+
+    function cancelEdit(btn) {
+      loadItems(); // Just reload to cancel changes
+    }
+
+    function deleteRow(index) {
+      const items = JSON.parse(localStorage.getItem(localStorageKey)) || [];
+      items.splice(index, 1);
+      saveItems(items);
+      loadItems();
+    }
+
+    // Show inventory by default
+    toggleSection('inventory');
+    loadItems();
+  </script>
 </body>
 </html>
