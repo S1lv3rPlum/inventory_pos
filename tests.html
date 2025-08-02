@@ -82,6 +82,97 @@
   </table>
 
   <script>
+  const exportBtn = document.getElementById('exportInventoryBtn');
+const importBtn = document.getElementById('importInventoryBtn');
+const importFileInput = document.getElementById('importInventoryFile');
+
+// Export inventory as CSV
+exportBtn.addEventListener('click', () => {
+  const rows = [['Category','Product Name','Gender','Size XS','Size S','Size M','Size L','Size XL']];
+  
+  Object.keys(inventory).forEach(category => {
+    inventory[category].forEach(product => {
+      rows.push([
+        category,
+        product.productName,
+        product.gender,
+        product.sizes.XS ?? 0,
+        product.sizes.S ?? 0,
+        product.sizes.M ?? 0,
+        product.sizes.L ?? 0,
+        product.sizes.XL ?? 0,
+      ]);
+    });
+  });
+
+  const csvContent = rows.map(e => e.join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'inventory.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+// Import inventory from CSV
+importBtn.addEventListener('click', () => {
+  importFileInput.click();
+});
+
+importFileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = evt => {
+    const text = evt.target.result;
+    parseCSVAndLoadInventory(text);
+    importFileInput.value = ''; // reset input
+  };
+  reader.readAsText(file);
+});
+
+function parseCSVAndLoadInventory(csvText) {
+  const lines = csvText.trim().split('\n');
+  if (lines.length < 2) {
+    alert('CSV file appears empty or invalid.');
+    return;
+  }
+  
+  // Clear current inventory
+  inventory = {};
+  
+  // Skip header line (assumed first line)
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',');
+    if (cols.length < 8) continue; // not enough columns
+
+    const [category, productName, gender, XS, S, M, L, XL] = cols;
+    if (!category || !productName) continue;
+
+    if (!inventory[category]) inventory[category] = [];
+    
+    inventory[category].push({
+      productName: productName.trim(),
+      gender: gender.trim(),
+      sizes: {
+        XS: parseInt(XS) || 0,
+        S: parseInt(S) || 0,
+        M: parseInt(M) || 0,
+        L: parseInt(L) || 0,
+        XL: parseInt(XL) || 0
+      }
+    });
+  }
+  
+  saveToLocalStorage();
+  renderTable();
+  alert('Inventory imported successfully!');
+}
+  
     const form = document.getElementById('productForm');
     const tableBody = document.querySelector('#inventoryTable tbody');
     let inventory = {};
