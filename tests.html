@@ -38,13 +38,16 @@
 <body>
   <h1>Inventory Manager</h1>
 
-<div style="display: flex; gap: 10px; margin-bottom: 1rem;">
-  <button type="button" id="exportInventoryBtn">⬆️ Export Inventory</button>
-  <button type="button" id="importInventoryBtn">⬇️ Import Inventory</button>
-  <input type="file" id="importInventoryFile" accept=".csv" style="display:none" />
+<!-- Import/Export Buttons -->
+<div style="display: flex; gap: 10px; margin-bottom: 20px;">
+  <button onclick="document.getElementById('importFile').click()">Import Inventory</button>
+  <button onclick="exportInventory()">Export Inventory</button>
+  <input type="file" id="importFile" accept=".csv" style="display: none" onchange="importInventory(event)">
 </div>
 
-  <h2>Add Product2</h2>
+<input type="file" id="importInventoryFile" accept=".csv" style="display: none;" />
+
+<h2>Add Product</h2>
   <form id="productForm">
     <div
     <label>Category:
