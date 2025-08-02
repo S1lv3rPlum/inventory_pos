@@ -68,6 +68,7 @@
       <legend>Gender:</legend>
       <label><input type="checkbox" name="gender" value="M" /> M</label>
       <label><input type="checkbox" name="gender" value="F" /> F</label>
+      <label><input type="checkbox" name="gender" value="Unisex" /> F</label>
     </fieldset>
     <button type="submit">Add Product</button>
   </form>
@@ -171,7 +172,7 @@
           <select class="gender-select">
             <option value="M" ${product.gender === 'M' ? 'selected' : ''}>M</option>
             <option value="F" ${product.gender === 'F' ? 'selected' : ''}>F</option>
-            <option value="M/F" ${product.gender === 'M/F' || product.gender === 'F/M' ? 'selected' : ''}>Unisex</option>
+            <option value="Unisex" ${product.gender === 'Unisex' || product.gender === 'U' ? 'selected' : ''}>Unisex</option>
           </select>
         `;
 
