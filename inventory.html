@@ -1,440 +1,247 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Product Inventory</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory Management</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
       margin: 0;
-      background: #fff;
+      background-color: #f4f4f4;
     }
-    #menu-toggle {
-      font-size: 24px;
-      cursor: pointer;
-      position: fixed;
-      top: 15px;
-      left: 15px;
-      z-index: 1001;
-      background: none;
-      border: none;
-    }
-    #menu-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 250px;
-      height: 100vh;
-      background: #333;
+    header {
+      background-color: #333;
       color: white;
-      transform: translateX(-260px);
-      transition: transform 0.3s ease;
-      padding: 20px;
-      box-sizing: border-box;
-      z-index: 1000;
-    }
-    #menu-overlay.open {
-      transform: translateX(0);
-    }
-    #menu-overlay nav button {
-      display: block;
-      width: 100%;
-      background: none;
-      border: none;
-      color: white;
-      text-align: left;
-      padding: 10px 0;
-      font-size: 18px;
-      cursor: pointer;
-    }
-    h2 {
-      margin-top: 0;
-    }
-    form {
-      margin-bottom: 20px;
+      padding: 1rem;
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
     }
-    form label {
+    .hamburger {
+      cursor: pointer;
+      font-size: 24px;
+    }
+    .overlay {
+      height: 100%;
+      width: 0;
+      position: fixed;
+      z-index: 1;
+      top: 0;
+      left: 0;
+      background-color: rgba(0, 0, 0, 0.9);
+      overflow-x: hidden;
+      transition: 0.5s;
+      padding-top: 60px;
+    }
+    .overlay-content {
       display: flex;
       flex-direction: column;
-      flex: 1 1 150px;
-    }
-    form input[type="text"],
-    form input[type="number"],
-    form input[type="file"] {
-      padding: 5px;
-      font-size: 14px;
-      margin-top: 4px;
-    }
-    form .gender-group {
-      display: flex;
-      gap: 10px;
       align-items: center;
-      margin-top: 4px;
+      margin-top: 30px;
     }
-    form .gender-group label {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      flex: none;
+    .overlay-content a {
+      padding: 8px;
+      text-decoration: none;
+      font-size: 24px;
+      color: #f1f1f1;
+      transition: 0.3s;
     }
-    form .checkbox-label {
-      flex: none;
-      align-items: center;
-      gap: 5px;
-      display: flex;
-      margin-top: 20px;
+    .overlay-content a:hover {
+      color: #ddd;
+    }
+    .closebtn {
+      position: absolute;
+      top: 20px;
+      right: 45px;
+      font-size: 40px;
+    }
+    .container {
+      padding: 1rem;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      margin-bottom: 1rem;
     }
     th, td {
-      border: 1px solid #ddd;
+      border: 1px solid #ccc;
       padding: 8px;
       text-align: left;
-      vertical-align: middle;
     }
     th {
-      background-color: #f2f2f2;
+      background-color: #eee;
     }
-    .category-header {
-      background-color: #ddd;
-      font-weight: bold;
-      text-align: center;
+    .controls {
+      margin-bottom: 1rem;
     }
-    button.action-btn {
-      margin-right: 5px;
-      padding: 4px 8px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    /* Disabled inputs for display mode */
-    td input[disabled] {
-      background: transparent;
-      border: none;
-      padding: 0;
-      margin: 0;
-      width: 100%;
-      box-sizing: border-box;
-      font-size: inherit;
-      font-family: inherit;
-      text-align: left;
+    button {
+      margin: 2px;
     }
   </style>
 </head>
 <body>
-
-  <!-- Hamburger menu toggle button -->
-  <button id="menu-toggle" aria-label="Toggle menu">☰</button>
-
-  <!-- Sliding menu overlay -->
-  <div id="menu-overlay" aria-hidden="true">
-    <nav>
-      <button data-target="inventory.html">Inventory</button>
-      <button data-target="pos.html">Make a Sale</button>
-      <button data-target="BrowseProducts.html">Browse Products</button>
-      <button data-target="sales.html">Sales Records</button>
-      <button data-target="shippingManager.html">Shipping Manager</button>
-      <button data-target="settings.html">Settings</button>
-    </nav>
-  </div>
-
-  <h2>Add Product</h2>
-  <form id="productForm">
-    <label>
-      Category (required):
-      <input type="text" id="category" required />
-    </label>
-    <label>
-      Product Name (required):
-      <input type="text" id="productName" required />
-    </label>
-    <label>
-      Price ($) (required):
-      <input type="number" id="productPrice" step="0.01" required />
-    </label>
-    <label class="checkbox-label">
-      <input type="checkbox" id="productHasSizes" />
-      Has Sizes?
-    </label>
-    <label>
-      Gender:
-      <div class="gender-group">
-        <label><input type="radio" name="gender" value="M" /> M</label>
-        <label><input type="radio" name="gender" value="F" /> F</label>
-        <label><input type="radio" name="gender" value="" checked /> None</label>
-      </div>
-    </label>
-    <label>
-      Product Image:
-      <input type="file" id="productImage" accept="image/*" />
-    </label>
-    <div style="flex-basis: 100%;">
-      <button type="submit">Add Product</button>
+  <header>
+    <div class="hamburger" onclick="openNav()">☰</div>
+    <h1>Inventory Management</h1>
+  </header>  <div id="myNav" class="overlay">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">×</a>
+    <div class="overlay-content">
+      <a href="#inventory">Inventory</a>
+      <a href="#discounts">Discounts</a>
     </div>
-  </form>
-
-  <table id="inventoryTable">
+  </div>  <div class="container">
+    <section id="inventory">
+      <h2>Inventory</h2>
+      <div class="controls">
+        <button onclick="addInventoryRow()">Add Product</button>
+        <button onclick="exportCSV('inventoryTable')">Export Inventory</button>
+        <input type="file" accept=".csv" onchange="importCSV(event, 'inventoryTable')">
+      </div>
+      <table id="inventoryTable">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Product Name</th>
+            <th>Gender</th>
+            <th>Size</th>
+            <th>Quantity</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section><section id="discounts">
+  <h2>Discounts</h2>
+  <div class="controls">
+    <button onclick="addDiscountRow()">Add Discount</button>
+    <button onclick="exportCSV('discountTable')">Export Discounts</button>
+    <input type="file" accept=".csv" onchange="importCSV(event, 'discountTable')">
+  </div>
+  <table id="discountTable">
     <thead>
-      <tr id="tableHeaderRow">
-        <th>Product Name</th>
-        <th>Gender</th>
-        <th class="size-col" data-size="XS">Size XS</th>
-        <th class="size-col" data-size="S">Size S</th>
-        <th class="size-col" data-size="M">Size M</th>
-        <th class="size-col" data-size="L">Size L</th>
-        <th class="size-col" data-size="XL">Size XL</th>
-        <th class="size-col" data-size="2XL">Size 2XL</th>
-        <th>Price</th>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Value</th>
         <th>Actions</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
+</section>
 
-<script>
-  const menuToggleBtn = document.getElementById('menu-toggle');
-  const menuOverlay = document.getElementById('menu-overlay');
-  menuToggleBtn.addEventListener('click', () => {
-    const open = menuOverlay.classList.toggle('open');
-    menuOverlay.setAttribute('aria-hidden', !open);
-  });
-
-  // Inventory data structure: { category: [ {productName, gender, price, hasSizes, sizes, image} ] }
-  let inventory = {};
-
-  const form = document.getElementById('productForm');
-  const tbody = document.querySelector('#inventoryTable tbody');
-  const hasSizesCheckbox = document.getElementById('productHasSizes');
-  const sizeCols = document.querySelectorAll('.size-col');
-
-  // Show/hide size columns based on "Has Sizes" checkbox
-  function updateSizeColumnsVisibility() {
-    const showSizes = hasSizesCheckbox.checked;
-    sizeCols.forEach(col => {
-      col.style.display = showSizes ? '' : 'none';
-    });
-    // Also hide/show size cells in rows
-    tbody.querySelectorAll('tr').forEach(row => {
-      if(row.classList.contains('category-header')) return;
-      row.querySelectorAll('td.size-cell').forEach(td => {
-        td.style.display = showSizes ? '' : 'none';
-      });
-    });
-  }
-
-  hasSizesCheckbox.addEventListener('change', updateSizeColumnsVisibility);
-
-  // Ensure only one gender radio selected (handled by radio input naturally)
-
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    const category = document.getElementById('category').value.trim();
-    const productName = document.getElementById('productName').value.trim();
-    const price = parseFloat(document.getElementById('productPrice').value);
-    const hasSizes = hasSizesCheckbox.checked;
-    const gender = form.gender.value || '';
-    const imageInput = document.getElementById('productImage');
-
-    if (!category || !productName || isNaN(price)) {
-      alert("Please fill in all required fields");
-      return;
+  </div>  <script>
+    function openNav() {
+      document.getElementById("myNav").style.width = "100%";
+    }
+    function closeNav() {
+      document.getElementById("myNav").style.width = "0%";
     }
 
-    if (!inventory[category]) inventory[category] = [];
+    function addInventoryRow() {
+      const table = document.getElementById('inventoryTable').getElementsByTagName('tbody')[0];
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td>
+          <label><input type="radio" name="gender${table.rows.length}" value="M">M</label>
+          <label><input type="radio" name="gender${table.rows.length}" value="F">F</label>
+        </td>
+        <td><input type="text"></td>
+        <td><input type="number"></td>
+        <td>
+          <button onclick="editRow(this)">Edit</button>
+          <button onclick="saveRow(this)">Save</button>
+          <button onclick="deleteRow(this)">Delete</button>
+        </td>
+      `;
+    }
 
-    // Default sizes object for new product
-    const sizes = hasSizes
-      ? { XS: 0, S: 0, M: 0, L: 0, XL: 0, '2XL': 0 }
-      : {};
+    function addDiscountRow() {
+      const table = document.getElementById('discountTable').getElementsByTagName('tbody')[0];
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td>
+          <button onclick="editRow(this)">Edit</button>
+          <button onclick="saveRow(this)">Save</button>
+          <button onclick="deleteRow(this)">Delete</button>
+        </td>
+      `;
+    }
 
-    inventory[category].push({
-      productName,
-      gender,
-      price,
-      hasSizes,
-      sizes,
-      imageName: imageInput.files[0]?.name || ''
-    });
-
-    form.reset();
-    updateSizeColumnsVisibility();
-    saveToLocalStorage();
-    renderTable();
-  });
-
-  function renderTable() {
-    tbody.innerHTML = '';
-    const showSizes = hasSizesCheckbox.checked;
-
-    Object.keys(inventory).sort().forEach(category => {
-      // Category header row
-      const categoryRow = document.createElement('tr');
-      categoryRow.classList.add('category-header');
-      const categoryCell = document.createElement('td');
-      categoryCell.colSpan = showSizes ? 10 : 4;
-      categoryCell.textContent = category;
-      categoryRow.appendChild(categoryCell);
-      tbody.appendChild(categoryRow);
-
-      inventory[category].sort((a, b) => a.productName.localeCompare(b.productName)).forEach(product => {
-        const tr = document.createElement('tr');
-
-        // Product Name cell
-        const nameTd = document.createElement('td');
-        nameTd.textContent = product.productName;
-        nameTd.classList.add('prod-name');
-        tr.appendChild(nameTd);
-
-        // Gender cell
-        const genderTd = document.createElement('td');
-        genderTd.innerHTML = formatGenderDisplay(product.gender);
-        tr.appendChild(genderTd);
-
-        // Sizes cells
-        if(showSizes) {
-          ['XS','S','M','L','XL','2XL'].forEach(size => {
-            const td = document.createElement('td');
-            td.classList.add('size-cell');
-            td.dataset.size = size;
-            td.textContent = product.sizes[size] ?? 0;
-            tr.appendChild(td);
-          });
+    function editRow(btn) {
+      const row = btn.parentNode.parentNode;
+      [...row.cells].forEach((cell, i) => {
+        if (i < row.cells.length - 1 && !cell.querySelector('input')) {
+          const value = cell.innerText;
+          cell.innerHTML = `<input type="text" value="${value}">`;
         }
-
-        // Price cell
-        const priceTd = document.createElement('td');
-        priceTd.textContent = product.price.toFixed(2);
-        tr.appendChild(priceTd);
-
-        // Actions cell
-        const actionTd = document.createElement('td');
-
-        const editBtn = document.createElement('button');
-        editBtn.textContent = 'Edit';
-        editBtn.classList.add('action-btn');
-        editBtn.addEventListener('click', () => toggleEdit(tr, product, category));
-        actionTd.appendChild(editBtn);
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'Delete';
-        deleteBtn.classList.add('action-btn');
-        deleteBtn.addEventListener('click', () => {
-          inventory[category] = inventory[category].filter(p => p !== product);
-          if (inventory[category].length === 0) delete inventory[category];
-          saveToLocalStorage();
-          renderTable();
-        });
-        actionTd.appendChild(deleteBtn);
-
-        tr.appendChild(actionTd);
-        tbody.appendChild(tr);
-      });
-    });
-
-    updateSizeColumnsVisibility();
-  }
-
-  function formatGenderDisplay(gender) {
-    if(gender === 'M') return '<label><input type="radio" disabled checked /> M</label>';
-    if(gender === 'F') return '<label><input type="radio" disabled checked /> F</label>';
-    return ''; // none selected
-  }
-
-  function toggleEdit(row, product, category) {
-    const isEditing = row.classList.toggle('editing');
-    if (!isEditing) {
-      // Cancel editing, just re-render
-      renderTable();
-      return;
-    }
-
-    // Change product name to input
-    const prodNameTd = row.querySelector('.prod-name');
-    prodNameTd.innerHTML = `<input type="text" value="${product.productName}" />`;
-
-    // Gender editable radios
-    const genderTd = row.children[1];
-    genderTd.innerHTML = `
-      <label><input type="radio" name="editGender" value="M" ${product.gender === 'M' ? 'checked' : ''} /> M</label>
-      <label><input type="radio" name="editGender" value="F" ${product.gender === 'F' ? 'checked' : ''} /> F</label>
-      <label><input type="radio" name="editGender" value="" ${product.gender === '' ? 'checked' : ''} /> None</label>
-    `;
-
-    // Editable sizes if applicable
-    if (product.hasSizes) {
-      ['XS','S','M','L','XL','2XL'].forEach((size, idx) => {
-        const td = row.children[2 + idx];
-        td.innerHTML = `<input type="number" min="0" value="${product.sizes[size]}" />`;
       });
     }
 
-    // Price editable
-    const priceTdIndex = product.hasSizes ? 8 : 2;
-    const priceTd = row.children[priceTdIndex];
-    priceTd.innerHTML = `<input type="number" min="0" step="0.01" value="${product.price.toFixed(2)}" />`;
-
-    // Actions: saveToLocalStorage
-    const actionTd = row.lastElementChild;
-    actionTd.innerHTML = '';
-
-    const saveBtn = document.createElement('button');
-    saveBtn.textContent = 'Save';
-    saveBtn.classList.add('action-btn');
-    saveBtn.addEventListener('click', () => {
-      // Get updated values
-      const newName = prodNameTd.querySelector('input').value.trim();
-      const newGender = genderTd.querySelector('input[name="editGender"]:checked')?.value || '';
-      const newPrice = parseFloat(priceTd.querySelector('input').value);
-
-      if (!newName || isNaN(newPrice)) {
-        alert('Please provide valid product name and price.');
-        return;
-      }
-
-      product.productName = newName;
-      product.gender = newGender;
-      product.price = newPrice;
-
-      if (product.hasSizes) {
-        ['XS','S','M','L','XL','2XL'].forEach((size, idx) => {
-          const sizeInput = row.children[2 + idx].querySelector('input');
-          product.sizes[size] = parseInt(sizeInput.value) || 0;
-        });
-      }
-
-      saveToLocalStorage();
-      renderTable();
-    });
-    actionTd.appendChild(saveBtn);
-
-    const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = 'Cancel';
-    cancelBtn.classList.add('action-btn');
-    cancelBtn.addEventListener('click', () => renderTable());
-    actionTd.appendChild(cancelBtn);
-  }
-
-  function saveToLocalStorage() {
-    localStorage.setItem('inventoryData', JSON.stringify(inventory));
-  }
-
-  function loadFromLocalStorage() {
-    const data = localStorage.getItem('inventoryData');
-    if (data) {
-      inventory = JSON.parse(data);
+    function saveRow(btn) {
+      const row = btn.parentNode.parentNode;
+      [...row.cells].forEach((cell, i) => {
+        if (i < row.cells.length - 1) {
+          const input = cell.querySelector('input');
+          if (input && input.type !== 'radio') {
+            cell.textContent = input.value;
+          }
+        }
+      });
     }
-  }
 
-  loadFromLocalStorage();
-  renderTable();
-</script>
+    function deleteRow(btn) {
+      const row = btn.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+    }
 
-</body>
+    function exportCSV(tableId) {
+      const table = document.getElementById(tableId);
+      let csv = [];
+      for (let row of table.rows) {
+        let values = [];
+        for (let cell of row.cells) {
+          values.push(cell.innerText.trim());
+        }
+        csv.push(values.join(","));
+      }
+      const blob = new Blob([csv.join("\n")], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${tableId}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importCSV(event, tableId) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const lines = e.target.result.split("\n");
+        const tbody = document.getElementById(tableId).getElementsByTagName('tbody')[0];
+        tbody.innerHTML = '';
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].trim()) continue;
+          const row = tbody.insertRow();
+          const cells = lines[i].split(',');
+          for (let j = 0; j < cells.length; j++) {
+            row.insertCell().innerText = cells[j];
+          }
+          const actions = row.insertCell();
+          actions.innerHTML = `
+            <button onclick="editRow(this)">Edit</button>
+            <button onclick="saveRow(this)">Save</button>
+            <button onclick="deleteRow(this)">Delete</button>
+          `;
+        }
+      };
+      reader.readAsText(file);
+    }
+  </script></body>
 </html>
