@@ -2,189 +2,154 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Product Inventory</title>
+  <title>Inventory Table</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    th { background-color: #f0f0f0; }
-    .category-header { background-color: #ddd; font-weight: bold; }
+    th { background-color: #f4f4f4; }
+    .category-row { background-color: #e0e0e0; font-weight: bold; }
     .hidden { display: none; }
-    .gender-toggle input[type="checkbox"] { margin: 0 5px; }
-    .edit-btn, .save-btn, .delete-btn { cursor: pointer; padding: 5px 10px; margin: 2px; }
-    .edit-btn { background-color: #ffcc00; }
-    .save-btn { background-color: #4CAF50; color: white; }
-    .delete-btn { background-color: #f44336; color: white; }
+    input[type="number"] { width: 60px; }
+    .edit-btn, .save-btn { padding: 4px 10px; cursor: pointer; }
   </style>
 </head>
-<body><h2>Inventory Management</h2><form id="productForm">
-  <label>Category: <input type="text" id="category" required></label>
-  <label>Product Name: <input type="text" id="productName" required></label>
-  <label>Has Sizes: <input type="checkbox" id="hasSizes"></label>
-  <span class="gender-toggle">
-    Gender:
-    <label>M <input type="checkbox" id="male"></label>
-    <label>F <input type="checkbox" id="female"></label>
-  </span>
-  <button type="submit">Add Product</button>
-</form><table id="inventoryTable">
-  <thead>
-    <tr>
-      <th>Category</th>
-      <th>Product</th>
-      <th>Gender</th>
-      <th>Size</th>
-      <th>Qty</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table><script>
-const form = document.getElementById("productForm");
-const tableBody = document.querySelector("#inventoryTable tbody");
-const sizes = ["S", "M", "L", "XL", "2XL"];
-const inventory = [];
+<body>
+  <h2>Product Inventory</h2>  <form id="productForm">
+    <input type="text" id="category" placeholder="Category" required>
+    <input type="text" id="productName" placeholder="Product Name" required>
+    <label>
+      <input type="checkbox" name="gender" value="M"> M
+    </label>
+    <label>
+      <input type="checkbox" name="gender" value="F"> F
+    </label>
+    <br>
+    Sizes:
+    <label><input type="checkbox" name="size" value="S"> S</label>
+    <label><input type="checkbox" name="size" value="M"> M</label>
+    <label><input type="checkbox" name="size" value="L"> L</label>
+    <label><input type="checkbox" name="size" value="XL"> XL</label>
+    <label><input type="checkbox" name="size" value="2XL"> 2XL</label>
+    <br>
+    <button type="submit">Add Product</button>
+  </form>  <table id="inventoryTable">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Gender</th>
+        <th>S</th>
+        <th>M</th>
+        <th>L</th>
+        <th>XL</th>
+        <th>2XL</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>  <script>
+    const form = document.getElementById("productForm");
+    const tableBody = document.querySelector("#inventoryTable tbody");
+    const inventory = [];
 
-const sanitize = str => str.trim().toLowerCase();
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
 
-function groupAndSortInventory() {
-  // Clear table
-  tableBody.innerHTML = "";
-  const grouped = {};
+      const category = document.getElementById("category").value.trim();
+      const productName = document.getElementById("productName").value.trim();
+      const genderBoxes = form.querySelectorAll("input[name='gender']");
+      const gender = Array.from(genderBoxes).filter(box => box.checked).map(b => b.value).join('');
+      const sizes = Array.from(form.querySelectorAll("input[name='size']:checked")).map(s => s.value);
 
-  // Group by category then product
-  inventory.forEach(item => {
-    const cat = item.category;
-    if (!grouped[cat]) grouped[cat] = {};
-    grouped[cat][item.productName] = item;
-  });
+      // Prevent duplicates
+      if (!productName || inventory.some(item => item.productName === productName && item.category === category)) {
+        alert("Duplicate product or missing name.");
+        return;
+      }
 
-  const sortedCats = Object.keys(grouped).sort();
-  sortedCats.forEach(cat => {
-    // Category header
-    const catRow = document.createElement("tr");
-    catRow.classList.add("category-header");
-    const catCell = document.createElement("td");
-    catCell.colSpan = 6;
-    catCell.textContent = cat;
-    catRow.appendChild(catCell);
-    tableBody.appendChild(catRow);
+      const sizeQtys = {};
+      ["S", "M", "L", "XL", "2XL"].forEach(size => sizeQtys[size] = sizes.includes(size) ? 0 : null);
 
-    const products = Object.keys(grouped[cat]).sort();
-    products.forEach(product => {
-      const data = grouped[cat][product];
-      sizes.forEach((size, i) => {
-        if (data.quantities[size] !== undefined) {
+      inventory.push({ category, productName, gender, sizes: sizeQtys });
+      renderTable();
+      form.reset();
+    });
+
+    function renderTable() {
+      tableBody.innerHTML = "";
+      const grouped = {};
+      inventory.forEach(item => {
+        if (!grouped[item.category]) grouped[item.category] = [];
+        grouped[item.category].push(item);
+      });
+
+      Object.keys(grouped).sort().forEach(category => {
+        const catRow = document.createElement("tr");
+        catRow.className = "category-row";
+        const catCell = document.createElement("td");
+        catCell.colSpan = 8;
+        catCell.textContent = category;
+        catRow.appendChild(catCell);
+        tableBody.appendChild(catRow);
+
+        grouped[category].sort((a,b) => a.productName.localeCompare(b.productName)).forEach(item => {
           const row = document.createElement("tr");
 
-          if (i === 0) {
-            const catCell = document.createElement("td");
-            catCell.rowSpan = sizes.length;
-            catCell.textContent = data.category;
-            row.appendChild(catCell);
+          row.innerHTML = `
+            <td><span>${item.productName}</span><input type="text" class="hidden" value="${item.productName}"></td>
+            <td>
+              <span>${item.gender}</span>
+              <label class="hidden"><input type="checkbox" value="M">M</label>
+              <label class="hidden"><input type="checkbox" value="F">F</label>
+            </td>
+            ${["S","M","L","XL","2XL"].map(size => `<td><span>${item.sizes[size] ?? ""}</span><input type="number" class="hidden" value="${item.sizes[size] ?? 0}"></td>`).join("")}
+            <td>
+              <button class="edit-btn">Edit</button>
+              <button class="save-btn hidden">Save</button>
+            </td>
+          `;
 
-            const nameCell = document.createElement("td");
-            nameCell.rowSpan = sizes.length;
-            nameCell.textContent = data.productName;
-            nameCell.classList.add("product-name-cell");
-            row.appendChild(nameCell);
+          row.querySelector(".edit-btn").addEventListener("click", () => {
+            toggleEdit(row, true);
+          });
 
-            const genderCell = document.createElement("td");
-            genderCell.rowSpan = sizes.length;
-            genderCell.innerHTML = `<label>M <input type="checkbox" class="gender-male" ${data.gender === 'M' ? 'checked' : ''} disabled></label> <label>F <input type="checkbox" class="gender-female" ${data.gender === 'F' ? 'checked' : ''} disabled></label>`;
-            row.appendChild(genderCell);
-          }
-
-          const sizeCell = document.createElement("td");
-          sizeCell.textContent = size;
-          row.appendChild(sizeCell);
-
-          const qtyCell = document.createElement("td");
-          qtyCell.innerHTML = `<input type="number" class="qty-input" value="${data.quantities[size]}" disabled>`;
-          row.appendChild(qtyCell);
-
-          if (i === 0) {
-            const actionCell = document.createElement("td");
-            actionCell.rowSpan = sizes.length;
-            actionCell.innerHTML = `<button class="edit-btn">Edit</button><button class="save-btn hidden">Save</button><button class="delete-btn">Delete</button>`;
-            row.appendChild(actionCell);
-          }
+          row.querySelector(".save-btn").addEventListener("click", () => {
+            saveRow(row, item);
+            toggleEdit(row, false);
+            renderTable();
+          });
 
           tableBody.appendChild(row);
+        });
+      });
+    }
+
+    function toggleEdit(row, isEditing) {
+      row.querySelectorAll("span").forEach(span => span.classList.toggle("hidden", isEditing));
+      row.querySelectorAll("input").forEach(input => input.classList.toggle("hidden", !isEditing));
+      row.querySelector(".edit-btn").classList.toggle("hidden", isEditing);
+      row.querySelector(".save-btn").classList.toggle("hidden", !isEditing);
+    }
+
+    function saveRow(row, item) {
+      const [nameInput, mCheck, fCheck, ...qtyInputs] = row.querySelectorAll("input");
+      item.productName = nameInput.value.trim();
+      item.gender = mCheck.checked ? "M" : fCheck.checked ? "F" : "";
+      ["S", "M", "L", "XL", "2XL"].forEach((size, idx) => {
+        const val = qtyInputs[idx].value;
+        item.sizes[size] = val === "" ? 0 : parseInt(val);
+      });
+    }
+
+    // Ensure only one gender checkbox at a time
+    form.querySelectorAll("input[name='gender']").forEach(cb => {
+      cb.addEventListener("change", () => {
+        if (cb.checked) {
+          form.querySelectorAll("input[name='gender']").forEach(other => {
+            if (other !== cb) other.checked = false;
+          });
         }
       });
     });
-  });
-}
-
-function handleGenderCheckboxes() {
-  const male = document.getElementById("male");
-  const female = document.getElementById("female");
-  male.addEventListener("change", () => { if (male.checked) female.checked = false; });
-  female.addEventListener("change", () => { if (female.checked) male.checked = false; });
-}
-
-form.addEventListener("submit", e => {
-  e.preventDefault();
-
-  const category = sanitize(document.getElementById("category").value);
-  const productName = sanitize(document.getElementById("productName").value);
-  const hasSizes = document.getElementById("hasSizes").checked;
-  const male = document.getElementById("male").checked;
-  const female = document.getElementById("female").checked;
-
-  const gender = male ? 'M' : female ? 'F' : '';
-  const quantities = {};
-  if (hasSizes) {
-    sizes.forEach(size => quantities[size] = 0);
-  } else {
-    quantities["-"] = 0;
-  }
-
-  inventory.push({ category, productName, gender, quantities });
-  groupAndSortInventory();
-  form.reset();
-});
-
-tableBody.addEventListener("click", e => {
-  const row = e.target.closest("tr");
-  const isEdit = e.target.classList.contains("edit-btn");
-  const isSave = e.target.classList.contains("save-btn");
-  const isDelete = e.target.classList.contains("delete-btn");
-
-  if (!row || (!isEdit && !isSave && !isDelete)) return;
-
-  const nameCell = row.querySelector(".product-name-cell");
-  const genderCell = row.querySelector(".gender-male").closest("td");
-  const qtyInputs = row.parentElement.querySelectorAll(".qty-input");
-  const productName = nameCell?.textContent.trim();
-
-  const invItem = inventory.find(item => item.productName === productName);
-
-  if (isEdit) {
-    qtyInputs.forEach(input => input.disabled = false);
-    genderCell.querySelectorAll("input[type='checkbox']").forEach(cb => cb.disabled = false);
-    row.parentElement.querySelector(".edit-btn").classList.add("hidden");
-    row.parentElement.querySelector(".save-btn").classList.remove("hidden");
-  } else if (isSave) {
-    qtyInputs.forEach((input, i) => {
-      const size = row.parentElement.querySelectorAll("td:nth-child(4)")[i].textContent.trim();
-      invItem.quantities[size] = parseInt(input.value, 10) || 0;
-      input.disabled = true;
-    });
-    const male = genderCell.querySelector(".gender-male").checked;
-    const female = genderCell.querySelector(".gender-female").checked;
-    invItem.gender = male ? 'M' : female ? 'F' : '';
-    genderCell.querySelectorAll("input[type='checkbox']").forEach(cb => cb.disabled = true);
-    row.parentElement.querySelector(".edit-btn").classList.remove("hidden");
-    row.parentElement.querySelector(".save-btn").classList.add("hidden");
-  } else if (isDelete) {
-    const index = inventory.findIndex(item => item.productName === productName);
-    if (index > -1) inventory.splice(index, 1);
-    groupAndSortInventory();
-  }
-});
-
-handleGenderCheckboxes();
-</script></body>
+  </script></body>
 </html>
