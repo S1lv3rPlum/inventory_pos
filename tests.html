@@ -49,7 +49,9 @@
       <label><input type="checkbox" name="gender" value="F" /> F</label>
     </fieldset>
     <button type="submit">Add Product</button>
-  </form>  <table id="inventoryTable">
+  </form>
+
+  <table id="inventoryTable">
     <thead>
       <tr>
         <th>Product Name</th>
@@ -63,10 +65,12 @@
       </tr>
     </thead>
     <tbody></tbody>
-  </table>  <script>
+  </table>
+
+  <script>
     const form = document.getElementById('productForm');
     const tableBody = document.querySelector('#inventoryTable tbody');
-    const inventory = {};
+    let inventory = {};
 
     form.addEventListener('submit', e => {
       e.preventDefault();
@@ -74,10 +78,11 @@
       const productName = document.getElementById('productName').value.trim();
       const gender = Array.from(document.querySelectorAll('input[name="gender"]:checked')).map(cb => cb.value).join('/');
       if (!productName || !category) return;
-      
+
       if (!inventory[category]) inventory[category] = [];
       inventory[category].push({ productName, gender, sizes: { XS: 0, S: 0, M: 0, L: 0, XL: 0 } });
       form.reset();
+      saveToLocalStorage();
       renderTable();
     });
 
@@ -105,10 +110,11 @@
           `;
           tableBody.appendChild(row);
 
-          row.querySelector('.edit-btn').addEventListener('click', () => toggleEdit(row, product));
+          row.querySelector('.edit-btn').addEventListener('click', () => toggleEdit(row, product, category));
           row.querySelector('.delete-btn').addEventListener('click', () => {
             inventory[category] = inventory[category].filter(p => p !== product);
             if (inventory[category].length === 0) delete inventory[category];
+            saveToLocalStorage();
             renderTable();
           });
         });
@@ -120,7 +126,7 @@
       return genders.map(g => `<label><input type="checkbox" value="${g}" ${genderStr.includes(g) ? 'checked' : ''} disabled /> ${g}</label>`).join('');
     }
 
-    function toggleEdit(row, product) {
+    function toggleEdit(row, product, category) {
       const isEditing = row.classList.toggle('editing');
       if (isEditing) {
         const prodNameCell = row.querySelector('.prod-name');
@@ -146,11 +152,27 @@
             const size = td.dataset.size;
             product.sizes[size] = parseInt(td.querySelector('input').value || '0');
           });
+          saveToLocalStorage();
           renderTable();
         });
 
         actionCell.querySelector('.cancel-btn').addEventListener('click', renderTable);
       }
     }
-  </script></body>
+
+    function saveToLocalStorage() {
+      localStorage.setItem('inventoryData', JSON.stringify(inventory));
+    }
+
+    function loadFromLocalStorage() {
+      const data = localStorage.getItem('inventoryData');
+      if (data) {
+        inventory = JSON.parse(data);
+        renderTable();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadFromLocalStorage);
+  </script>
+</body>
 </html>
