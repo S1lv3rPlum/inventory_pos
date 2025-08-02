@@ -345,6 +345,14 @@ td img {
   }
 }
 
+
+  .size-input {
+    width: 50px;
+    padding: 4px;
+    font-size: 14px;
+  }
+
+
 #menu-cart-bar {
   display: flex;
   justify-content: space-between;
