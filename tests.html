@@ -52,7 +52,7 @@
 </head>
 <body>
 
-  <h1>Inventory Manager</h1>
+  <h1>Inventory Manager1</h1>
 
   <div class="tab-buttons">
     <button id="btnInventory" type="button">Inventory</button>
@@ -120,69 +120,52 @@
       <input type="file" id="importDiscountsFile" accept=".csv" style="display:none" />
     </div>
 
-    <h2>Add Discount</h2>
-    <form id="discountForm" class="form-section">
-      <label>
-        Type:
-        <select id="discountType" class="discount-type-select" required>
-          <option value="">-- Select --</option>
-          <option value="Seasonal">Seasonal</option>
-          <option value="Clearance">Clearance</option>
-          <option value="Promotional">Promotional</option>
-          <option value="Bulk">Bulk</option>
-        </select>
-      </label>
-      <br />
-      <label>
-        Discount Name:
-        <input type="text" id="discountName" required />
-      </label>
-      <br />
-      <label>
-        Amount (%):
-        <input type="number" id="discountAmount" min="0" max="100" step="0.1" required />
-      </label>
-      <br />
-      <button type="submit">Add Discount</button>
-    </form>
+   h2>Manage Discounts</h2>
 
-    <table id="discountTable">
-      <thead>
-        <tr>
-          <th>Discount Name</th>
-          <th>Amount (%)</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+<form id="discountForm">
+  <div>
+    <label>Type:
+      <select id="discountType" required>
+        <option value="">-- Select Type --</option>
+        <option value="percent"> % off </option>
+        <option value="dollar"> $ off </option>
+      </select>
+    </label>
+  </div>
+  <div>
+    <label>Discount Name:
+      <input type="text" id="discountName" required />
+    </label>
+  </div>
+  <div>
+    <label>Amount:
+      <input type="number" id="discountAmount" min="0.01" step="0.01" required />
+    </label>
+  </div>
+  <button type="submit">Add Discount</button>
+</form>
+
+<table id="discountTable">
+  <thead>
+    <tr>
+      <th>Discount Name</th>
+      <th>Amount</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
   </section>
+<script>
+  const products = [];
+  const discounts = [];
 
-  <script>
-    // --- Data storage ---
-    let inventory = {};
-    let discounts = {};
+  function switchSection(section) {
+    document.getElementById('inventory-section').style.display = section === 'inventory' ? 'block' : 'none';
+    document.getElementById('discounts-section').style.display = section === 'discounts' ? 'block' : 'none';
+  }
+  
 
-    // --- Common ---
-    function escapeHTML(text) {
-      return text.replace(/[&<>"']/g, m => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      })[m]);
-    }
-
-    // --- Sizes for inventory ---
-    const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
-
-    // --- Elements ---
-    const btnInventory = document.getElementById('btnInventory');
-    const btnDiscounts = document.getElementById('btnDiscounts');
-
-    const inventorySection = document.getElementById('inventorySection');
-    const discountSection = document.getElementById('discountSection');
 
     // Inventory form/table elements
     const productForm = document.getElementById('productForm');
