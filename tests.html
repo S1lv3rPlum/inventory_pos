@@ -2,136 +2,136 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Inventory POS</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Inventory Manager</title>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    label { display: block; margin-top: 10px; }
+    .size-qty { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .size-qty input { width: 60px; }
+  </style>
 </head>
 <body>
-  <div id="menuToggle">&#9776;</div>
-  <div id="menuOverlay">
-    <button onclick="toggleView('inventory')">Inventory</button>
-    <button onclick="toggleView('discounts')">Discounts</button>
-  </div>
+  <h2>Add Product</h2>
+  <form id="addProductForm">
+    <label>
+      Category:
+      <input type="text" id="category" required>
+    </label>
+    <label>
+      Name:
+      <input type="text" id="name" required>
+    </label>
+    <label>
+      Image URL:
+      <input type="url" id="image">
+    </label>
+    <label>
+      Has Sizes?
+      <input type="checkbox" id="hasSizes">
+    </label>
 
-  <section id="inventorySection">
-    <h1>Add Product</h1>
-    <form id="productForm">
-      <input type="text" id="productCategory" placeholder="Category" required>
-      <input type="text" id="productName" placeholder="Name" required>
-      <input type="url" id="productImage" placeholder="Image URL">
-      <input type="text" id="productSize" placeholder="Size" required>
-      <input type="number" id="productQty" placeholder="Qty" required>
+    <div id="sizeInputs" class="size-qty" style="display:none;">
+      <label>S: <input type="number" min="0" id="qty_S" value="0"></label>
+      <label>M: <input type="number" min="0" id="qty_M" value="0"></label>
+      <label>L: <input type="number" min="0" id="qty_L" value="0"></label>
+      <label>XL: <input type="number" min="0" id="qty_XL" value="0"></label>
+      <label>2XL: <input type="number" min="0" id="qty_2XL" value="0"></label>
+    </div>
+
+    <div id="singleQtyContainer">
       <label>
-        <input type="checkbox" id="productGenderMale" onchange="toggleGender('M')"> Male
+        Quantity:
+        <input type="number" min="0" id="singleQty" value="0">
       </label>
-      <label>
-        <input type="checkbox" id="productGenderFemale" onchange="toggleGender('F')"> Female
-      </label>
-      <button type="submit">Add Product</button>
-    </form>
+    </div>
 
-    <h2>Inventor2y</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th>Name</th>
-          <th>Image</th>
-          <th>Size</th>
-          <th>Qty</th>
-        </tr>
-      </thead>
-      <tbody id="inventoryTableBody"></tbody>
-    </table>
-  </section>
+    <button type="submit">Add Product</button>
+  </form>
 
-  <section id="discountSection" style="display:none;">
-    <h1>Discounts</h1>
-    <div id="discountList">Coming soon...</div>
-  </section>
+  <h2>Inventory</h2>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Name</th>
+        <th>Image</th>
+        <th>Size</th>
+        <th>Qty</th>
+      </tr>
+    </thead>
+    <tbody id="inventoryTableBody"></tbody>
+  </table>
 
   <script>
-    function toggleView(view) {
-      document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
-      document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
-    }
+    const hasSizesCheckbox = document.getElementById("hasSizes");
+    const sizeInputs = document.getElementById("sizeInputs");
+    const singleQtyContainer = document.getElementById("singleQtyContainer");
 
-    function toggleGender(selected) {
-      const male = document.getElementById("productGenderMale");
-      const female = document.getElementById("productGenderFemale");
-      if (selected === "M" && male.checked) {
-        female.checked = false;
-      } else if (selected === "F" && female.checked) {
-        male.checked = false;
+    hasSizesCheckbox.addEventListener("change", () => {
+      if (hasSizesCheckbox.checked) {
+        sizeInputs.style.display = "flex";
+        singleQtyContainer.style.display = "none";
+      } else {
+        sizeInputs.style.display = "none";
+        singleQtyContainer.style.display = "block";
       }
-    }
-
-    // Menu overlay
-    document.getElementById("menuToggle").addEventListener("click", () => {
-      const menu = document.getElementById("menuOverlay");
-      menu.style.display = menu.style.display === "block" ? "none" : "block";
     });
 
-    // Load inventory from localStorage
-    window.addEventListener('DOMContentLoaded', function () {
-      const inventory = JSON.parse(localStorage.getItem('products')) || {};
-      const tableBody = document.getElementById('inventoryTableBody');
-      tableBody.innerHTML = '';
+    document.getElementById("addProductForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const category = document.getElementById("category").value.trim();
+      const name = document.getElementById("name").value.trim();
+      const image = document.getElementById("image").value.trim();
+      const hasSizes = hasSizesCheckbox.checked;
+
+      const inventory = JSON.parse(localStorage.getItem("products") || "{}");
+
+      if (!inventory[category]) inventory[category] = {};
+      if (!inventory[category][name]) inventory[category][name] = { sizes: {}, image };
+
+      if (hasSizes) {
+        const sizes = ["S", "M", "L", "XL", "2XL"];
+        sizes.forEach(size => {
+          const qty = parseInt(document.getElementById("qty_" + size).value || "0", 10);
+          inventory[category][name].sizes[size] = qty;
+        });
+      } else {
+        const qty = parseInt(document.getElementById("singleQty").value || "0", 10);
+        inventory[category][name].sizes[""] = qty; // store with blank size
+      }
+
+      localStorage.setItem("products", JSON.stringify(inventory));
+      loadInventoryTable();
+      this.reset();
+      sizeInputs.style.display = "none";
+      singleQtyContainer.style.display = "block";
+    });
+
+    function loadInventoryTable() {
+      const tableBody = document.getElementById("inventoryTableBody");
+      const inventory = JSON.parse(localStorage.getItem("products") || "{}");
+      tableBody.innerHTML = "";
 
       for (const category in inventory) {
-        const products = inventory[category];
-
-        for (const productName in products) {
-          const product = products[productName];
+        for (const name in inventory[category]) {
+          const product = inventory[category][name];
           const sizes = product.sizes || {};
-          const imageURL = product.image || '';
-
           for (const size in sizes) {
-            const qty = sizes[size];
-
-            const row = document.createElement('tr');
+            const row = document.createElement("tr");
             row.innerHTML = `
               <td>${category}</td>
-              <td>${productName}</td>
-              <td>
-                ${imageURL ? `<img src="${imageURL}" alt="${productName}" style="width:50px;height:auto;">` : 'No Image'}
-              </td>
-              <td>${size}</td>
-              <td>${qty}</td>
+              <td>${name}</td>
+              <td>${product.image ? `<img src="${product.image}" style="width:50px;">` : "No Image"}</td>
+              <td>${size || "N/A"}</td>
+              <td>${sizes[size]}</td>
             `;
             tableBody.appendChild(row);
           }
         }
       }
-    });
+    }
 
-    // Add product logic
-    document.getElementById("productForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const category = document.getElementById("productCategory").value.trim();
-      const name = document.getElementById("productName").value.trim();
-      const image = document.getElementById("productImage").value.trim();
-      const size = document.getElementById("productSize").value.trim();
-      const qty = parseInt(document.getElementById("productQty").value.trim());
-      const male = document.getElementById("productGenderMale").checked;
-      const female = document.getElementById("productGenderFemale").checked;
-
-      if (!category || !name || !size || isNaN(qty)) return;
-
-      const inventory = JSON.parse(localStorage.getItem("products")) || {};
-      if (!inventory[category]) inventory[category] = {};
-      if (!inventory[category][name]) {
-        inventory[category][name] = {
-          sizes: {},
-          image: image,
-          gender: male ? "M" : female ? "F" : ""
-        };
-      }
-
-      inventory[category][name].sizes[size] = (inventory[category][name].sizes[size] || 0) + qty;
-      localStorage.setItem("products", JSON.stringify(inventory));
-      location.reload(); // reload so the table updates
-    });
+    window.addEventListener("DOMContentLoaded", loadInventoryTable);
   </script>
 </body>
 </html>
