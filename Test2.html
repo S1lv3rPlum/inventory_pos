@@ -54,164 +54,110 @@
     </form><div id="discount-table"></div>
 
   </section>  <script>
-    let products = [];
-    let discounts = [];
+  const products = [];
+  const discounts = [];
 
-    const sizeList = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
+  function switchSection(section) {
+    document.getElementById('inventory-section').style.display = section === 'inventory' ? 'block' : 'none';
+    document.getElementById('discounts-section').style.display = section === 'discounts' ? 'block' : 'none';
+  }
 
-    function renderProductTable() {
-      const grouped = products.reduce((acc, cur) => {
-        if (!acc[cur.category]) acc[cur.category] = [];
-        acc[cur.category].push(cur);
-        return acc;
-      }, {});
+  // PRODUCT FUNCTIONS
+  function addProduct() {
+    const name = document.getElementById('product-name').value;
+    const price = document.getElementById('product-price').value;
+    const stock = document.getElementById('product-stock').value;
 
-      let html = '';
-      for (const cat in grouped) {
-        html += `<h3>${cat}</h3><table><tr><th>Product</th><th>Gender</th>${sizeList.map(s => `<th>${s}</th>`).join('')}<th>Actions</th></tr>`;
-        grouped[cat].forEach((p, i) => {
-          const sizes = sizeList.map(s => `<td><input class="qty-input" type="number" value="${p.sizes[s] || ''}" data-size="${s}" data-id="${p.id}" onchange="updateSize(event)"></td>`).join('');
-          const genderOptions = ['Men', 'Women', 'Unisex'].map(opt => `<option value="${opt}" ${opt === p.gender ? 'selected' : ''}>${opt}</option>`).join('');
-          html += `<tr data-id="${p.id}">
-            <td><span class="name-display">${p.name}</span><input class="hidden name-edit" value="${p.name}"/></td>
-            <td><span class="gender-display">${p.gender}</span><select class="hidden gender-edit">${genderOptions}</select></td>
-            ${sizes}
-            <td>
-              <button onclick="toggleEdit(this)">Edit</button>
-              <button class="hidden" onclick="saveEdit(this)">Save</button>
-              <button onclick="deleteProduct(${p.id})">Delete</button>
-            </td>
-          </tr>`;
-        });
-        html += '</table>';
-      }
-      document.getElementById('product-table').innerHTML = html;
-    }
+    if (!name || price === '' || stock === '') return;
 
-    function renderDiscountTable() {
-      const grouped = discounts.reduce((acc, cur) => {
-        if (!acc[cur.type]) acc[cur.type] = [];
-        acc[cur.type].push(cur);
-        return acc;
-      }, {});
+    products.push({ name, price: parseFloat(price), stock: parseInt(stock) });
+    renderProductTable();
 
-      let html = '';
-      for (const type in grouped) {
-        html += `<h3>${type}</h3><table><tr><th>Name</th><th>Value</th><th>Actions</th></tr>`;
-        grouped[type].forEach((d, i) => {
-          html += `<tr>
-            <td><span class="name-display">${d.name}</span><input class="hidden name-edit" value="${d.name}"/></td>
-            <td><span class="value-display">${d.value}</span><input class="hidden value-edit" type="number" value="${d.value}"/></td>
-            <td>
-              <button onclick="toggleDiscountEdit(this)">Edit</button>
-              <button class="hidden" onclick="saveDiscountEdit(this)">Save</button>
-              <button onclick="deleteDiscount(${d.id})">Delete</button>
-            </td>
-          </tr>`;
-        });
-        html += '</table>';
-      }
-      document.getElementById('discount-table').innerHTML = html;
-    }
+    document.getElementById('product-name').value = '';
+    document.getElementById('product-price').value = '';
+    document.getElementById('product-stock').value = '';
+  }
 
-    function toggleEdit(btn) {
-      const row = btn.closest('tr');
-      row.querySelector('.name-display').classList.add('hidden');
-      row.querySelector('.name-edit').classList.remove('hidden');
-      row.querySelector('.gender-display').classList.add('hidden');
-      row.querySelector('.gender-edit').classList.remove('hidden');
-      btn.classList.add('hidden');
-      row.querySelector('button:nth-child(2)').classList.remove('hidden');
-    }
+  function renderProductTable() {
+    const tbody = document.querySelector('#product-table tbody');
+    tbody.innerHTML = '';
+    products.forEach((product, index) => {
+      const row = document.createElement('tr');
 
-    function saveEdit(btn) {
-      const row = btn.closest('tr');
-      const id = parseInt(row.dataset.id);
-      const name = row.querySelector('.name-edit').value;
-      const gender = row.querySelector('.gender-edit').value;
-      const prod = products.find(p => p.id === id);
-      prod.name = name;
-      prod.gender = gender;
-      renderProductTable();
-    }
-
-    function updateSize(e) {
-      const size = e.target.dataset.size;
-      const id = parseInt(e.target.dataset.id);
-      const val = parseInt(e.target.value);
-      const prod = products.find(p => p.id === id);
-      prod.sizes[size] = val;
-    }
-
-    function deleteProduct(id) {
-      products = products.filter(p => p.id !== id);
-      renderProductTable();
-    }
-
-    function deleteDiscount(id) {
-      discounts = discounts.filter(d => d.id !== id);
-      renderDiscountTable();
-    }
-
-    function toggleDiscountEdit(btn) {
-      const row = btn.closest('tr');
-      row.querySelector('.name-display').classList.add('hidden');
-      row.querySelector('.name-edit').classList.remove('hidden');
-      row.querySelector('.value-display').classList.add('hidden');
-      row.querySelector('.value-edit').classList.remove('hidden');
-      btn.classList.add('hidden');
-      row.querySelector('button:nth-child(2)').classList.remove('hidden');
-    }
-
-    function saveDiscountEdit(btn) {
-      const row = btn.closest('tr');
-      const name = row.querySelector('.name-edit').value;
-      const value = parseFloat(row.querySelector('.value-edit').value);
-      const id = parseInt(discounts.find(d => d.name === row.querySelector('.name-display').textContent).id);
-      const disc = discounts.find(d => d.id === id);
-      disc.name = name;
-      disc.value = value;
-      renderDiscountTable();
-    }
-
-    document.getElementById('product-form').addEventListener('submit', e => {
-      e.preventDefault();
-      const name = document.getElementById('product-name').value;
-      const gender = document.getElementById('product-gender').value;
-      const category = document.getElementById('product-category').value;
-      const id = Date.now();
-      products.push({ id, name, gender, category, sizes: {} });
-      e.target.reset();
-      renderProductTable();
+      row.innerHTML = `
+        <td><input value="${product.name}" onchange="updateProduct(${index}, 'name', this.value)"></td>
+        <td><input type="number" value="${product.price}" onchange="updateProduct(${index}, 'price', this.value)"></td>
+        <td><input type="number" value="${product.stock}" onchange="updateProduct(${index}, 'stock', this.value)"></td>
+        <td><button onclick="deleteProduct(${index})">Delete</button></td>
+      `;
+      tbody.appendChild(row);
     });
+  }
 
-    document.getElementById('discount-form').addEventListener('submit', e => {
-      e.preventDefault();
-      const name = document.getElementById('discount-name').value;
-      const type = document.getElementById('discount-type').value;
-      const value = parseFloat(document.getElementById('discount-value').value);
-      const id = Date.now();
-      discounts.push({ id, name, type, value });
-      e.target.reset();
-      renderDiscountTable();
+  function updateProduct(index, key, value) {
+    if (key === 'price') value = parseFloat(value);
+    if (key === 'stock') value = parseInt(value);
+    products[index][key] = value;
+  }
+
+  function deleteProduct(index) {
+    products.splice(index, 1);
+    renderProductTable();
+  }
+
+  // DISCOUNT FUNCTIONS
+  function addDiscount() {
+    const type = document.getElementById('discount-type').value;
+    const amount = document.getElementById('discount-amount').value;
+
+    if (!amount || isNaN(amount)) return alert('Please enter a valid amount.');
+
+    const parsedAmount = parseFloat(amount);
+    discounts.push({ type, amount: parsedAmount });
+    renderDiscountTable();
+
+    document.getElementById('discount-type').value = '%';
+    document.getElementById('discount-amount').value = '';
+  }
+
+  function renderDiscountTable() {
+    const tbody = document.querySelector('#discount-table tbody');
+    tbody.innerHTML = '';
+    discounts.forEach((discount, index) => {
+      const row = document.createElement('tr');
+
+      row.innerHTML = `
+        <td>
+          <select onchange="updateDiscount(${index}, 'type', this.value)">
+            <option value="%" ${discount.type === '%' ? 'selected' : ''}>%</option>
+            <option value="$" ${discount.type === '$' ? 'selected' : ''}>$</option>
+          </select>
+        </td>
+        <td><input type="number" value="${discount.amount}" onchange="updateDiscount(${index}, 'amount', this.value)"></td>
+        <td><button onclick="deleteDiscount(${index})">Delete</button></td>
+      `;
+
+      tbody.appendChild(row);
     });
+  }
 
-    function showInventorySection() {
-      document.getElementById('inventory-section').classList.remove('hidden');
-      document.getElementById('discount-section').classList.add('hidden');
+  function updateDiscount(index, key, value) {
+    if (key === 'amount') {
+      const parsed = parseFloat(value);
+      if (isNaN(parsed)) return alert('Invalid amount');
+      discounts[index][key] = parsed;
+    } else {
+      discounts[index][key] = value;
     }
+  }
 
-    function showDiscountSection() {
-      document.getElementById('discount-section').classList.remove('hidden');
-      document.getElementById('inventory-section').classList.add('hidden');
-    }
+  function deleteDiscount(index) {
+    discounts.splice(index, 1);
+    renderDiscountTable();
+  }
 
-    function exportToCSV() {
-      alert('Export not implemented yet.');
-    }
-
-    function importFromCSV() {
-      alert('Import not implemented yet.');
-    }
-  </script></body>
+  // Init
+  switchSection('inventory');
+</script>
+</body>
 </html>
