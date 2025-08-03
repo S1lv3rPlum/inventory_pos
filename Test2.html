@@ -1,163 +1,210 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inventory Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Product and Discount Manager</title>
   <style>
-    table, th, td {
-      border: 1px solid black;
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    table {
+      width: 100%;
       border-collapse: collapse;
+      margin-top: 10px;
     }
     th, td {
-      padding: 4px;
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
     }
-    .hidden {
-      display: none;
+    th {
+      background-color: #f4f4f4;
     }
-    input.qty-input {
-      width: 4ch;
+    button {
+      margin: 5px;
     }
   </style>
 </head>
 <body>
-  <h1>Inventory Manager</h1>
-  <button onclick="exportToCSV()">Export</button>
-  <button onclick="importFromCSV()">Import</button>
-  <button onclick="showInventorySection()">Inventory</button>
-  <button onclick="showDiscountSection()">Discounts</button>  <section id="inventory-section">
+  <h1>Product and Discount Manager</h1>
+
+  <div class="section">
+    <button onclick="toggleForm('productForm')">Add Product</button>
+    <button onclick="toggleForm('discountForm')">Add Discount</button>
+  </div>
+
+  <!-- Product Form -->
+  <div id="productForm" style="display:none;" class="section">
     <h2>Add Product</h2>
-    <form id="product-form">
-      <input type="text" id="product-name" placeholder="Product Name" required />
-      <select id="product-gender">
-        <option value="Men">Men</option>
-        <option value="Women">Women</option>
-        <option value="Unisex">Unisex</option>
-      </select>
-      <select id="product-category">
-        <option value="Tops">Tops</option>
-        <option value="Bottoms">Bottoms</option>
-        <option value="Accessories">Accessories</option>
-      </select>
-      <button type="submit">Add Product</button>
-    </form><div id="product-table"></div>
+    <input type="text" id="productName" placeholder="Product Name" />
+    <input type="number" id="productPrice" placeholder="Price" step="0.01" />
+    <input type="number" id="productQuantity" placeholder="Quantity" />
+    <select id="productCategory">
+      <option value="">Select Category</option>
+      <option value="Snacks">Snacks</option>
+      <option value="Drinks">Drinks</option>
+      <option value="Household">Household</option>
+    </select>
+    <button onclick="addProduct()">Add</button>
+  </div>
 
-  </section>  <section id="discount-section" class="hidden">
+  <!-- Discount Form -->
+  <div id="discountForm" style="display:none;" class="section">
     <h2>Add Discount</h2>
-    <form id="discount-form">
-      <input type="text" id="discount-name" placeholder="Discount Name" required />
-      <select id="discount-type">
-        <option value="Percentage">Percentage</option>
-        <option value="Flat">Flat</option>
-      </select>
-      <input type="number" id="discount-value" placeholder="Value" required />
-      <button type="submit">Add Discount</button>
-    </form><div id="discount-table"></div>
+    <input type="text" id="discountName" placeholder="Discount Name" />
+    <input type="number" id="discountAmount" placeholder="Amount" step="0.01" />
+    <select id="discountType">
+      <option value="">Select Type</option>
+      <option value="percent">Percent Off</option>
+      <option value="dollar">Dollar Off</option>
+    </select>
+    <button onclick="addDiscount()">Add</button>
+  </div>
 
-  </section>  <script>
-  const products = [];
-  const discounts = [];
+  <!-- Product Table -->
+  <div class="section">
+    <h2>Products</h2>
+    <table id="productTable">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Name</th>
+          <th>Price</th>
+          <th>Quantity</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-  function switchSection(section) {
-    document.getElementById('inventory-section').style.display = section === 'inventory' ? 'block' : 'none';
-    document.getElementById('discounts-section').style.display = section === 'discounts' ? 'block' : 'none';
-  }
+  <!-- Discount Table -->
+  <div class="section">
+    <h2>Discounts</h2>
+    <table id="discountTable">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Name</th>
+          <th>Amount</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-  // PRODUCT FUNCTIONS
-  function addProduct() {
-    const name = document.getElementById('product-name').value;
-    const price = document.getElementById('product-price').value;
-    const stock = document.getElementById('product-stock').value;
+  <script>
+    const products = [];
+    const discounts = [];
 
-    if (!name || price === '' || stock === '') return;
-
-    products.push({ name, price: parseFloat(price), stock: parseInt(stock) });
-    renderProductTable();
-
-    document.getElementById('product-name').value = '';
-    document.getElementById('product-price').value = '';
-    document.getElementById('product-stock').value = '';
-  }
-
-  function renderProductTable() {
-    const tbody = document.querySelector('#product-table tbody');
-    tbody.innerHTML = '';
-    products.forEach((product, index) => {
-      const row = document.createElement('tr');
-
-      row.innerHTML = `
-        <td><input value="${product.name}" onchange="updateProduct(${index}, 'name', this.value)"></td>
-        <td><input type="number" value="${product.price}" onchange="updateProduct(${index}, 'price', this.value)"></td>
-        <td><input type="number" value="${product.stock}" onchange="updateProduct(${index}, 'stock', this.value)"></td>
-        <td><button onclick="deleteProduct(${index})">Delete</button></td>
-      `;
-      tbody.appendChild(row);
-    });
-  }
-
-  function updateProduct(index, key, value) {
-    if (key === 'price') value = parseFloat(value);
-    if (key === 'stock') value = parseInt(value);
-    products[index][key] = value;
-  }
-
-  function deleteProduct(index) {
-    products.splice(index, 1);
-    renderProductTable();
-  }
-
-  // DISCOUNT FUNCTIONS
-  function addDiscount() {
-    const type = document.getElementById('discount-type').value;
-    const amount = document.getElementById('discount-amount').value;
-
-    if (!amount || isNaN(amount)) return alert('Please enter a valid amount.');
-
-    const parsedAmount = parseFloat(amount);
-    discounts.push({ type, amount: parsedAmount });
-    renderDiscountTable();
-
-    document.getElementById('discount-type').value = '%';
-    document.getElementById('discount-amount').value = '';
-  }
-
-  function renderDiscountTable() {
-    const tbody = document.querySelector('#discount-table tbody');
-    tbody.innerHTML = '';
-    discounts.forEach((discount, index) => {
-      const row = document.createElement('tr');
-
-      row.innerHTML = `
-        <td>
-          <select onchange="updateDiscount(${index}, 'type', this.value)">
-            <option value="%" ${discount.type === '%' ? 'selected' : ''}>%</option>
-            <option value="$" ${discount.type === '$' ? 'selected' : ''}>$</option>
-          </select>
-        </td>
-        <td><input type="number" value="${discount.amount}" onchange="updateDiscount(${index}, 'amount', this.value)"></td>
-        <td><button onclick="deleteDiscount(${index})">Delete</button></td>
-      `;
-
-      tbody.appendChild(row);
-    });
-  }
-
-  function updateDiscount(index, key, value) {
-    if (key === 'amount') {
-      const parsed = parseFloat(value);
-      if (isNaN(parsed)) return alert('Invalid amount');
-      discounts[index][key] = parsed;
-    } else {
-      discounts[index][key] = value;
+    function toggleForm(formId) {
+      document.getElementById('productForm').style.display = 'none';
+      document.getElementById('discountForm').style.display = 'none';
+      document.getElementById(formId).style.display = 'block';
     }
-  }
 
-  function deleteDiscount(index) {
-    discounts.splice(index, 1);
-    renderDiscountTable();
-  }
+    function addProduct() {
+      const name = document.getElementById('productName').value.trim();
+      const price = parseFloat(document.getElementById('productPrice').value);
+      const quantity = parseInt(document.getElementById('productQuantity').value);
+      const category = document.getElementById('productCategory').value;
 
-  // Init
-  switchSection('inventory');
-</script>
+      if (!name || isNaN(price) || isNaN(quantity) || !category) {
+        alert("Please fill out all product fields.");
+        return;
+      }
+
+      products.push({ name, price, quantity, category });
+      renderProducts();
+      document.getElementById('productForm').reset();
+    }
+
+    function addDiscount() {
+      const name = document.getElementById('discountName').value.trim();
+      const amount = parseFloat(document.getElementById('discountAmount').value);
+      const type = document.getElementById('discountType').value;
+
+      if (!name || isNaN(amount) || !type) {
+        alert("Please fill out all discount fields.");
+        return;
+      }
+
+      discounts.push({ name, amount, type });
+      renderDiscounts();
+      document.getElementById('discountForm').reset();
+    }
+
+    function renderProducts() {
+      const tbody = document.querySelector("#productTable tbody");
+      tbody.innerHTML = "";
+      products.forEach((p, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${p.category}</td>
+          <td>${p.name}</td>
+          <td>$${p.price.toFixed(2)}</td>
+          <td>${p.quantity}</td>
+          <td>
+            <button onclick="editProduct(${index})">Edit</button>
+            <button onclick="deleteProduct(${index})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function renderDiscounts() {
+      const tbody = document.querySelector("#discountTable tbody");
+      tbody.innerHTML = "";
+      discounts.forEach((d, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${d.type === "percent" ? "%" : "$"} Off</td>
+          <td>${d.name}</td>
+          <td>${d.amount.toFixed(2)}</td>
+          <td>
+            <button onclick="editDiscount(${index})">Edit</button>
+            <button onclick="deleteDiscount(${index})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function deleteProduct(index) {
+      products.splice(index, 1);
+      renderProducts();
+    }
+
+    function deleteDiscount(index) {
+      discounts.splice(index, 1);
+      renderDiscounts();
+    }
+
+    function editProduct(index) {
+      const p = products[index];
+      document.getElementById('productName').value = p.name;
+      document.getElementById('productPrice').value = p.price;
+      document.getElementById('productQuantity').value = p.quantity;
+      document.getElementById('productCategory').value = p.category;
+      products.splice(index, 1);
+      toggleForm('productForm');
+    }
+
+    function editDiscount(index) {
+      const d = discounts[index];
+      document.getElementById('discountName').value = d.name;
+      document.getElementById('discountAmount').value = d.amount;
+      document.getElementById('discountType').value = d.type;
+      discounts.splice(index, 1);
+      toggleForm('discountForm');
+    }
+  </script>
 </body>
 </html>
