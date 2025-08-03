@@ -2,220 +2,338 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Inventory Manager</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 1rem;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+    }
+    .button-group {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    button {
+      margin: 0 8px 10px;
+      padding: 8px 15px;
+      cursor: pointer;
+    }
+    #importExportButtons {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    form label {
+      margin-right: 15px;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+    input[type="text"], input[type="number"], select {
+      padding: 5px;
+      font-size: 14px;
+    }
+    #productForm {
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 15px;
     }
     table {
       border-collapse: collapse;
       width: 100%;
-      margin-top: 1rem;
+      margin-top: 10px;
     }
     th, td {
-      border: 1px solid #ccc;
-      padding: 0.5rem;
+      border: 1px solid #aaa;
+      padding: 8px 10px;
       text-align: left;
+      vertical-align: middle;
     }
-    .hidden {
-      display: none;
+    tr.category-header-row {
+      background-color: #ddd;
+      font-weight: bold;
+      text-align: center;
+      font-size: 1.1em;
     }
-    .button-group {
-      margin-bottom: 1rem;
+    td.sizes-cell input {
+      width: 40px;
+      font-size: 13px;
+      padding: 3px;
+      margin: 0 2px;
+      text-align: center;
     }
-    button {
-      margin-right: 0.5rem;
+    td.editable {
+      cursor: text;
     }
-    input[type="number"] {
-      width: 60px;
-    }
-    select {
-      max-width: 120px;
+    td.actions-cell button {
+      margin-right: 6px;
     }
   </style>
 </head>
 <body>
-  <h1>last semi-working Inventory Manager</h1>
+
+  <h1>Inventory Manager</h1>
+
   <div class="button-group">
-    <button>Import</button>
-    <button>Export</button>
-    <button onclick="showInventory()">Inventory</button>
-    <button onclick="showDiscounts()">Discounts</button>
+    <button disabled>Import</button>
+    <button disabled>Export</button>
+    <button disabled>Inventory</button>
+    <button disabled>Discounts</button>
   </div>
 
-  <!-- Add Product Form -->
-  <div id="product-form">
-    <h2>Add Product</h2>
-    <label>Category: <input type="text" id="category"/></label>
-    <label>Name: <input type="text" id="name"/></label>
-    <label>Price: <input type="number" id="price"/></label>
-    <label>Quantity: <input type="number" id="quantity"/></label>
+  <form id="productForm">
+    <label>
+      Category: <input type="text" id="category" required />
+    </label>
+    <label>
+      Product Name: <input type="text" id="productName" required />
+    </label>
+    <label>
+      Price: <input type="number" id="price" step="0.01" min="0" required />
+    </label>
     <label>
       Unisex:
-      <select id="unisex">
+      <select id="unisex" required>
+        <option value="">-- Select --</option>
         <option value="Yes">Yes</option>
         <option value="No">No</option>
       </select>
     </label>
     <label>
       Has Sizes:
-      <select id="hasSizes">
-        <option value="No">No</option>
+      <select id="hasSizes" required>
+        <option value="">-- Select --</option>
         <option value="Yes">Yes</option>
+        <option value="No">No</option>
       </select>
     </label>
-    <button onclick="addProduct()">Add Product</button>
-  </div>
+    <button type="submit">Add Product</button>
+  </form>
 
-  <!-- Product Table -->
-  <table id="product-table">
+  <table id="productTable" aria-label="Inventory product list">
     <thead>
       <tr>
-        <th>Category</th>
-        <th>Name</th>
+        <th>Product</th>
         <th>Price</th>
-        <th>Quantity</th>
         <th>Unisex</th>
         <th>Sizes</th>
         <th>Actions</th>
       </tr>
     </thead>
-    <tbody></tbody>
-  </table>
-
-  <!-- Discount Form -->
-  <div id="discount-form" class="hidden">
-    <h2>Add Discount</h2>
-    <label>Type:
-      <select id="discount-type">
-        <option value="%">% Off</option>
-        <option value="$">$ Off</option>
-      </select>
-    </label>
-    <label>Name: <input type="text" id="discount-name"/></label>
-    <label>Amount: <input type="number" id="discount-amount"/></label>
-    <button onclick="addDiscount()">Add Discount</button>
-  </div>
-
-  <!-- Discount Table -->
-  <table id="discount-table" class="hidden">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Amount</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
+    <tbody>
+      <!-- Product rows inserted here -->
+    </tbody>
   </table>
 
   <script>
-  let productData = [];
-  let discountData = [];
+    // Global product array
+    let products = [];
 
-function addProduct() {
-  const category = document.getElementById("category").value.trim();
-  const name = document.getElementById("name").value.trim();
-  const price = parseFloat(document.getElementById("price").value);
-  const quantity = parseInt(document.getElementById("quantity").value);
-  const unisex = document.getElementById("unisex").value;
-  const hasSizes = document.getElementById("hasSizes").value;
+    // Size labels to display/edit
+    const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 
-  if (!category || !name || isNaN(price) || isNaN(quantity)) {
-    alert("Please fill in all required fields correctly.");
-    return;
-  }
+    // Load products from localStorage on page load
+    window.addEventListener("DOMContentLoaded", () => {
+      const saved = localStorage.getItem("products");
+      if (saved) {
+        products = JSON.parse(saved);
+      }
+      renderProductTable();
+    });
 
-  const sizes = hasSizes === "Yes"
-    ? { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0, XXXXL: 0 }
-    : null;
-
-  productData.push({ category, name, price, quantity, unisex, sizes });
-  displayProductTable();
-  saveData();
-
-  // Clear form inputs
-  document.getElementById("category").value = "";
-  document.getElementById("name").value = "";
-  document.getElementById("price").value = "";
-  document.getElementById("quantity").value = "";
-  document.getElementById("unisex").value = "Yes";
-  document.getElementById("hasSizes").value = "No";
-}
-
-  // ADDED: Load from localStorage if available
-  window.addEventListener("DOMContentLoaded", () => {
-    const savedProducts = localStorage.getItem("productData");
-    const savedDiscounts = localStorage.getItem("discountData");
-    if (savedProducts) {
-      productData = JSON.parse(savedProducts);
-      displayProductTable();
+    // Save to localStorage helper
+    function saveProducts() {
+      localStorage.setItem("products", JSON.stringify(products));
     }
-    if (savedDiscounts) {
-      discountData = JSON.parse(savedDiscounts);
-      displayDiscountTable();
+
+    // Add product form submit handler
+    document.getElementById("productForm").addEventListener("submit", e => {
+      e.preventDefault();
+
+      const category = document.getElementById("category").value.trim();
+      const name = document.getElementById("productName").value.trim();
+      const price = parseFloat(document.getElementById("price").value);
+      const unisex = document.getElementById("unisex").value;
+      const hasSizes = document.getElementById("hasSizes").value;
+
+      if (!category || !name || isNaN(price) || !unisex || !hasSizes) {
+        alert("Please fill in all required fields.");
+        return;
+      }
+
+      // Initialize sizes with 0 quantities if hasSizes = Yes, else null
+      const sizes = hasSizes === "Yes" ? sizeLabels.reduce((acc, size) => {
+        acc[size] = 0;
+        return acc;
+      }, {}) : null;
+
+      products.push({ category, name, price, unisex, sizes });
+      saveProducts();
+      renderProductTable();
+
+      // Clear form
+      e.target.reset();
+    });
+
+    // Render product table with category header rows
+    function renderProductTable() {
+      const tbody = document.querySelector("#productTable tbody");
+      tbody.innerHTML = "";
+
+      if (products.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 5;
+        td.style.textAlign = "center";
+        td.textContent = "No products added yet.";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      // Group products by category
+      const grouped = products.reduce((acc, product, i) => {
+        if (!acc[product.category]) acc[product.category] = [];
+        acc[product.category].push({...product, index: i});
+        return acc;
+      }, {});
+
+      // For each category group, add header row, then product rows
+      for (const category of Object.keys(grouped).sort((a,b) => a.localeCompare(b))) {
+        const headerRow = document.createElement("tr");
+        headerRow.classList.add("category-header-row");
+        const th = document.createElement("td");
+        th.colSpan = 5;
+        th.textContent = category;
+        headerRow.appendChild(th);
+        tbody.appendChild(headerRow);
+
+        grouped[category].forEach(prod => {
+          const tr = document.createElement("tr");
+
+          // Editable product name cell
+          const nameCell = document.createElement("td");
+          nameCell.contentEditable = "true";
+          nameCell.textContent = prod.name;
+          nameCell.classList.add("editable");
+          nameCell.dataset.index = prod.index;
+          nameCell.dataset.field = "name";
+          tr.appendChild(nameCell);
+
+          // Editable price cell
+          const priceCell = document.createElement("td");
+          priceCell.contentEditable = "true";
+          priceCell.textContent = prod.price.toFixed(2);
+          priceCell.classList.add("editable");
+          priceCell.dataset.index = prod.index;
+          priceCell.dataset.field = "price";
+          tr.appendChild(priceCell);
+
+          // Editable unisex cell (select element)
+          const unisexCell = document.createElement("td");
+          const select = document.createElement("select");
+          select.innerHTML = `<option value="Yes">Yes</option><option value="No">No</option>`;
+          select.value = prod.unisex;
+          select.dataset.index = prod.index;
+          select.dataset.field = "unisex";
+          select.addEventListener("change", onSelectChange);
+          unisexCell.appendChild(select);
+          tr.appendChild(unisexCell);
+
+          // Sizes cell
+          const sizesCell = document.createElement("td");
+          sizesCell.classList.add("sizes-cell");
+          if (prod.sizes) {
+            sizeLabels.forEach(size => {
+              const input = document.createElement("input");
+              input.type = "number";
+              input.min = 0;
+              input.value = prod.sizes[size] || 0;
+              input.dataset.index = prod.index;
+              input.dataset.size = size;
+              input.addEventListener("change", onSizeQtyChange);
+              sizesCell.appendChild(input);
+            });
+          } else {
+            sizesCell.textContent = "-";
+          }
+          tr.appendChild(sizesCell);
+
+          // Actions cell: Edit and Delete buttons
+          const actionsCell = document.createElement("td");
+          actionsCell.classList.add("actions-cell");
+          const deleteBtn = document.createElement("button");
+          deleteBtn.textContent = "Delete";
+          deleteBtn.dataset.index = prod.index;
+          deleteBtn.addEventListener("click", onDeleteProduct);
+          actionsCell.appendChild(deleteBtn);
+          tr.appendChild(actionsCell);
+
+          tbody.appendChild(tr);
+        });
+      }
     }
-  });
 
-  // ADDED: Save to localStorage helper
-  function saveData() {
-    localStorage.setItem("productData", JSON.stringify(productData));
-    localStorage.setItem("discountData", JSON.stringify(discountData));
-  }
+    // Handle inline contentEditable changes for name and price
+    document.querySelector("#productTable tbody").addEventListener("blur", e => {
+      if (!e.target.classList.contains("editable")) return;
+      const index = parseInt(e.target.dataset.index);
+      const field = e.target.dataset.field;
+      let value = e.target.textContent.trim();
 
-  // MODIFIED: Add product
-  document.getElementById("productForm").addEventListener("submit", function (e) {
-    e.preventDefault();
-    const category = document.getElementById("category").value;
-    const name = document.getElementById("name").value;
-    const sizes = {
-      XS: parseInt(document.getElementById("xs").value) || 0,
-      S: parseInt(document.getElementById("s").value) || 0,
-      M: parseInt(document.getElementById("m").value) || 0,
-      L: parseInt(document.getElementById("l").value) || 0,
-      XL: parseInt(document.getElementById("xl").value) || 0,
-    };
-    productData.push({ category, name, sizes });
-    displayProductTable();
-    saveData(); // ADDED
-    this.reset();
-  });
+      if (field === "price") {
+        const parsed = parseFloat(value);
+        if (isNaN(parsed) || parsed < 0) {
+          alert("Please enter a valid price.");
+          e.target.textContent = products[index].price.toFixed(2);
+          return;
+        }
+        value = parsed;
+      }
+      if (field === "name" && !value) {
+        alert("Product name cannot be empty.");
+        e.target.textContent = products[index].name;
+        return;
+      }
 
-  // MODIFIED: Delete product
-  function deleteProduct(index) {
-    productData.splice(index, 1);
-    displayProductTable();
-    saveData(); // ADDED
-  }
+      products[index][field] = value;
+      saveProducts();
+    }, true);
 
-  // MODIFIED: Update product (called after editing)
-  function updateProduct(index, updatedProduct) {
-    productData[index] = updatedProduct;
-    displayProductTable();
-    saveData(); // ADDED
-  }
+    // Handle select change for unisex column
+    function onSelectChange(e) {
+      const index = parseInt(e.target.dataset.index);
+      const value = e.target.value;
+      products[index].unisex = value;
+      saveProducts();
+    }
 
-  // MODIFIED: Add discount
-  document.getElementById("discountForm").addEventListener("submit", function (e) {
-    e.preventDefault();
-    const code = document.getElementById("code").value;
-    const amount = parseFloat(document.getElementById("amount").value);
-    const type = document.getElementById("type").value;
-    discountData.push({ code, amount, type });
-    displayDiscountTable();
-    saveData(); // ADDED
-    this.reset();
-  });
+    // Handle sizes quantity input changes
+    function onSizeQtyChange(e) {
+      const index = parseInt(e.target.dataset.index);
+      const size = e.target.dataset.size;
+      let val = parseInt(e.target.value);
+      if (isNaN(val) || val < 0) {
+        alert("Quantity must be a non-negative integer.");
+        e.target.value = products[index].sizes[size];
+        return;
+      }
+      products[index].sizes[size] = val;
+      saveProducts();
+    }
 
-  // MODIFIED: Delete discount
-  function deleteDiscount(index) {
-    discountData.splice(index, 1);
-    displayDiscountTable();
-    saveData(); // ADDED
-  }
-</script>
+    // Delete product handler
+    function onDeleteProduct(e) {
+      const index = parseInt(e.target.dataset.index);
+      if (!confirm("Are you sure you want to delete this product?")) return;
+      products.splice(index, 1);
+      saveProducts();
+      renderProductTable();
+    }
+  </script>
+
 </body>
 </html>
