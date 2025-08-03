@@ -3,184 +3,200 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inventory and Discount Manager</title>
+  <title>Inventory and Discounts</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    table, th, td { border: 1px solid black; border-collapse: collapse; }
-    th, td { padding: 8px; text-align: left; }
+    body { font-family: Arial; margin: 20px; }
     .hidden { display: none; }
-    .btn { margin: 5px; padding: 5px 10px; cursor: pointer; }
-    .section { margin-top: 20px; }
-    .size-inputs input { width: 50px; margin-right: 5px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background-color: #f4f4f4; }
+    input[type="text"], input[type="number"], select { width: 100%; padding: 5px; }
+    .button-group button { margin-right: 10px; }
   </style>
 </head>
 <body>
-  <h1>Inventory and Discount Manager</h1>
+  <h1>Product Manager</h1>
+  <div class="button-group">
+    <button onclick="showSection('inventory')">Inventory</button>
+    <button onclick="showSection('discount')">Discounts</button>
+  </div>
 
-  <button id="showInventory" class="btn">Inventory</button>
-  <button id="showDiscounts" class="btn">Discounts</button>
-
-  <div id="inventorySection" class="section">
+  <div id="inventory-section">
     <h2>Add Product</h2>
-    <form id="productForm">
-      <input type="text" id="productName" placeholder="Product Name" required />
-      <input type="text" id="productCategory" placeholder="Category" required />
-      <input type="number" id="productPrice" placeholder="Price" step="0.01" required />
-      <input type="number" id="productQuantity" placeholder="Quantity" required />
-      <label><input type="checkbox" id="hasSizes" /> Has Sizes</label>
+    <form id="product-form">
+      <label>Product Name: <input type="text" id="product-name" required></label><br>
+      <label>Category: <input type="text" id="product-category" required></label><br>
+      <label>Price ($): <input type="number" id="product-price" required></label><br>
+      <label>Quantity: <input type="number" id="product-quantity" required></label><br>
+      <label>Has Sizes? <input type="checkbox" id="product-has-sizes"></label><br>
       <button type="submit">Add Product</button>
     </form>
 
-    <h2>Product Inventory</h2>
-    <div id="productTableContainer"></div>
+    <table id="product-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Quantity</th>
+          <th>Sizes</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
-  <div id="discountSection" class="section hidden">
+  <div id="discount-section" class="hidden">
     <h2>Add Discount</h2>
-    <form id="discountForm">
-      <input type="text" id="discountName" placeholder="Discount Name" required />
-      <select id="discountType">
-        <option value="% off">% off</option>
-        <option value="$ off">$ off</option>
-      </select>
-      <input type="number" id="discountAmount" placeholder="Amount" step="0.01" required />
+    <form id="discount-form">
+      <label>Description: <input type="text" id="discount-desc" required></label><br>
+      <label>Type: 
+        <select id="discount-type">
+          <option value="percent">% Off</option>
+          <option value="dollar">$ Off</option>
+        </select>
+      </label><br>
+      <label>Amount: <input type="number" id="discount-amount" required></label><br>
       <button type="submit">Add Discount</button>
     </form>
 
-    <h2>Discounts</h2>
-    <table id="discountTable">
+    <table id="discount-table">
       <thead>
-        <tr><th>Name</th><th>Type</th><th>Amount</th><th>Action</th></tr>
+        <tr>
+          <th>Description</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Actions</th>
+        </tr>
       </thead>
       <tbody></tbody>
     </table>
   </div>
 
   <script>
-    let products = JSON.parse(localStorage.getItem("products")) || [];
-    let discounts = JSON.parse(localStorage.getItem("discounts")) || [];
+    const sizes = ["XS","S","M","L","XL","2XL","3XL","4XL"];
 
-    const inventorySection = document.getElementById("inventorySection");
-    const discountSection = document.getElementById("discountSection");
-
-    document.getElementById("showInventory").onclick = () => {
-      inventorySection.classList.remove("hidden");
-      discountSection.classList.add("hidden");
-    };
-
-    document.getElementById("showDiscounts").onclick = () => {
-      discountSection.classList.remove("hidden");
-      inventorySection.classList.add("hidden");
-    };
-
-    document.getElementById("productForm").onsubmit = e => {
-      e.preventDefault();
-      const name = document.getElementById("productName").value;
-      const category = document.getElementById("productCategory").value;
-      const price = parseFloat(document.getElementById("productPrice").value);
-      const quantity = parseInt(document.getElementById("productQuantity").value);
-      const hasSizes = document.getElementById("hasSizes").checked;
-      
-      const newProduct = { name, category, price, quantity, hasSizes, sizes: {} };
-      products.push(newProduct);
-      localStorage.setItem("products", JSON.stringify(products));
-      renderProducts();
-      e.target.reset();
-    };
-
-    function renderProducts() {
-      const container = document.getElementById("productTableContainer");
-      container.innerHTML = "";
-      const grouped = {};
-      for (let product of products) {
-        if (!grouped[product.category]) grouped[product.category] = [];
-        grouped[product.category].push(product);
-      }
-      for (let category in grouped) {
-        const table = document.createElement("table");
-        const thead = table.createTHead();
-        thead.innerHTML = `<tr><th colspan="6">${category}</th></tr>
-                           <tr><th>Name</th><th>Price</th><th>Qty</th><th>Has Sizes</th><th>Sizes</th><th>Action</th></tr>`;
-        const tbody = table.createTBody();
-        for (let [index, p] of grouped[category].entries()) {
-          const row = tbody.insertRow();
-          row.innerHTML = `
-            <td>${p.name}</td>
-            <td>$${p.price.toFixed(2)}</td>
-            <td>${p.hasSizes ? "-" : p.quantity}</td>
-            <td>${p.hasSizes ? "Yes" : "No"}</td>
-            <td>${p.hasSizes ? Object.entries(p.sizes).map(([s, q]) => `${s}: ${q}`).join(", ") : ""}</td>
-            <td><button onclick="editProduct('${p.name}', '${p.category}')">Edit</button></td>
-          `;
-        }
-        container.appendChild(table);
-      }
+    function showSection(section) {
+      document.getElementById("inventory-section").classList.toggle("hidden", section !== 'inventory');
+      document.getElementById("discount-section").classList.toggle("hidden", section !== 'discount');
     }
 
-    window.editProduct = function(name, category) {
-      const product = products.find(p => p.name === name && p.category === category);
-      if (product.hasSizes) {
-        const sizeKeys = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
-        const inputs = sizeKeys.map(size => {
-          const val = product.sizes[size] || 0;
-          return `${size}: <input type='number' id='size_${size}' value='${val}' />`;
-        }).join("<br>");
-        const popup = window.open("", "", "width=400,height=600");
-        popup.document.write(`<h3>Edit Sizes for ${product.name}</h3><form id='sizeForm'>${inputs}<br><button type='submit'>Save</button></form>`);
-        popup.document.getElementById("sizeForm").onsubmit = e => {
-          e.preventDefault();
-          for (let size of sizeKeys) {
-            const val = parseInt(popup.document.getElementById(`size_${size}`).value) || 0;
-            product.sizes[size] = val;
-          }
-          localStorage.setItem("products", JSON.stringify(products));
-          renderProducts();
-          popup.close();
-        };
-      } else {
-        const newQty = prompt("Enter new quantity:", product.quantity);
-        if (newQty !== null) {
-          product.quantity = parseInt(newQty);
-          localStorage.setItem("products", JSON.stringify(products));
-          renderProducts();
-        }
-      }
-    };
+    function saveData() {
+      localStorage.setItem('products', JSON.stringify(products));
+      localStorage.setItem('discounts', JSON.stringify(discounts));
+    }
 
-    document.getElementById("discountForm").onsubmit = e => {
-      e.preventDefault();
-      const name = document.getElementById("discountName").value;
-      const type = document.getElementById("discountType").value;
-      const amount = parseFloat(document.getElementById("discountAmount").value);
-      discounts.push({ name, type, amount });
-      localStorage.setItem("discounts", JSON.stringify(discounts));
-      renderDiscounts();
-      e.target.reset();
-    };
+    function loadData() {
+      products = JSON.parse(localStorage.getItem('products') || '[]');
+      discounts = JSON.parse(localStorage.getItem('discounts') || '[]');
+    }
 
-    function renderDiscounts() {
-      const tbody = document.querySelector("#discountTable tbody");
-      tbody.innerHTML = "";
-      discounts.forEach((d, i) => {
-        const row = tbody.insertRow();
-        row.innerHTML = `<td>${d.name}</td><td>${d.type}</td><td>${d.amount}</td><td><button onclick="editDiscount(${i})">Edit</button></td>`;
+    function renderProducts() {
+      const tbody = document.querySelector('#product-table tbody');
+      tbody.innerHTML = '';
+      products.forEach((p, i) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${p.name}</td>
+          <td>${p.category}</td>
+          <td>$${p.price.toFixed(2)}</td>
+          <td>${p.hasSizes ? '' : p.quantity}</td>
+          <td>${p.hasSizes ? sizes.map(s => `${s}: ${p.sizes[s] || 0}`).join('<br>') : ''}</td>
+          <td>
+            <button onclick="editProduct(${i})">Edit</button>
+            <button onclick="deleteProduct(${i})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
       });
     }
 
-    window.editDiscount = function(index) {
+    function renderDiscounts() {
+      const tbody = document.querySelector('#discount-table tbody');
+      tbody.innerHTML = '';
+      discounts.forEach((d, i) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${d.description}</td>
+          <td>${d.type === 'percent' ? '% Off' : '$ Off'}</td>
+          <td>${d.amount}</td>
+          <td>
+            <button onclick="editDiscount(${i})">Edit</button>
+            <button onclick="deleteDiscount(${i})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function editProduct(index) {
+      const p = products[index];
+      const newQty = p.hasSizes ? sizes.reduce((acc, s) => {
+        const input = prompt(`Enter quantity for size ${s}:`, p.sizes[s] || 0);
+        acc[s] = parseInt(input || 0);
+        return acc;
+      }, {}) : parseInt(prompt("Enter new quantity:", p.quantity));
+      if (p.hasSizes) products[index].sizes = newQty;
+      else products[index].quantity = newQty;
+      saveData();
+      renderProducts();
+    }
+
+    function deleteProduct(index) {
+      products.splice(index, 1);
+      saveData();
+      renderProducts();
+    }
+
+    function editDiscount(index) {
       const d = discounts[index];
-      const name = prompt("Edit name:", d.name);
-      const type = prompt("Edit type (% off or $ off):", d.type);
-      const amount = prompt("Edit amount:", d.amount);
-      if (name && type && !isNaN(parseFloat(amount))) {
-        discounts[index] = { name, type, amount: parseFloat(amount) };
-        localStorage.setItem("discounts", JSON.stringify(discounts));
+      const desc = prompt("Edit description:", d.description);
+      const amt = parseFloat(prompt("Edit amount:", d.amount));
+      if (!isNaN(amt)) {
+        discounts[index].description = desc;
+        discounts[index].amount = amt;
+        saveData();
         renderDiscounts();
       }
-    };
+    }
 
+    function deleteDiscount(index) {
+      discounts.splice(index, 1);
+      saveData();
+      renderDiscounts();
+    }
+
+    let products = [], discounts = [];
+    loadData();
     renderProducts();
     renderDiscounts();
+
+    document.getElementById("product-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const name = document.getElementById("product-name").value.trim();
+      const category = document.getElementById("product-category").value.trim();
+      const price = parseFloat(document.getElementById("product-price").value);
+      const quantity = parseInt(document.getElementById("product-quantity").value);
+      const hasSizes = document.getElementById("product-has-sizes").checked;
+      const newProduct = { name, category, price, quantity, hasSizes, sizes: {} };
+      products.push(newProduct);
+      saveData();
+      renderProducts();
+      e.target.reset();
+    });
+
+    document.getElementById("discount-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const description = document.getElementById("discount-desc").value.trim();
+      const type = document.getElementById("discount-type").value;
+      const amount = parseFloat(document.getElementById("discount-amount").value);
+      if (!description || isNaN(amount)) return;
+      discounts.push({ description, type, amount });
+      saveData();
+      renderDiscounts();
+      e.target.reset();
+    });
   </script>
 </body>
 </html>
