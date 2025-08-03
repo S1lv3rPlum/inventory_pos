@@ -6,12 +6,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!db.objectStoreNames.contains("products")) {
       db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
+      showMessage("🛠️ Object store 'products' created.");
+    } else {
+      showMessage("ℹ️ Object store 'products' already exists.");
     }
   };
 
   request.onsuccess = (event) => {
     const db = event.target.result;
-    showMessage("IndexedDB opened successfully");
+    showMessage("✅ IndexedDB opened successfully");
 
     const addForm = document.getElementById("addProductForm");
     if (!addForm) {
@@ -34,20 +37,33 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const transaction = db.transaction(["products"], "readwrite");
-      const store = transaction.objectStore("products");
+      showMessage(`📦 Creating transaction...`);
 
-      const newProduct = { name, price, quantity };
-      const addRequest = store.add(newProduct);
+      try {
+        const transaction = db.transaction(["products"], "readwrite");
 
-      addRequest.onsuccess = () => {
-        showMessage("✅ Product added successfully.");
-        addForm.reset();
-      };
+        transaction.onerror = () => {
+          showMessage("❌ Transaction error.");
+        };
 
-      addRequest.onerror = () => {
-        showMessage("❌ Error adding product.");
-      };
+        const store = transaction.objectStore("products");
+
+        const newProduct = { name, price, quantity };
+        showMessage(`📤 Adding product: ${JSON.stringify(newProduct)}`);
+
+        const addRequest = store.add(newProduct);
+
+        addRequest.onsuccess = () => {
+          showMessage("✅ Product added successfully.");
+          addForm.reset();
+        };
+
+        addRequest.onerror = (event) => {
+          showMessage("❌ Error adding product: " + event.target.error);
+        };
+      } catch (err) {
+        showMessage("❌ Exception during add: " + err.message);
+      }
     });
   };
 
@@ -56,7 +72,6 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 });
 
-// Utility to show messages on screen
 function showMessage(msg) {
   let log = document.getElementById("debugLog");
   if (!log) {
