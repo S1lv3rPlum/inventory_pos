@@ -316,6 +316,17 @@
     discounts.splice(index, 1);
     renderDiscountTable();
   }
+  
+  // Hook up tab buttons
+document.getElementById("btnInventory").addEventListener("click", () => {
+  document.getElementById("inventorySection").classList.remove("hidden");
+  document.getElementById("discountSection").classList.add("hidden");
+});
+
+document.getElementById("btnDiscounts").addEventListener("click", () => {
+  document.getElementById("inventorySection").classList.add("hidden");
+  document.getElementById("discountSection").classList.remove("hidden");
+});
 </script>
 </body>
 </html>
