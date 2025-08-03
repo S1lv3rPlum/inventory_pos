@@ -333,16 +333,7 @@
       renderProductTable();
     }
     
-    document.getElementById('addProductForm').addEventListener('submit', function (event) {
-  event.preventDefault(); // Prevent form refresh
-  const category = document.getElementById('productCategory').value;
-  const name = document.getElementById('productName').value;
-  const price = parseFloat(document.getElementById('productPrice').value).toFixed(2);
-
-  if (!category || !name || isNaN(price)) {
-    alert('Please fill out all required fields.');
-    return;
-  }
+  
 
   
     
