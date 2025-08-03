@@ -157,172 +157,157 @@
 </table>
   </section>
 <script>
-  let editingProductIndex = null;
-  let editingDiscountIndex = null;
+  const inventorySection = document.getElementById("inventorySection");
+  const discountSection = document.getElementById("discountSection");
+  const btnInventory = document.getElementById("btnInventory");
+  const btnDiscounts = document.getElementById("btnDiscounts");
+
   const products = [];
   const discounts = [];
+  let editingProductIndex = null;
+  let editingDiscountIndex = null;
 
-  const inventorySection = document.getElementById("inventorySection");
-  const discountsSection = document.getElementById("discountsSection");
-  const inventoryBtn = document.getElementById("inventoryBtn");
-  const discountsBtn = document.getElementById("discountsBtn");
-
-  inventoryBtn.addEventListener("click", () => {
-    inventorySection.style.display = "block";
-    discountsSection.style.display = "none";
+  btnInventory.addEventListener("click", () => {
+    inventorySection.classList.remove("hidden");
+    discountSection.classList.add("hidden");
   });
 
-  discountsBtn.addEventListener("click", () => {
-    inventorySection.style.display = "none";
-    discountsSection.style.display = "block";
+  btnDiscounts.addEventListener("click", () => {
+    inventorySection.classList.add("hidden");
+    discountSection.classList.remove("hidden");
   });
 
-  function addProduct() {
+  // Handle Add Product
+  document.getElementById("productForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
     const name = document.getElementById("productName").value.trim();
-    const category = document.getElementById("productCategory").value;
-    const size = document.getElementById("productSize").value;
-    const quantity = document.getElementById("productQuantity").value.trim();
+    const category = document.getElementById("category").value.trim();
+    const gender = document.getElementById("gender").value;
 
-    if (!name || !category || !size || quantity === "") {
+    if (!name || !category || !gender) {
       alert("Please fill out all product fields.");
       return;
     }
 
+    const sizes = {
+      XS: 0, S: 0, M: 0, L: 0, XL: 0, "2XL": 0, "3XL": 0, "4XL": 0
+    };
+
     if (editingProductIndex !== null) {
-      products[editingProductIndex] = { name, category, size, quantity };
+      products[editingProductIndex] = { name, category, gender, sizes };
       editingProductIndex = null;
     } else {
-      products.push({ name, category, size, quantity });
+      products.push({ name, category, gender, sizes });
     }
 
-    document.getElementById("productName").value = "";
-    document.getElementById("productCategory").value = "";
-    document.getElementById("productSize").value = "";
-    document.getElementById("productQuantity").value = "";
+    document.getElementById("productForm").reset();
+    renderInventoryTable();
+  });
 
-    renderProductTable();
-  }
-
-  function renderProductTable() {
-    const table = document.getElementById("productTable");
-    table.innerHTML = `
-      <tr>
-        <th>Product Name</th>
-        <th>Category</th>
-        <th>Size</th>
-        <th>Quantity</th>
-        <th>Actions</th>
-      </tr>
-    `;
+  function renderInventoryTable() {
+    const tbody = document.querySelector("#inventoryTable tbody");
+    tbody.innerHTML = "";
 
     products.forEach((product, index) => {
-      const row = table.insertRow();
+      const row = document.createElement("tr");
       row.innerHTML = `
         <td>${product.name}</td>
-        <td>${product.category}</td>
-        <td>${product.size}</td>
-        <td>${product.quantity}</td>
+        <td>${product.gender}</td>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td>0</td><td>0</td><td>0</td>
         <td>
           <button onclick="editProduct(${index})">Edit</button>
           <button onclick="deleteProduct(${index})">Delete</button>
         </td>
       `;
+      tbody.appendChild(row);
     });
   }
 
   function editProduct(index) {
     const product = products[index];
     document.getElementById("productName").value = product.name;
-    document.getElementById("productCategory").value = product.category;
-    document.getElementById("productSize").value = product.size;
-    document.getElementById("productQuantity").value = product.quantity;
+    document.getElementById("category").value = product.category;
+    document.getElementById("gender").value = product.gender;
     editingProductIndex = index;
   }
 
   function deleteProduct(index) {
-    if (confirm("Are you sure you want to delete this product?")) {
+    if (confirm("Delete this product?")) {
       products.splice(index, 1);
-      renderProductTable();
+      renderInventoryTable();
     }
   }
 
-  function addDiscount() {
-    const type = document.getElementById("discountType").value.trim();
+  // Handle Add Discount
+  document.getElementById("discountForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const typeRaw = document.getElementById("discountType").value;
     const name = document.getElementById("discountName").value.trim();
     const amountStr = document.getElementById("discountAmount").value.trim();
 
-    if (!type || !name || amountStr === "") {
+    if (!typeRaw || !name || amountStr === "") {
       alert("Please fill out all discount fields.");
       return;
     }
 
-    if (!["%", "$"].includes(type)) {
-      alert("Discount type must be either '%' or '$'");
-      return;
-    }
-
+    const type = typeRaw === "percent" ? "%" : "$";
     const amount = parseFloat(amountStr);
     if (isNaN(amount)) {
-      alert("Amount must be a number without the % sign.");
+      alert("Amount must be a number.");
       return;
     }
 
+    const discount = { type, name, amount };
+
     if (editingDiscountIndex !== null) {
-      discounts[editingDiscountIndex] = { type, name, amount };
+      discounts[editingDiscountIndex] = discount;
       editingDiscountIndex = null;
     } else {
-      discounts.push({ type, name, amount });
+      discounts.push(discount);
     }
 
-    document.getElementById("discountType").value = "";
-    document.getElementById("discountName").value = "";
-    document.getElementById("discountAmount").value = "";
-
+    document.getElementById("discountForm").reset();
     renderDiscountTable();
-  }
+  });
 
   function renderDiscountTable() {
-    const table = document.getElementById("discountTable");
-    table.innerHTML = `
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Amount</th>
-        <th>Actions</th>
-      </tr>
-    `;
+    const tbody = document.querySelector("#discountTable tbody");
+    tbody.innerHTML = "";
 
     discounts.forEach((discount, index) => {
-      const row = table.insertRow();
+      const row = document.createElement("tr");
       row.innerHTML = `
-        <td>${discount.type}</td>
         <td>${discount.name}</td>
-        <td>${discount.amount}</td>
+        <td>${discount.type}${discount.amount}</td>
         <td>
           <button onclick="editDiscount(${index})">Edit</button>
           <button onclick="deleteDiscount(${index})">Delete</button>
         </td>
       `;
+      tbody.appendChild(row);
     });
   }
 
   function editDiscount(index) {
     const discount = discounts[index];
-    document.getElementById("discountType").value = discount.type;
+    document.getElementById("discountType").value = discount.type === "%" ? "percent" : "dollar";
     document.getElementById("discountName").value = discount.name;
     document.getElementById("discountAmount").value = discount.amount;
     editingDiscountIndex = index;
   }
 
   function deleteDiscount(index) {
-    if (confirm("Are you sure you want to delete this discount?")) {
+    if (confirm("Delete this discount?")) {
       discounts.splice(index, 1);
       renderDiscountTable();
     }
   }
 
   // Initial render
-  renderProductTable();
+  renderInventoryTable();
   renderDiscountTable();
 </script>
 </body>
