@@ -4,28 +4,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inventory Manager</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    h1 {
-      font-size: 2em;
-      margin-bottom: 10px;
-    }
-    h2 {
-      margin-top: 30px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
     table, th, td {
-      border: 1px solid #ccc;
+      border: 1px solid black;
+      border-collapse: collapse;
     }
     th, td {
-      padding: 8px;
-      text-align: left;
+      padding: 5px;
     }
     .hidden {
       display: none;
@@ -33,173 +17,192 @@
   </style>
 </head>
 <body>
-  <h1>Inventory Manager</h1><button onclick="showInventory()">Inventory</button> <button onclick="showDiscount()">Discounts</button> <button onclick="exportExcel()">Export to Excel</button> <input type="file" id="importFile" accept=".xlsx" onchange="importExcel()" />
-
-  <h2 id="sectionTitle">Product Manager</h2>  <div id="productForm">
-    <input type="text" id="name" placeholder="Product Name" />
-    <input type="text" id="category" placeholder="Category" />
-    <input type="number" id="price" placeholder="Price" />
+  <h1>Inventory Manager</h1>
+  <button onclick="toggleView('product')">Inventory</button>
+  <button onclick="toggleView('discount')">Discounts</button>
+  <button onclick="exportToExcel()">Export</button>
+  <input type="file" id="importFile" accept=".xlsx" onchange="importFromExcel()" />  <h2 id="formHeader">Product Manager</h2>  <form id="productForm">
+    <label>Category: <input type="text" id="category" required /></label>
+    <label>Product Name: <input type="text" id="productName" required /></label>
+    <label><input type="checkbox" id="hasSizes" /> Has Sizes</label>
+    <button type="submit">Add Product</button>
+  </form>  <form id="discountForm" class="hidden">
+    <label>Product Name: <input type="text" id="discountProduct" required /></label>
+    <label>Discount Amount: <input type="number" id="discountAmount" required /></label>
     <label>
-      <input type="checkbox" id="hasSizes" /> Has Sizes
+      <select id="discountType">
+        <option value="amount">$ Off</option>
+        <option value="percent">% Off</option>
+      </select>
     </label>
-    <button onclick="addProduct()">Add Product</button>
-  </div>  <div id="discountForm" class="hidden">
-    <input type="text" id="discountName" placeholder="Discount Name" />
-    <input type="number" id="discountValue" placeholder="Discount (%)" />
-    <button onclick="addDiscount()">Add Discount</button>
-  </div>  <table id="productTable">
+    <button type="submit">Add Discount</button>
+  </form>  <table id="productTable">
     <thead>
       <tr>
         <th>Category</th>
-        <th>Name</th>
-        <th>Price</th>
-        <th>Sizes</th>
-        <th>Actions</th>
+        <th>Product</th>
+        <th>Has Sizes</th>
+        <th>XS</th><th>S</th><th>M</th><th>L</th><th>XL</th><th>2XL</th><th>3XL</th><th>4XL</th>
+        <th>Edit</th><th>Delete</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>  <table id="discountTable" class="hidden">
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Discount (%)</th>
-        <th>Actions</th>
+        <th>Product</th>
+        <th>Amount</th>
+        <th>Type</th>
+        <th>Edit</th><th>Delete</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>  <script>
-    let products = JSON.parse(localStorage.getItem("products")) || [];
-    let discounts = JSON.parse(localStorage.getItem("discounts")) || [];
+    let inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+    let discounts = JSON.parse(localStorage.getItem('discounts') || '[]');
 
-    const sizes = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
+    const productTable = document.querySelector('#productTable tbody');
+    const discountTable = document.querySelector('#discountTable tbody');
 
-    function showInventory() {
-      document.getElementById("productForm").classList.remove("hidden");
-      document.getElementById("discountForm").classList.add("hidden");
-      document.getElementById("productTable").classList.remove("hidden");
-      document.getElementById("discountTable").classList.add("hidden");
-      document.getElementById("sectionTitle").textContent = "Product Manager";
+    function saveData() {
+      localStorage.setItem('inventory', JSON.stringify(inventory));
+      localStorage.setItem('discounts', JSON.stringify(discounts));
     }
 
-    function showDiscount() {
-      document.getElementById("productForm").classList.add("hidden");
-      document.getElementById("discountForm").classList.remove("hidden");
-      document.getElementById("productTable").classList.add("hidden");
-      document.getElementById("discountTable").classList.remove("hidden");
-      document.getElementById("sectionTitle").textContent = "Discount Manager";
-    }
-
-    function addProduct() {
-      const name = document.getElementById("name").value;
-      const category = document.getElementById("category").value;
-      const price = parseFloat(document.getElementById("price").value);
-      const hasSizes = document.getElementById("hasSizes").checked;
-
-      if (!name || !category || isNaN(price)) return;
-
-      const sizeQuantities = hasSizes ? Object.fromEntries(sizes.map(s => [s, 0])) : null;
-
-      products.push({ name, category, price, hasSizes, sizeQuantities });
-      localStorage.setItem("products", JSON.stringify(products));
-      renderProducts();
-    }
-
-    function addDiscount() {
-      const name = document.getElementById("discountName").value;
-      const value = parseFloat(document.getElementById("discountValue").value);
-      if (!name || isNaN(value)) return;
-      discounts.push({ name, value });
-      localStorage.setItem("discounts", JSON.stringify(discounts));
-      renderDiscounts();
-    }
-
-    function renderProducts() {
-      const tbody = document.querySelector("#productTable tbody");
-      tbody.innerHTML = "";
-      const sorted = [...products].sort((a, b) =>
-        a.category.localeCompare(b.category) || a.name.localeCompare(b.name)
-      );
-      for (let i = 0; i < sorted.length; i++) {
-        const p = sorted[i];
-        const row = document.createElement("tr");
+    function renderTables() {
+      productTable.innerHTML = '';
+      discountTable.innerHTML = '';
+      const sorted = [...inventory].sort((a,b) => a.category.localeCompare(b.category) || a.product.localeCompare(b.product));
+      for (const item of sorted) {
+        const row = document.createElement('tr');
         row.innerHTML = `
-          <td contenteditable>${p.category}</td>
-          <td contenteditable>${p.name}</td>
-          <td contenteditable>${p.price}</td>
-          <td>${p.hasSizes ? sizes.map(s => `${s}: ${p.sizeQuantities[s]}`).join(", ") : "-"}</td>
-          <td>
-            <button onclick="deleteProduct(${i})">Delete</button>
-          </td>
+          <td contenteditable>${item.category}</td>
+          <td contenteditable>${item.product}</td>
+          <td>${item.hasSizes ? 'Yes' : 'No'}</td>
+          ${item.hasSizes ? ['XS','S','M','L','XL','2XL','3XL','4XL'].map(size => `<td contenteditable>${item.sizes[size] || 0}</td>`).join('') : '<td colspan="8"></td>'}
+          <td><button onclick="editProduct(this)">✔</button></td>
+          <td><button onclick="deleteProduct('${item.product}')">❌</button></td>
         `;
-        tbody.appendChild(row);
+        productTable.appendChild(row);
+      }
+
+      for (const item of discounts) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td contenteditable>${item.product}</td>
+          <td contenteditable>${item.amount}</td>
+          <td contenteditable>${item.type}</td>
+          <td><button onclick="editDiscount(this)">✔</button></td>
+          <td><button onclick="deleteDiscount('${item.product}')">❌</button></td>
+        `;
+        discountTable.appendChild(row);
       }
     }
 
-    function renderDiscounts() {
-      const tbody = document.querySelector("#discountTable tbody");
-      tbody.innerHTML = "";
-      discounts.forEach((d, i) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td contenteditable>${d.name}</td>
-          <td contenteditable>${d.value}</td>
-          <td>
-            <button onclick="deleteDiscount(${i})">Delete</button>
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    function deleteProduct(index) {
-      products.splice(index, 1);
-      localStorage.setItem("products", JSON.stringify(products));
-      renderProducts();
-    }
-
-    function deleteDiscount(index) {
-      discounts.splice(index, 1);
-      localStorage.setItem("discounts", JSON.stringify(discounts));
-      renderDiscounts();
-    }
-
-    function exportExcel() {
-      const wsData = [["Category", "Name", "Price", "Has Sizes", ...sizes]];
-      for (const p of products) {
-        const sizeData = p.hasSizes ? sizes.map(s => p.sizeQuantities[s]) : sizes.map(() => "");
-        wsData.push([p.category, p.name, p.price, p.hasSizes ? "Yes" : "No", ...sizeData]);
+    function editProduct(btn) {
+      const cells = btn.parentNode.parentNode.children;
+      const updated = {
+        category: cells[0].innerText,
+        product: cells[1].innerText,
+        hasSizes: cells[2].innerText === 'Yes',
+        sizes: {}
+      };
+      if (updated.hasSizes) {
+        const sizes = ['XS','S','M','L','XL','2XL','3XL','4XL'];
+        sizes.forEach((size, idx) => {
+          updated.sizes[size] = parseInt(cells[3 + idx].innerText) || 0;
+        });
       }
+      inventory = inventory.map(p => p.product === cells[1].innerText ? updated : p);
+      saveData();
+    }
+
+    function editDiscount(btn) {
+      const cells = btn.parentNode.parentNode.children;
+      const updated = {
+        product: cells[0].innerText,
+        amount: parseFloat(cells[1].innerText),
+        type: cells[2].innerText
+      };
+      discounts = discounts.map(d => d.product === cells[0].innerText ? updated : d);
+      saveData();
+    }
+
+    function deleteProduct(name) {
+      inventory = inventory.filter(p => p.product !== name);
+      saveData();
+      renderTables();
+    }
+
+    function deleteDiscount(name) {
+      discounts = discounts.filter(d => d.product !== name);
+      saveData();
+      renderTables();
+    }
+
+    function toggleView(view) {
+      const isDiscount = view === 'discount';
+      document.getElementById('productForm').classList.toggle('hidden', isDiscount);
+      document.getElementById('discountForm').classList.toggle('hidden', !isDiscount);
+      document.getElementById('productTable').classList.toggle('hidden', isDiscount);
+      document.getElementById('discountTable').classList.toggle('hidden', !isDiscount);
+      document.getElementById('formHeader').innerText = isDiscount ? 'Discount Manager' : 'Product Manager';
+    }
+
+    document.getElementById('productForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const product = {
+        category: document.getElementById('category').value,
+        product: document.getElementById('productName').value,
+        hasSizes: document.getElementById('hasSizes').checked,
+        sizes: {}
+      };
+      if (product.hasSizes) {
+        ['XS','S','M','L','XL','2XL','3XL','4XL'].forEach(size => product.sizes[size] = 0);
+      }
+      inventory.push(product);
+      saveData();
+      renderTables();
+      e.target.reset();
+    });
+
+    document.getElementById('discountForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const discount = {
+        product: document.getElementById('discountProduct').value,
+        amount: parseFloat(document.getElementById('discountAmount').value),
+        type: document.getElementById('discountType').value
+      };
+      discounts.push(discount);
+      saveData();
+      renderTables();
+      e.target.reset();
+    });
+
+    function exportToExcel() {
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      XLSX.utils.book_append_sheet(wb, ws, "Products");
-      XLSX.writeFile(wb, "products.xlsx");
+      const ws = XLSX.utils.json_to_sheet(inventory);
+      XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+      const ws2 = XLSX.utils.json_to_sheet(discounts);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Discounts');
+      XLSX.writeFile(wb, 'inventory_data.xlsx');
     }
 
-    function importExcel() {
-      const file = document.getElementById("importFile").files[0];
+    function importFromExcel() {
+      const input = document.getElementById('importFile');
       const reader = new FileReader();
       reader.onload = function (e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        products = rows.slice(1).map(row => {
-          const sizeQuantities = Object.fromEntries(sizes.map((s, i) => [s, parseInt(row[4 + i]) || 0]));
-          return {
-            category: row[0],
-            name: row[1],
-            price: parseFloat(row[2]),
-            hasSizes: row[3] === "Yes",
-            sizeQuantities
-          };
-        });
-        localStorage.setItem("products", JSON.stringify(products));
-        renderProducts();
+        const workbook = XLSX.read(e.target.result, { type: 'binary' });
+        const inv = XLSX.utils.sheet_to_json(workbook.Sheets['Inventory']);
+        const disc = XLSX.utils.sheet_to_json(workbook.Sheets['Discounts']);
+        inventory = inv;
+        discounts = disc;
+        saveData();
+        renderTables();
       };
-      reader.readAsArrayBuffer(file);
+      reader.readAsBinaryString(input.files[0]);
     }
 
-    renderProducts();
-    renderDiscounts();
+    renderTables();
   </script></body>
 </html>
