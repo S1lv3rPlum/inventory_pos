@@ -157,140 +157,173 @@
 </table>
   </section>
 <script>
-  // ---------- PRODUCT SECTION ----------
-  const productForm = document.getElementById("product-form");
-  const productNameInput = document.getElementById("product-name");
-  const productCategorySelect = document.getElementById("product-category");
-  const productTableBody = document.getElementById("product-table").getElementsByTagName("tbody")[0];
-  const addProductBtn = document.getElementById("add-product-btn");
+  let editingProductIndex = null;
+  let editingDiscountIndex = null;
+  const products = [];
+  const discounts = [];
 
-  let editingRow = null;
+  const inventorySection = document.getElementById("inventorySection");
+  const discountsSection = document.getElementById("discountsSection");
+  const inventoryBtn = document.getElementById("inventoryBtn");
+  const discountsBtn = document.getElementById("discountsBtn");
 
-  addProductBtn.addEventListener("click", () => {
-    const name = productNameInput.value.trim();
-    const category = productCategorySelect.value;
-
-    if (!name) return alert("Please enter a product name.");
-
-    if (editingRow) {
-      editingRow.cells[0].textContent = name;
-      editingRow.cells[1].textContent = category;
-      editingRow = null;
-      addProductBtn.textContent = "Add Product";
-    } else {
-      const newRow = productTableBody.insertRow();
-      const nameCell = newRow.insertCell(0);
-      const categoryCell = newRow.insertCell(1);
-      const actionsCell = newRow.insertCell(2);
-
-      nameCell.textContent = name;
-      categoryCell.textContent = category;
-
-      const editBtn = document.createElement("button");
-      editBtn.textContent = "Edit";
-      editBtn.addEventListener("click", () => {
-        productNameInput.value = nameCell.textContent;
-        productCategorySelect.value = categoryCell.textContent;
-        editingRow = newRow;
-        addProductBtn.textContent = "Save";
-      });
-
-      const deleteBtn = document.createElement("button");
-      deleteBtn.textContent = "Delete";
-      deleteBtn.addEventListener("click", () => {
-        if (editingRow === newRow) {
-          editingRow = null;
-          addProductBtn.textContent = "Add Product";
-        }
-        productTableBody.removeChild(newRow);
-      });
-
-      actionsCell.appendChild(editBtn);
-      actionsCell.appendChild(deleteBtn);
-    }
-
-    productForm.reset();
+  inventoryBtn.addEventListener("click", () => {
+    inventorySection.style.display = "block";
+    discountsSection.style.display = "none";
   });
 
-  // ---------- DISCOUNT SECTION ----------
-  const discountForm = document.getElementById("discount-form");
-  const discountTypeSelect = document.getElementById("discount-type");
-  const discountAmountInput = document.getElementById("discount-amount");
-  const discountTableBody = document.getElementById("discount-table").getElementsByTagName("tbody")[0];
-  const addDiscountBtn = document.getElementById("add-discount-btn");
+  discountsBtn.addEventListener("click", () => {
+    inventorySection.style.display = "none";
+    discountsSection.style.display = "block";
+  });
 
-  let editingDiscountRow = null;
+  function addProduct() {
+    const name = document.getElementById("productName").value.trim();
+    const category = document.getElementById("productCategory").value;
+    const size = document.getElementById("productSize").value;
+    const quantity = document.getElementById("productQuantity").value.trim();
 
-  addDiscountBtn.addEventListener("click", () => {
-    const type = discountTypeSelect.value;
-    const amountStr = discountAmountInput.value.trim();
+    if (!name || !category || !size || quantity === "") {
+      alert("Please fill out all product fields.");
+      return;
+    }
+
+    if (editingProductIndex !== null) {
+      products[editingProductIndex] = { name, category, size, quantity };
+      editingProductIndex = null;
+    } else {
+      products.push({ name, category, size, quantity });
+    }
+
+    document.getElementById("productName").value = "";
+    document.getElementById("productCategory").value = "";
+    document.getElementById("productSize").value = "";
+    document.getElementById("productQuantity").value = "";
+
+    renderProductTable();
+  }
+
+  function renderProductTable() {
+    const table = document.getElementById("productTable");
+    table.innerHTML = `
+      <tr>
+        <th>Product Name</th>
+        <th>Category</th>
+        <th>Size</th>
+        <th>Quantity</th>
+        <th>Actions</th>
+      </tr>
+    `;
+
+    products.forEach((product, index) => {
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td>${product.name}</td>
+        <td>${product.category}</td>
+        <td>${product.size}</td>
+        <td>${product.quantity}</td>
+        <td>
+          <button onclick="editProduct(${index})">Edit</button>
+          <button onclick="deleteProduct(${index})">Delete</button>
+        </td>
+      `;
+    });
+  }
+
+  function editProduct(index) {
+    const product = products[index];
+    document.getElementById("productName").value = product.name;
+    document.getElementById("productCategory").value = product.category;
+    document.getElementById("productSize").value = product.size;
+    document.getElementById("productQuantity").value = product.quantity;
+    editingProductIndex = index;
+  }
+
+  function deleteProduct(index) {
+    if (confirm("Are you sure you want to delete this product?")) {
+      products.splice(index, 1);
+      renderProductTable();
+    }
+  }
+
+  function addDiscount() {
+    const type = document.getElementById("discountType").value.trim();
+    const name = document.getElementById("discountName").value.trim();
+    const amountStr = document.getElementById("discountAmount").value.trim();
+
+    if (!type || !name || amountStr === "") {
+      alert("Please fill out all discount fields.");
+      return;
+    }
+
+    if (!["%", "$"].includes(type)) {
+      alert("Discount type must be either '%' or '$'");
+      return;
+    }
+
     const amount = parseFloat(amountStr);
-
-    if (!type) return alert("Please select a discount type.");
-    if (isNaN(amount) || amount <= 0) return alert("Please enter a valid discount amount.");
-
-    if (editingDiscountRow) {
-      editingDiscountRow.cells[0].textContent = type;
-      editingDiscountRow.cells[1].textContent = amount.toFixed(2);
-      editingDiscountRow = null;
-      addDiscountBtn.textContent = "Add Discount";
-    } else {
-      const newRow = discountTableBody.insertRow();
-      const typeCell = newRow.insertCell(0);
-      const amountCell = newRow.insertCell(1);
-      const actionsCell = newRow.insertCell(2);
-
-      typeCell.textContent = type;
-      amountCell.textContent = amount.toFixed(2);
-
-      const editBtn = document.createElement("button");
-      editBtn.textContent = "Edit";
-      editBtn.addEventListener("click", () => {
-        discountTypeSelect.value = typeCell.textContent;
-        discountAmountInput.value = amountCell.textContent;
-        editingDiscountRow = newRow;
-        addDiscountBtn.textContent = "Save";
-      });
-
-      const deleteBtn = document.createElement("button");
-      deleteBtn.textContent = "Delete";
-      deleteBtn.addEventListener("click", () => {
-        if (editingDiscountRow === newRow) {
-          editingDiscountRow = null;
-          addDiscountBtn.textContent = "Add Discount";
-        }
-        discountTableBody.removeChild(newRow);
-      });
-
-      actionsCell.appendChild(editBtn);
-      actionsCell.appendChild(deleteBtn);
+    if (isNaN(amount)) {
+      alert("Amount must be a number without the % sign.");
+      return;
     }
 
-    discountForm.reset();
-  });
+    if (editingDiscountIndex !== null) {
+      discounts[editingDiscountIndex] = { type, name, amount };
+      editingDiscountIndex = null;
+    } else {
+      discounts.push({ type, name, amount });
+    }
 
-  // ---------- TAB SWITCHING ----------
-  const inventoryTabBtn = document.getElementById("inventory-tab-btn");
-  const discountsTabBtn = document.getElementById("discounts-tab-btn");
-  const productSection = document.getElementById("product-section");
-  const discountSection = document.getElementById("discount-section");
+    document.getElementById("discountType").value = "";
+    document.getElementById("discountName").value = "";
+    document.getElementById("discountAmount").value = "";
 
-  inventoryTabBtn.addEventListener("click", () => {
-    productSection.style.display = "block";
-    discountSection.style.display = "none";
-    inventoryTabBtn.classList.add("active");
-    discountsTabBtn.classList.remove("active");
-  });
+    renderDiscountTable();
+  }
 
-  discountsTabBtn.addEventListener("click", () => {
-    productSection.style.display = "none";
-    discountSection.style.display = "block";
-    discountsTabBtn.classList.add("active");
-    inventoryTabBtn.classList.remove("active");
-  });
+  function renderDiscountTable() {
+    const table = document.getElementById("discountTable");
+    table.innerHTML = `
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Amount</th>
+        <th>Actions</th>
+      </tr>
+    `;
 
-  // Initialize default view
-  inventoryTabBtn.click();
+    discounts.forEach((discount, index) => {
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td>${discount.type}</td>
+        <td>${discount.name}</td>
+        <td>${discount.amount}</td>
+        <td>
+          <button onclick="editDiscount(${index})">Edit</button>
+          <button onclick="deleteDiscount(${index})">Delete</button>
+        </td>
+      `;
+    });
+  }
+
+  function editDiscount(index) {
+    const discount = discounts[index];
+    document.getElementById("discountType").value = discount.type;
+    document.getElementById("discountName").value = discount.name;
+    document.getElementById("discountAmount").value = discount.amount;
+    editingDiscountIndex = index;
+  }
+
+  function deleteDiscount(index) {
+    if (confirm("Are you sure you want to delete this discount?")) {
+      discounts.splice(index, 1);
+      renderDiscountTable();
+    }
+  }
+
+  // Initial render
+  renderProductTable();
+  renderDiscountTable();
 </script>
 </body>
 </html>
