@@ -67,7 +67,7 @@
       <input type="file" id="importInventoryFile" accept=".csv" style="display:none" />
     </div>
 
-    <h2>Add Product</h2>
+    <h2>Add Product2</h2>
     <form id="productForm" class="form-section">
       <label>
         Category:
@@ -157,176 +157,196 @@
 </table>
   </section>
 <script>
-  let products = [];
-  let discounts = [];
-  let isEditingProduct = false;
-  let editProductIndex = null;
-  let isEditingDiscount = false;
-  let editDiscountIndex = null;
+  let editingRow = null;
+  let currentSection = 'inventory';
 
-  function switchView(view) {
-    document.getElementById("inventoryView").style.display = view === "inventory" ? "block" : "none";
-    document.getElementById("discountView").style.display = view === "discount" ? "block" : "none";
+  function switchSection(section) {
+    currentSection = section;
+    document.getElementById('inventorySection').style.display = section === 'inventory' ? 'block' : 'none';
+    document.getElementById('discountSection').style.display = section === 'discounts' ? 'block' : 'none';
   }
 
-  function addOrUpdateProduct() {
-    const name = document.getElementById("productName").value;
-    const price = parseFloat(document.getElementById("productPrice").value);
-    const category = document.getElementById("productCategory").value;
-    const gender = document.getElementById("productGender").value;
+  function addProduct() {
+    const name = document.getElementById('productName').value.trim();
+    const price = parseFloat(document.getElementById('productPrice').value);
+    const quantity = parseInt(document.getElementById('productQuantity').value);
 
-    if (!name || isNaN(price) || !category || !gender) {
-      alert("Please fill in all product fields correctly.");
+    if (!name || isNaN(price) || isNaN(quantity)) {
+      alert('Please fill in all product fields correctly.');
       return;
     }
 
-    const productData = { name, price, category, gender };
-
-    if (isEditingProduct) {
-      products[editProductIndex] = productData;
-      isEditingProduct = false;
-      editProductIndex = null;
-    } else {
-      products.push(productData);
-    }
-
-    renderProductTable();
-    clearProductForm();
+    const table = document.getElementById('productTable').getElementsByTagName('tbody')[0];
+    const newRow = table.insertRow();
+    newRow.innerHTML = `
+      <td>${name}</td>
+      <td>${price.toFixed(2)}</td>
+      <td>${quantity}</td>
+      <td>
+        <button onclick="editRow(this, 'product')">Edit</button>
+        <button onclick="deleteRow(this)">Delete</button>
+      </td>`;
+    
+    document.getElementById('productForm').reset();
   }
 
-  function renderProductTable() {
-    const table = document.getElementById("productTable");
-    table.innerHTML = `
-      <tr>
-        <th>Name</th>
-        <th>Price</th>
-        <th>Category</th>
-        <th>Gender</th>
-        <th>Actions</th>
-      </tr>
-    `;
+  function addDiscount() {
+    const name = document.getElementById('discountName').value.trim();
+    const type = document.getElementById('discountType').value;
+    const amountStr = document.getElementById('discountAmount').value.trim();
+    const amount = parseFloat(amountStr);
 
-    products.forEach((product, index) => {
-      table.innerHTML += `
-        <tr>
-          <td>${product.name}</td>
-          <td>$${product.price.toFixed(2)}</td>
-          <td>${product.category}</td>
-          <td>${product.gender}</td>
-          <td>
-            <button onclick="editProduct(${index})">Edit</button>
-            <button onclick="deleteProduct(${index})">Delete</button>
-          </td>
-        </tr>
-      `;
-    });
-  }
-
-  function clearProductForm() {
-    document.getElementById("productName").value = "";
-    document.getElementById("productPrice").value = "";
-    document.getElementById("productCategory").value = "";
-    document.getElementById("productGender").value = "";
-  }
-
-  function editProduct(index) {
-    const product = products[index];
-    document.getElementById("productName").value = product.name;
-    document.getElementById("productPrice").value = product.price;
-    document.getElementById("productCategory").value = product.category;
-    document.getElementById("productGender").value = product.gender;
-
-    isEditingProduct = true;
-    editProductIndex = index;
-  }
-
-  function deleteProduct(index) {
-    products.splice(index, 1);
-    renderProductTable();
-  }
-
-  function addOrUpdateDiscount() {
-    const name = document.getElementById("discountName").value;
-    const amount = parseFloat(document.getElementById("discountAmount").value);
-    const type = document.getElementById("discountType").value;
-
-    if (!name || isNaN(amount) || !type) {
-      alert("Please fill in all discount fields correctly.");
+    if (!name || isNaN(amount)) {
+      alert('Please enter valid discount name and amount.');
       return;
     }
 
-    const discountData = { name, amount, type };
-
-    if (isEditingDiscount) {
-      discounts[editDiscountIndex] = discountData;
-      isEditingDiscount = false;
-      editDiscountIndex = null;
-    } else {
-      discounts.push(discountData);
+    if (type !== '%' && type !== '$') {
+      alert('Discount type must be % or $.');
+      return;
     }
 
-    renderDiscountTable();
-    clearDiscountForm();
+    const table = document.getElementById('discountTable').getElementsByTagName('tbody')[0];
+    const newRow = table.insertRow();
+    newRow.innerHTML = `
+      <td>${type}</td>
+      <td>${name}</td>
+      <td>${amount}</td>
+      <td>
+        <button onclick="editRow(this, 'discount')">Edit</button>
+        <button onclick="deleteRow(this)">Delete</button>
+      </td>`;
+
+    document.getElementById('discountForm').reset();
   }
 
-  function renderDiscountTable() {
-    const table = document.getElementById("discountTable");
-    table.innerHTML = `
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Amount</th>
-        <th>Actions</th>
-      </tr>
-    `;
-
-    discounts.forEach((discount, index) => {
-      const formattedAmount = discount.type === "%" ? `${discount.amount}%` : `$${discount.amount.toFixed(2)}`;
-      table.innerHTML += `
-        <tr>
-          <td>${discount.type}</td>
-          <td>${discount.name}</td>
-          <td>${formattedAmount}</td>
-          <td>
-            <button onclick="editDiscount(${index})">Edit</button>
-            <button onclick="deleteDiscount(${index})">Delete</button>
-          </td>
-        </tr>
-      `;
-    });
+  function deleteRow(button) {
+    const row = button.closest('tr');
+    row.parentNode.removeChild(row);
   }
 
-  function clearDiscountForm() {
-    document.getElementById("discountName").value = "";
-    document.getElementById("discountAmount").value = "";
-    document.getElementById("discountType").value = "";
+  function editRow(button, section) {
+    const row = button.closest('tr');
+    const cells = row.querySelectorAll('td');
+
+    if (editingRow && editingRow !== row) {
+      cancelEdit(editingRow, section);
+    }
+
+    editingRow = row;
+
+    if (section === 'product') {
+      const [name, price, quantity] = [cells[0].innerText, cells[1].innerText, cells[2].innerText];
+      cells[0].innerHTML = `<input type="text" value="${name}">`;
+      cells[1].innerHTML = `<input type="number" step="0.01" value="${price}">`;
+      cells[2].innerHTML = `<input type="number" step="1" value="${quantity}">`;
+    } else {
+      const [type, name, amount] = [cells[0].innerText, cells[1].innerText, cells[2].innerText];
+      cells[0].innerHTML = `<select><option value="%">%</option><option value="$">$</option></select>`;
+      cells[0].querySelector('select').value = type;
+      cells[1].innerHTML = `<input type="text" value="${name}">`;
+      cells[2].innerHTML = `<input type="number" step="0.01" value="${amount}">`;
+    }
+
+    cells[3].innerHTML = `
+      <button onclick="saveRow(this, '${section}')">Save</button>
+      <button onclick="cancelEdit(this.closest('tr'), '${section}')">Cancel</button>`;
   }
 
-  function editDiscount(index) {
-    const discount = discounts[index];
-    document.getElementById("discountName").value = discount.name;
-    document.getElementById("discountAmount").value = discount.amount;
-    document.getElementById("discountType").value = discount.type;
+  function saveRow(button, section) {
+    const row = button.closest('tr');
+    const inputs = row.querySelectorAll('input, select');
 
-    isEditingDiscount = true;
-    editDiscountIndex = index;
+    if (section === 'product') {
+      const [name, price, quantity] = [inputs[0].value.trim(), parseFloat(inputs[1].value), parseInt(inputs[2].value)];
+      if (!name || isNaN(price) || isNaN(quantity)) {
+        alert('Invalid product data.');
+        return;
+      }
+      row.innerHTML = `
+        <td>${name}</td>
+        <td>${price.toFixed(2)}</td>
+        <td>${quantity}</td>
+        <td>
+          <button onclick="editRow(this, 'product')">Edit</button>
+          <button onclick="deleteRow(this)">Delete</button>
+        </td>`;
+    } else {
+      const [type, name, amount] = [inputs[0].value, inputs[1].value.trim(), parseFloat(inputs[2].value)];
+      if (!name || isNaN(amount) || (type !== '%' && type !== '$')) {
+        alert('Invalid discount data.');
+        return;
+      }
+      row.innerHTML = `
+        <td>${type}</td>
+        <td>${name}</td>
+        <td>${amount}</td>
+        <td>
+          <button onclick="editRow(this, 'discount')">Edit</button>
+          <button onclick="deleteRow(this)">Delete</button>
+        </td>`;
+    }
+
+    editingRow = null;
   }
 
-  function deleteDiscount(index) {
-    discounts.splice(index, 1);
-    renderDiscountTable();
+  function cancelEdit(row, section) {
+    const originalCells = Array.from(row.cells).map(cell => cell.getAttribute('data-original') || cell.innerText);
+    if (section === 'product') {
+      row.innerHTML = `
+        <td>${originalCells[0]}</td>
+        <td>${originalCells[1]}</td>
+        <td>${originalCells[2]}</td>
+        <td>
+          <button onclick="editRow(this, 'product')">Edit</button>
+          <button onclick="deleteRow(this)">Delete</button>
+        </td>`;
+    } else {
+      row.innerHTML = `
+        <td>${originalCells[0]}</td>
+        <td>${originalCells[1]}</td>
+        <td>${originalCells[2]}</td>
+        <td>
+          <button onclick="editRow(this, 'discount')">Edit</button>
+          <button onclick="deleteRow(this)">Delete</button>
+        </td>`;
+    }
+    editingRow = null;
   }
-  
-  // Hook up tab buttons
-document.getElementById("btnInventory").addEventListener("click", () => {
-  document.getElementById("inventorySection").classList.remove("hidden");
-  document.getElementById("discountSection").classList.add("hidden");
-});
 
-document.getElementById("btnDiscounts").addEventListener("click", () => {
-  document.getElementById("inventorySection").classList.add("hidden");
-  document.getElementById("discountSection").classList.remove("hidden");
-});
+  function sortTable(n, tableId) {
+    const table = document.getElementById(tableId);
+    const rows = Array.from(table.rows).slice(1);
+    let switching = true;
+    let dir = "asc";
+
+    while (switching) {
+      switching = false;
+      for (let i = 0; i < rows.length - 1; i++) {
+        let x = rows[i].cells[n].innerText.toLowerCase();
+        let y = rows[i + 1].cells[n].innerText.toLowerCase();
+        let shouldSwitch = false;
+
+        if (!isNaN(x) && !isNaN(y)) {
+          x = parseFloat(x);
+          y = parseFloat(y);
+        }
+
+        if ((dir === "asc" && x > y) || (dir === "desc" && x < y)) {
+          shouldSwitch = true;
+          break;
+        }
+      }
+
+      if (shouldSwitch) {
+        table.tBodies[0].insertBefore(rows[i + 1], rows[i]);
+        switching = true;
+      } else if (dir === "asc") {
+        dir = "desc";
+        switching = true;
+      }
+    }
+  }
 </script>
 </body>
 </html>
