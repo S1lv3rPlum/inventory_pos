@@ -149,7 +149,7 @@
       localStorage.setItem("products", JSON.stringify(products));
     }
 
-    // Add product form submit handler
+    // FIXED: Add product form submit handler
     document.getElementById("productForm").addEventListener("submit", e => {
       e.preventDefault();
 
@@ -164,7 +164,6 @@
         return;
       }
 
-      // Initialize sizes with 0 quantities if hasSizes = Yes, else null
       const sizes = hasSizes === "Yes" ? sizeLabels.reduce((acc, size) => {
         acc[size] = 0;
         return acc;
@@ -174,7 +173,6 @@
       saveProducts();
       renderProductTable();
 
-      // Clear form
       e.target.reset();
     });
 
@@ -262,7 +260,7 @@
           }
           tr.appendChild(sizesCell);
 
-          // Actions cell: Edit and Delete buttons
+          // Actions cell: Delete button only (as per your code)
           const actionsCell = document.createElement("td");
           actionsCell.classList.add("actions-cell");
           const deleteBtn = document.createElement("button");
