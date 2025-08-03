@@ -3,27 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Product and Discount Manager</title>
+  <title>Inventory & Discounts</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    .section {
-      margin-bottom: 30px;
+      padding: 20px;
     }
     table {
       width: 100%;
-      border-collapse: collapse;
       margin-top: 10px;
+      border-collapse: collapse;
     }
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
       text-align: left;
     }
-    th {
-      background-color: #f4f4f4;
+    th.sortable:hover {
+      cursor: pointer;
+      background-color: #eee;
+    }
+    .hidden {
+      display: none;
     }
     button {
       margin: 5px;
@@ -31,51 +32,31 @@
   </style>
 </head>
 <body>
-  <h1>Product and Discount Manager</h1>
+  <h1>Product & Discount Manager</h1>
 
-  <div class="section">
-    <button onclick="toggleForm('productForm')">Add Product</button>
-    <button onclick="toggleForm('discountForm')">Add Discount</button>
-  </div>
+  <button onclick="toggleView('product')">Inventory</button>
+  <button onclick="toggleView('discount')">Discounts</button>
 
-  <!-- Product Form -->
-  <div id="productForm" style="display:none;" class="section">
+  <!-- Product Section -->
+  <div id="product-section">
     <h2>Add Product</h2>
-    <input type="text" id="productName" placeholder="Product Name" />
-    <input type="number" id="productPrice" placeholder="Price" step="0.01" />
-    <input type="number" id="productQuantity" placeholder="Quantity" />
-    <select id="productCategory">
-      <option value="">Select Category</option>
-      <option value="Snacks">Snacks</option>
-      <option value="Drinks">Drinks</option>
-      <option value="Household">Household</option>
-    </select>
-    <button onclick="addProduct()">Add</button>
-  </div>
+    <form id="product-form">
+      <input type="hidden" id="editingProductIndex" />
+      <label>Name: <input type="text" id="product-name" required></label>
+      <label>Category: <input type="text" id="product-category" required></label>
+      <label>Price: <input type="number" id="product-price" required min="0" step="0.01"></label>
+      <label>Quantity: <input type="number" id="product-quantity" required min="0"></label>
+      <button type="submit">Add Product</button>
+    </form>
 
-  <!-- Discount Form -->
-  <div id="discountForm" style="display:none;" class="section">
-    <h2>Add Discount</h2>
-    <input type="text" id="discountName" placeholder="Discount Name" />
-    <input type="number" id="discountAmount" placeholder="Amount" step="0.01" />
-    <select id="discountType">
-      <option value="">Select Type</option>
-      <option value="percent">Percent Off</option>
-      <option value="dollar">Dollar Off</option>
-    </select>
-    <button onclick="addDiscount()">Add</button>
-  </div>
-
-  <!-- Product Table -->
-  <div class="section">
-    <h2>Products</h2>
-    <table id="productTable">
+    <h2>Inventory</h2>
+    <table id="product-table">
       <thead>
         <tr>
-          <th>Category</th>
-          <th>Name</th>
-          <th>Price</th>
-          <th>Quantity</th>
+          <th class="sortable" onclick="sortTable('product', 0)">Name</th>
+          <th class="sortable" onclick="sortTable('product', 1)">Category</th>
+          <th class="sortable" onclick="sortTable('product', 2)">Price</th>
+          <th class="sortable" onclick="sortTable('product', 3)">Quantity</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -83,14 +64,29 @@
     </table>
   </div>
 
-  <!-- Discount Table -->
-  <div class="section">
+  <!-- Discount Section -->
+  <div id="discount-section" class="hidden">
+    <h2>Add Discount</h2>
+    <form id="discount-form">
+      <input type="hidden" id="editingDiscountIndex" />
+      <label>Code: <input type="text" id="discount-code" required></label>
+      <label>Type:
+        <select id="discount-type" required>
+          <option value="">Select</option>
+          <option value="percent">Percent Off</option>
+          <option value="dollar">Dollar Off</option>
+        </select>
+      </label>
+      <label>Amount: <input type="number" id="discount-amount" required min="0" step="0.01"></label>
+      <button type="submit">Add Discount</button>
+    </form>
+
     <h2>Discounts</h2>
-    <table id="discountTable">
+    <table id="discount-table">
       <thead>
         <tr>
+          <th>Code</th>
           <th>Type</th>
-          <th>Name</th>
           <th>Amount</th>
           <th>Actions</th>
         </tr>
@@ -103,107 +99,127 @@
     const products = [];
     const discounts = [];
 
-    function toggleForm(formId) {
-      document.getElementById('productForm').style.display = 'none';
-      document.getElementById('discountForm').style.display = 'none';
-      document.getElementById(formId).style.display = 'block';
+    const productForm = document.getElementById('product-form');
+    const discountForm = document.getElementById('discount-form');
+
+    const productSection = document.getElementById('product-section');
+    const discountSection = document.getElementById('discount-section');
+
+    function toggleView(view) {
+      if (view === 'product') {
+        productSection.classList.remove('hidden');
+        discountSection.classList.add('hidden');
+      } else {
+        discountSection.classList.remove('hidden');
+        productSection.classList.add('hidden');
+      }
     }
 
-    function addProduct() {
-      const name = document.getElementById('productName').value.trim();
-      const price = parseFloat(document.getElementById('productPrice').value);
-      const quantity = parseInt(document.getElementById('productQuantity').value);
-      const category = document.getElementById('productCategory').value;
+    productForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('product-name').value.trim();
+      const category = document.getElementById('product-category').value.trim();
+      const price = parseFloat(document.getElementById('product-price').value);
+      const quantity = parseInt(document.getElementById('product-quantity').value, 10);
+      const index = document.getElementById('editingProductIndex').value;
 
-      if (!name || isNaN(price) || isNaN(quantity) || !category) {
-        alert("Please fill out all product fields.");
+      if (index) {
+        products[index] = { name, category, price, quantity };
+      } else {
+        products.push({ name, category, price, quantity });
+      }
+
+      productForm.reset();
+      document.getElementById('editingProductIndex').value = '';
+      renderProductTable();
+    });
+
+    discountForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const code = document.getElementById('discount-code').value.trim();
+      const type = document.getElementById('discount-type').value;
+      const amount = parseFloat(document.getElementById('discount-amount').value);
+      const index = document.getElementById('editingDiscountIndex').value;
+
+      if (!type || isNaN(amount)) {
+        alert('Please select a discount type and valid amount.');
         return;
       }
 
-      products.push({ name, price, quantity, category });
-      renderProducts();
-      document.getElementById('productForm').reset();
-    }
-
-    function addDiscount() {
-      const name = document.getElementById('discountName').value.trim();
-      const amount = parseFloat(document.getElementById('discountAmount').value);
-      const type = document.getElementById('discountType').value;
-
-      if (!name || isNaN(amount) || !type) {
-        alert("Please fill out all discount fields.");
-        return;
+      if (index) {
+        discounts[index] = { code, type, amount };
+      } else {
+        discounts.push({ code, type, amount });
       }
 
-      discounts.push({ name, amount, type });
-      renderDiscounts();
-      document.getElementById('discountForm').reset();
-    }
+      discountForm.reset();
+      document.getElementById('editingDiscountIndex').value = '';
+      renderDiscountTable();
+    });
 
-    function renderProducts() {
-      const tbody = document.querySelector("#productTable tbody");
-      tbody.innerHTML = "";
-      products.forEach((p, index) => {
-        const row = document.createElement("tr");
+    function renderProductTable() {
+      const tbody = document.querySelector('#product-table tbody');
+      tbody.innerHTML = '';
+      products.forEach((p, i) => {
+        const row = tbody.insertRow();
         row.innerHTML = `
-          <td>${p.category}</td>
           <td>${p.name}</td>
+          <td>${p.category}</td>
           <td>$${p.price.toFixed(2)}</td>
           <td>${p.quantity}</td>
-          <td>
-            <button onclick="editProduct(${index})">Edit</button>
-            <button onclick="deleteProduct(${index})">Delete</button>
-          </td>
+          <td><button onclick="editProduct(${i})">Edit</button></td>
         `;
-        tbody.appendChild(row);
       });
     }
 
-    function renderDiscounts() {
-      const tbody = document.querySelector("#discountTable tbody");
-      tbody.innerHTML = "";
-      discounts.forEach((d, index) => {
-        const row = document.createElement("tr");
+    function renderDiscountTable() {
+      const tbody = document.querySelector('#discount-table tbody');
+      tbody.innerHTML = '';
+      discounts.forEach((d, i) => {
+        const row = tbody.insertRow();
+        const typeLabel = d.type === 'percent' ? '% Off' : '$ Off';
         row.innerHTML = `
-          <td>${d.type === "percent" ? "%" : "$"} Off</td>
-          <td>${d.name}</td>
+          <td>${d.code}</td>
+          <td>${typeLabel}</td>
           <td>${d.amount.toFixed(2)}</td>
-          <td>
-            <button onclick="editDiscount(${index})">Edit</button>
-            <button onclick="deleteDiscount(${index})">Delete</button>
-          </td>
+          <td><button onclick="editDiscount(${i})">Edit</button></td>
         `;
-        tbody.appendChild(row);
       });
-    }
-
-    function deleteProduct(index) {
-      products.splice(index, 1);
-      renderProducts();
-    }
-
-    function deleteDiscount(index) {
-      discounts.splice(index, 1);
-      renderDiscounts();
     }
 
     function editProduct(index) {
       const p = products[index];
-      document.getElementById('productName').value = p.name;
-      document.getElementById('productPrice').value = p.price;
-      document.getElementById('productQuantity').value = p.quantity;
-      document.getElementById('productCategory').value = p.category;
-      products.splice(index, 1);
-      toggleForm('productForm');
+      document.getElementById('product-name').value = p.name;
+      document.getElementById('product-category').value = p.category;
+      document.getElementById('product-price').value = p.price;
+      document.getElementById('product-quantity').value = p.quantity;
+      document.getElementById('editingProductIndex').value = index;
     }
 
     function editDiscount(index) {
       const d = discounts[index];
-      document.getElementById('discountName').value = d.name;
-      document.getElementById('discountAmount').value = d.amount;
-      document.getElementById('discountType').value = d.type;
-      discounts.splice(index, 1);
-      toggleForm('discountForm');
+      document.getElementById('discount-code').value = d.code;
+      document.getElementById('discount-type').value = d.type;
+      document.getElementById('discount-amount').value = d.amount;
+      document.getElementById('editingDiscountIndex').value = index;
+    }
+
+    function sortTable(type, colIndex) {
+      let arr = type === 'product' ? products : discounts;
+      let key;
+      switch (colIndex) {
+        case 0: key = 'name'; break;
+        case 1: key = 'category'; break;
+        case 2: key = 'price'; break;
+        case 3: key = 'quantity'; break;
+      }
+
+      arr.sort((a, b) => {
+        if (typeof a[key] === 'string') return a[key].localeCompare(b[key]);
+        return a[key] - b[key];
+      });
+
+      type === 'product' ? renderProductTable() : renderDiscountTable();
     }
   </script>
 </body>
