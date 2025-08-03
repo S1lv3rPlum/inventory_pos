@@ -25,43 +25,45 @@ document.getElementById("addProductForm").addEventListener("submit", function (e
   const gender = document.getElementById("productGenderMale").checked ? "M" :
                  document.getElementById("productGenderFemale").checked ? "F" : "";
 
+  if (!name || isNaN(price)) {
+    alert("Please enter a valid product name and price.");
+    return;
+  }
+
   const imageInput = document.getElementById("productImage");
   const imageFile = imageInput.files[0];
   const reader = new FileReader();
 
   reader.onload = function () {
-    const imageData = reader.result;
+    const imageData = reader.result || null; // fallback to null if empty
+
     const defaultSizes = ["S", "M", "L", "XL", "2XL"];
     const variants = hasSizes ? defaultSizes.map(size => ({ size, stock: 0 })) : [{ size: "One Size", stock: 0 }];
 
     const newProduct = { name, category, price, gender, variants, image: imageData };
+
     const tx = db.transaction("products", "readwrite");
     const store = tx.objectStore("products");
-    store.add(newProduct);
-    tx.oncomplete = () => {
+    const addRequest = store.add(newProduct);
+
+    addRequest.onsuccess = () => {
       document.getElementById("addProductForm").reset();
       displayInventory();
+    };
+
+    addRequest.onerror = (event) => {
+      alert("Failed to add product: " + event.target.error);
     };
   };
 
   if (imageFile) {
     reader.readAsDataURL(imageFile);
   } else {
-    // No image file — directly add product with image = null
-    const imageData = null;
-    const defaultSizes = ["S", "M", "L", "XL", "2XL"];
-    const variants = hasSizes ? defaultSizes.map(size => ({ size, stock: 0 })) : [{ size: "One Size", stock: 0 }];
-
-    const newProduct = { name, category, price, gender, variants, image: imageData };
-    const tx = db.transaction("products", "readwrite");
-    const store = tx.objectStore("products");
-    store.add(newProduct);
-    tx.oncomplete = () => {
-      document.getElementById("addProductForm").reset();
-      displayInventory();
-    };
+    // No image, manually trigger onload with empty result
+    reader.onload();
   }
 });
+
 
 function displayInventory() {
   const container = document.getElementById("inventoryList");
