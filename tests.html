@@ -331,6 +331,38 @@
       saveProducts();
       renderProductTable();
     }
+    
+    document.getElementById('addProductForm').addEventListener('submit', function (event) {
+  event.preventDefault(); // Prevent form refresh
+  const category = document.getElementById('productCategory').value;
+  const name = document.getElementById('productName').value;
+  const price = parseFloat(document.getElementById('productPrice').value).toFixed(2);
+
+  if (!category || !name || isNaN(price)) {
+    alert('Please fill out all required fields.');
+    return;
+  }
+
+  const table = document.getElementById('productTable').getElementsByTagName('tbody')[0];
+  const row = table.insertRow();
+
+  row.innerHTML = `
+    <td>${category}</td>
+    <td>${name}</td>
+    <td>$${price}</td>
+    <td contenteditable="true">0</td>
+    <td contenteditable="true">0</td>
+    <td contenteditable="true">0</td>
+    <td contenteditable="true">0</td>
+    <td><button class="editBtn">Edit</button></td>
+  `;
+
+  // Clear form fields
+  document.getElementById('productCategory').value = '';
+  document.getElementById('productName').value = '';
+  document.getElementById('productPrice').value = '';
+});
+    
   </script>
 
 </body>
