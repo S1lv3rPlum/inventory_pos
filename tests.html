@@ -194,11 +194,12 @@
       }
 
       // Group products by category
-      const grouped = products.reduce((acc, product, i) => {
-        if (!acc[product.category]) acc[product.category] = [];
-        acc[product.category].push({...product, index: i});
-        return acc;
-      }, {});
+     // Group products by category
+const grouped = {};
+products.forEach(product => {
+  if (!grouped[product.category]) grouped[product.category] = [];
+  grouped[product.category].push(product);
+});
 
       // For each category group, add header row, then product rows
       for (const category of Object.keys(grouped).sort((a,b) => a.localeCompare(b))) {
@@ -211,68 +212,69 @@
         tbody.appendChild(headerRow);
 
         grouped[category].forEach(prod => {
-          const tr = document.createElement("tr");
+  const tr = document.createElement("tr");
+  const index = products.indexOf(prod);  // ✅ correct live index
 
-          // Editable product name cell
-          const nameCell = document.createElement("td");
-          nameCell.contentEditable = "true";
-          nameCell.textContent = prod.name;
-          nameCell.classList.add("editable");
-          nameCell.dataset.index = prod.index;
-          nameCell.dataset.field = "name";
-          tr.appendChild(nameCell);
+  // Editable product name cell
+  const nameCell = document.createElement("td");
+  nameCell.contentEditable = "true";
+  nameCell.textContent = prod.name;
+  nameCell.classList.add("editable");
+  nameCell.dataset.index = index;
+  nameCell.dataset.field = "name";
+  tr.appendChild(nameCell);
 
-          // Editable price cell
-          const priceCell = document.createElement("td");
-          priceCell.contentEditable = "true";
-          priceCell.textContent = prod.price.toFixed(2);
-          priceCell.classList.add("editable");
-          priceCell.dataset.index = prod.index;
-          priceCell.dataset.field = "price";
-          tr.appendChild(priceCell);
+  // Editable price cell
+  const priceCell = document.createElement("td");
+  priceCell.contentEditable = "true";
+  priceCell.textContent = prod.price.toFixed(2);
+  priceCell.classList.add("editable");
+  priceCell.dataset.index = index;
+  priceCell.dataset.field = "price";
+  tr.appendChild(priceCell);
 
-          // Editable unisex cell (select element)
-          const unisexCell = document.createElement("td");
-          const select = document.createElement("select");
-          select.innerHTML = `<option value="Yes">Yes</option><option value="No">No</option>`;
-          select.value = prod.unisex;
-          select.dataset.index = prod.index;
-          select.dataset.field = "unisex";
-          select.addEventListener("change", onSelectChange);
-          unisexCell.appendChild(select);
-          tr.appendChild(unisexCell);
+  // Editable unisex cell
+  const unisexCell = document.createElement("td");
+  const select = document.createElement("select");
+  select.innerHTML = `<option value="Yes">Yes</option><option value="No">No</option>`;
+  select.value = prod.unisex;
+  select.dataset.index = index;
+  select.dataset.field = "unisex";
+  select.addEventListener("change", onSelectChange);
+  unisexCell.appendChild(select);
+  tr.appendChild(unisexCell);
 
-          // Sizes cell
-          const sizesCell = document.createElement("td");
-          sizesCell.classList.add("sizes-cell");
-          if (prod.sizes) {
-            sizeLabels.forEach(size => {
-              const input = document.createElement("input");
-              input.type = "number";
-              input.min = 0;
-              input.value = prod.sizes[size] || 0;
-              input.dataset.index = prod.index;
-              input.dataset.size = size;
-              input.addEventListener("change", onSizeQtyChange);
-              sizesCell.appendChild(input);
-            });
-          } else {
-            sizesCell.textContent = "-";
-          }
-          tr.appendChild(sizesCell);
+  // Sizes cell
+  const sizesCell = document.createElement("td");
+  sizesCell.classList.add("sizes-cell");
+  if (prod.sizes) {
+    sizeLabels.forEach(size => {
+      const input = document.createElement("input");
+      input.type = "number";
+      input.min = 0;
+      input.value = prod.sizes[size] || 0;
+      input.dataset.index = index;
+      input.dataset.size = size;
+      input.addEventListener("change", onSizeQtyChange);
+      sizesCell.appendChild(input);
+    });
+  } else {
+    sizesCell.textContent = "-";
+  }
+  tr.appendChild(sizesCell);
 
-          // Actions cell: Delete button only (as per your code)
-          const actionsCell = document.createElement("td");
-          actionsCell.classList.add("actions-cell");
-          const deleteBtn = document.createElement("button");
-          deleteBtn.textContent = "Delete";
-          deleteBtn.dataset.index = prod.index;
-          deleteBtn.addEventListener("click", onDeleteProduct);
-          actionsCell.appendChild(deleteBtn);
-          tr.appendChild(actionsCell);
+  // Actions cell
+  const actionsCell = document.createElement("td");
+  actionsCell.classList.add("actions-cell");
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "Delete";
+  deleteBtn.dataset.index = index;
+  deleteBtn.addEventListener("click", onDeleteProduct);
+  actionsCell.appendChild(deleteBtn);
+  tr.appendChild(actionsCell);
 
-          tbody.appendChild(tr);
-        });
+  tbody.appendChild(tr);
+});
       }
     }
 
