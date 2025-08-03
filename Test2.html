@@ -1,249 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Inventory Manager</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 1rem;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 1rem;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 0.5rem;
-      text-align: left;
-    }
-    .hidden {
-      display: none;
-    }
-    .button-group {
-      margin-bottom: 1rem;
-    }
-    button {
-      margin-right: 0.5rem;
-    }
-    input[type="number"] {
-      width: 60px;
-    }
-    select {
-      max-width: 120px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inventory Manager</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; }
+  h1 { text-align: center; }
+  label { margin-right: 15px; display: inline-block; margin-bottom: 10px; }
+  input, select { padding: 5px; font-size: 14px; }
+  button { margin-top: 10px; padding: 8px 15px; cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
+</style>
 </head>
 <body>
-  <h1>last semi-working Inventory Manager</h1>
-  <div class="button-group">
-    <button>Import</button>
-    <button>Export</button>
-    <button onclick="showInventory()">Inventory</button>
-    <button onclick="showDiscounts()">Discounts</button>
-  </div>
 
-  <!-- Add Product Form -->
-  <div id="product-form">
-    <h2>Add Product</h2>
-    <label>Category: <input type="text" id="category"/></label>
-    <label>Name: <input type="text" id="name"/></label>
-    <label>Price: <input type="number" id="price"/></label>
-    <label>Quantity: <input type="number" id="quantity"/></label>
-    <label>
-      Unisex:
-      <select id="unisex">
-        <option value="Yes">Yes</option>
-        <option value="No">No</option>
-      </select>
-    </label>
-    <label>
-      Has Sizes:
-      <select id="hasSizes">
-        <option value="No">No</option>
-        <option value="Yes">Yes</option>
-      </select>
-    </label>
-    <button onclick="addProduct()">Add Product</button>
-  </div>
+<h1>Inventory Manager</h1>
 
-  <!-- Product Table -->
-  <table id="product-table">
-    <thead>
-      <tr>
-        <th>Category</th>
-        <th>Name</th>
-        <th>Price</th>
-        <th>Quantity</th>
-        <th>Unisex</th>
-        <th>Sizes</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<form id="productForm">
+  <label>Category: <input type="text" id="category" required /></label>
+  <label>Product Name: <input type="text" id="productName" required /></label>
+  <label>Price: <input type="number" id="price" step="0.01" min="0" required /></label>
+  <label>
+    Unisex:
+    <select id="unisex" required>
+      <option value="">-- Select --</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+  </label>
+  <label>
+    Has Sizes:
+    <select id="hasSizes" required>
+      <option value="">-- Select --</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+  </label>
+  <br />
+  <button type="submit">Add Product</button>
+</form>
 
-  <!-- Discount Form -->
-  <div id="discount-form" class="hidden">
-    <h2>Add Discount</h2>
-    <label>Type:
-      <select id="discount-type">
-        <option value="%">% Off</option>
-        <option value="$">$ Off</option>
-      </select>
-    </label>
-    <label>Name: <input type="text" id="discount-name"/></label>
-    <label>Amount: <input type="number" id="discount-amount"/></label>
-    <button onclick="addDiscount()">Add Discount</button>
-  </div>
+<table id="productTable" aria-label="Inventory product list">
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Name</th>
+      <th>Price</th>
+      <th>Unisex</th>
+      <th>Sizes</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <!-- Discount Table -->
-  <table id="discount-table" class="hidden">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Amount</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<script>
+  const products = [];
+  const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 
-  <script>
-    let productData = [];
-    let discountData = [];
+  document.getElementById("productForm").addEventListener("submit", e => {
+    e.preventDefault();
 
-    function showInventory() {
-      document.getElementById("product-form").classList.remove("hidden");
-      document.getElementById("product-table").classList.remove("hidden");
-      document.getElementById("discount-form").classList.add("hidden");
-      document.getElementById("discount-table").classList.add("hidden");
+    const category = document.getElementById("category").value.trim();
+    const name = document.getElementById("productName").value.trim();
+    const price = parseFloat(document.getElementById("price").value);
+    const unisex = document.getElementById("unisex").value;
+    const hasSizes = document.getElementById("hasSizes").value;
+
+    if (!category || !name || isNaN(price) || !unisex || !hasSizes) {
+      alert("Please fill in all required fields.");
+      return;
     }
 
-    function showDiscounts() {
-      document.getElementById("product-form").classList.add("hidden");
-      document.getElementById("product-table").classList.add("hidden");
-      document.getElementById("discount-form").classList.remove("hidden");
-      document.getElementById("discount-table").classList.remove("hidden");
-    }
+    const sizes = hasSizes === "Yes" ? sizeLabels.reduce((acc, size) => {
+      acc[size] = 0;
+      return acc;
+    }, {}) : null;
 
-    function addProduct() {
-      const category = document.getElementById("category").value;
-      const name = document.getElementById("name").value;
-      const price = parseFloat(document.getElementById("price").value);
-      const quantity = parseInt(document.getElementById("quantity").value);
-      const unisex = document.getElementById("unisex").value;
-      const hasSizes = document.getElementById("hasSizes").value;
+    products.push({ category, name, price, unisex, sizes });
 
-      if (!category || !name || isNaN(price) || isNaN(quantity)) return;
+    renderTable();
 
-      const sizes = hasSizes === "Yes"
-        ? { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0, XXXXL: 0 }
-        : null;
+    document.getElementById("productForm").reset();
+  });
 
-      productData.push({ category, name, price, quantity, unisex, sizes });
-      renderProducts();
-      document.getElementById("category").value = "";
-      document.getElementById("name").value = "";
-      document.getElementById("price").value = "";
-      document.getElementById("quantity").value = "";
-    }
+  function renderTable() {
+    const tbody = document.querySelector("#productTable tbody");
+    tbody.innerHTML = "";
 
-    function renderProducts() {
-      const tbody = document.querySelector("#product-table tbody");
-      tbody.innerHTML = "";
-      productData.forEach((p, index) => {
-        const tr = document.createElement("tr");
+    products.forEach(prod => {
+      const tr = document.createElement("tr");
 
-        const sizesDisplay = p.sizes
-          ? Object.entries(p.sizes).map(([size, qty]) => `${size}:${qty}`).join(", ")
-          : "-";
+      tr.innerHTML = `
+        <td>${prod.category}</td>
+        <td>${prod.name}</td>
+        <td>${prod.price.toFixed(2)}</td>
+        <td>${prod.unisex}</td>
+        <td>${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}</td>
+      `;
 
-        tr.innerHTML = `
-          <td>${p.category}</td>
-          <td contenteditable="true">${p.name}</td>
-          <td>${p.price}</td>
-          <td>${p.quantity}</td>
-          <td>${p.unisex}</td>
-          <td>${sizesDisplay}</td>
-          <td>
-            <button onclick="editProduct(${index})">Edit</button>
-            <button onclick="deleteProduct(${index})">Delete</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
+      tbody.appendChild(tr);
+    });
+  }
+</script>
 
-    function editProduct(index) {
-      const product = productData[index];
-      if (product.sizes) {
-        const newSizes = {};
-        for (let size in product.sizes) {
-          const value = prompt(`Qty for size ${size}:`, product.sizes[size]);
-          newSizes[size] = isNaN(parseInt(value)) ? 0 : parseInt(value);
-        }
-        productData[index].sizes = newSizes;
-        renderProducts();
-      } else {
-        alert("This product does not use sizes.");
-      }
-    }
-
-    function deleteProduct(index) {
-      productData.splice(index, 1);
-      renderProducts();
-    }
-
-    function addDiscount() {
-      const type = document.getElementById("discount-type").value;
-      const name = document.getElementById("discount-name").value;
-      const amount = parseFloat(document.getElementById("discount-amount").value);
-      if (!name || isNaN(amount)) return;
-      discountData.push({ type, name, amount });
-      renderDiscounts();
-      document.getElementById("discount-name").value = "";
-      document.getElementById("discount-amount").value = "";
-    }
-
-    function renderDiscounts() {
-      const tbody = document.querySelector("#discount-table tbody");
-      tbody.innerHTML = "";
-      discountData.forEach((d, index) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${d.type}</td>
-          <td contenteditable="true">${d.name}</td>
-          <td>${d.amount}</td>
-          <td>
-            <button onclick="editDiscount(${index})">Edit</button>
-            <button onclick="deleteDiscount(${index})">Delete</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function editDiscount(index) {
-      const discount = discountData[index];
-      const newType = prompt("New type (% or $):", discount.type);
-      const newAmount = parseFloat(prompt("New amount:", discount.amount));
-      if (!["%", "$"].includes(newType) || isNaN(newAmount)) return;
-      discountData[index].type = newType;
-      discountData[index].amount = newAmount;
-      renderDiscounts();
-    }
-
-    function deleteDiscount(index) {
-      discountData.splice(index, 1);
-      renderDiscounts();
-    }
-
-    // Initialize view
-    showInventory();
-  </script>
 </body>
 </html>
