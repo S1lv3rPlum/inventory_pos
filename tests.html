@@ -2,344 +2,201 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Inventory Manager</title>
+  <title>Band Inventory Manager</title>
+
+  <!-- Global styles including menu, themes, and buttons -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Inventory-specific styles -->
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 900px;
-      margin: auto;
+    .container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1rem;
     }
-    h1 {
-      text-align: center;
-    }
-    .button-group {
-      margin-bottom: 15px;
-      text-align: center;
-    }
-    button {
-      margin: 0 8px 10px;
-      padding: 8px 15px;
-      cursor: pointer;
-    }
-    #importExportButtons {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    form label {
-      margin-right: 15px;
-      display: inline-block;
-      margin-bottom: 10px;
-    }
-    input[type="text"], input[type="number"], select {
-      padding: 5px;
-      font-size: 14px;
-    }
-    #productForm {
-      margin-bottom: 15px;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 15px;
+    #inventorySection, #discountSection {
+      border: 1px solid #888;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: #fff;
     }
     table {
-      border-collapse: collapse;
       width: 100%;
-      margin-top: 10px;
+      border-collapse: collapse;
+      margin-top: 1rem;
     }
     th, td {
-      border: 1px solid #aaa;
-      padding: 8px 10px;
+      border: 1px solid #ccc;
+      padding: 8px 12px;
       text-align: left;
-      vertical-align: middle;
+      vertical-align: top;
     }
-    tr.category-header-row {
-      background-color: #ddd;
-      font-weight: bold;
+    th {
+      background-color: #eee;
+    }
+    button {
+      margin: 0 4px;
+      cursor: pointer;
+    }
+    input[type="text"], input[type="number"] {
+      padding: 4px 6px;
+      box-sizing: border-box;
+    }
+    .form-row {
+      margin: 12px 0;
+    }
+    #topBar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    #navButtons {
+      display: flex;
+      gap: 10px;
+    }
+    #bandNameBanner {
+      font-size: 1.2rem;
+      color: #999;
+      margin-bottom: 0.5rem;
       text-align: center;
-      font-size: 1.1em;
     }
-    td.sizes-cell input {
-      width: 40px;
-      font-size: 13px;
-      padding: 3px;
-      margin: 0 2px;
-      text-align: center;
-    }
-    td.editable {
-      cursor: text;
-    }
-    td.actions-cell button {
-      margin-right: 6px;
+
+    /* NEW: Adjusted hamburger wrapper to stay inside layout */
+    #menu-toggle-wrapper {
+      position: sticky;
+      top: 1rem;
+      z-index: 1001;
+      margin-bottom: 1rem;
     }
   </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
 </head>
-<body>
 
-  <h1>Inventory Manager</h1>
+<body class="light-theme accent-blue">
 
-  <div class="button-group">
-    <button disabled>Import</button>
-    <button disabled>Export</button>
-    <button disabled>Inventory</button>
-    <button disabled>Discounts</button>
+  <div class="container">
+
+    <!-- Hamburger Menu Button (now inside layout) -->
+    <div id="menu-toggle-wrapper">
+      <button id="menu-toggle" class="menu-button" aria-label="Open menu">☰</button>
+    </div>
+
+    <div id="bandNameBanner">&lt;band Name Banner&gt;</div>
+
+    <div id="topBar">
+      <h1>Inventory Manager</h1>
+  
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+    <button type="button" onclick="toggleView('inventory')">Manage Inventory</button>
+    <button type="button" onclick="toggleView('discounts')">Manage Discounts</button>
+    </div>
+
+<div style="margin-bottom: 1rem; display: flex; gap: 10px;">
+  <button type="button" style="flex: 1;" onclick="exportInventory()">⬆️ Export Inventory to Excel</button>
+  <button type="button" style="flex: 1;" onclick="document.getElementById('importFileInput').click()">⬇️ Import Inventory from Excel</button>
+  <input type="file" id="importFileInput" accept=".xlsx" style="display: none;" onchange="handleInventoryImport(event)" />
+</div>
+
+<div style="margin-bottom: 1rem; display: flex; gap: 10px;">
+  <button type="button" style="flex: 1;" onclick="exportDiscounts()">⬆️ Export Discounts to Excel</button>
+  <button type="button" style="flex: 1;" onclick="document.getElementById('importDiscountFileInput').click()">⬇️ Import Discount from Excel</button>
+  <input type="file" id="importDiscountFileInput" accept=".xlsx" style="display: none;" onchange="handleDiscountImport(event)" />
+</div>
+
+
+    <div id="inventorySection">
+      <form id="addProductForm">
+        <div class="form-row">
+          <label>Product Name: <input type="text" id="productName" required /></label>
+        </div>
+        <div class="form-row">
+          <label>Category: <input type="text" id="productCategory" /></label>
+        </div>
+        <div class="form-row">
+          <label>Price: $<input type="number" id="productPrice" step="0.01" required /></label>
+        </div>
+        <div class="form-row">
+          <label>Has Sizes? <input type="checkbox" id="productHasSizes" /></label>
+        </div>
+<div class="form-row">
+  <label>Product Image: <input type="file" id="productImage" accept="image/*" /></label>
+</div>
+
+
+        <div class="form-row">
+          Gender:
+          <label><input type="checkbox" id="productGenderMale" onclick="toggleGender('M')" /> M</label>
+          <label><input type="checkbox" id="productGenderFemale" onclick="toggleGender('F')" /> F</label>
+        </div>
+        <div class="form-row">
+          <button type="submit">Add Product</button>
+        </div>
+      </form>
+
+      <hr />
+      <h2>Current Inventory</h2>
+      <div id="inventoryList"></div>
+    </div>
+
+    <div id="discountSection" style="display:none;">
+      <h2>Discount Settings</h2>
+      <form id="discountForm">
+        <label>Reason: <input type="text" id="discountName" required /></label><br />
+        <label>Type:
+          <select id="discountType">
+            <option value="flat">Flat $ off</option>
+            <option value="percent">% off</option>
+          </select>
+        </label><br />
+        <label>Value: <input type="number" id="discountValue" step="0.01" required /></label><br />
+        <button type="submit">Add/Update Discount</button>
+      </form>
+      <ul id="discountList"></ul>
+      <hr>
+    </div>
   </div>
 
-<h2>Product Manager</h2>
-  <form id="productForm">
-    <label>
-      Category: <input type="text" id="category" required />
-    </label>
-    <label>
-      Product Name: <input type="text" id="productName" required />
-    </label>
-    <label>
-      Price: <input type="number" id="price" step="0.01" min="0" required />
-    </label>
-    <label>
-      Unisex:
-      <select id="unisex" required>
-        <option value="">-- Select --</option>
-        <option value="Yes">Yes</option>
-        <option value="No">No</option>
-      </select>
-    </label>
-    <label>
-      Has Sizes:
-      <select id="hasSizes" required>
-        <option value="">-- Select --</option>
-        <option value="Yes">Yes</option>
-        <option value="No">No</option>
-      </select>
-    </label>
-    <button type="submit">Add Product</button>
-  </form>
+  <!-- Slide-in Menu (stays outside container for full-screen coverage) -->
+  <div id="menu-overlay" class="hidden" aria-hidden="true">
+    <div class="side-menu" role="menu">
+            <nav>
+        <button class="menu-navButton" data-target="inventory.html" role="menuitem">Inventory</button>
+        <button class="menu-navButton" data-target="pos.html" role="menuitem">Make a Sale</button>
+        <button class="menu-navButton" data-target="BrowseProducts.html" role="menuitem">Browse Products</button>
+        <button class="menu-navButton" data-target="sales.html" role="menuitem">Sales Records</button>
+        <button class="menu-navButton" data-target="shippingManager.html" role="menuitem">Shipping Manager</button>
+        <button class="menu-navButton" data-target="settings.html" role="menuitem">Settings</button>
+        
+      </nav>
+    </div>
+  </div>
 
-  <table id="productTable" aria-label="Inventory product list">
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Price</th>
-        <th>Unisex</th>
-        <th>Sizes</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Product rows inserted here -->
-    </tbody>
-  </table>
-
+  <!-- Page Scripts -->
   <script>
-    // Global product array
-    let products = [];
-
-    // Size labels to display/edit
-    const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
-
-    // Load products from localStorage on page load
-    window.addEventListener("DOMContentLoaded", () => {
-      const saved = localStorage.getItem("products");
-      if (saved) {
-        products = JSON.parse(saved);
-      }
-      renderProductTable();
-    });
-
-    // Save to localStorage helper
-    function saveProducts() {
-      localStorage.setItem("products", JSON.stringify(products));
+    function toggleView(view) {
+      document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
+      document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
+      if (view === "discounts") loadDiscounts();
     }
 
-    // FIXED: Add product form submit handler
-    document.getElementById("productForm").addEventListener("submit", e => {
-      e.preventDefault();
-
-      const category = document.getElementById("category").value.trim();
-      const name = document.getElementById("productName").value.trim();
-      const price = parseFloat(document.getElementById("price").value);
-      const unisex = document.getElementById("unisex").value;
-      const hasSizes = document.getElementById("hasSizes").value;
-
-      if (!category || !name || isNaN(price) || !unisex || !hasSizes) {
-        alert("Please fill in all required fields.");
-        return;
-      }
-
-      const sizes = hasSizes === "Yes" ? sizeLabels.reduce((acc, size) => {
-        acc[size] = 0;
-        return acc;
-      }, {}) : null;
-
-      products.push({ category, name, price, unisex, sizes });
-      saveProducts();
-      renderProductTable();
-
-      document.getElementById("productForm").reset();
-    });
-
-    // Render product table with category header rows
-    function renderProductTable() {
-      const tbody = document.querySelector("#productTable tbody");
-      tbody.innerHTML = "";
-
-      if (products.length === 0) {
-        const tr = document.createElement("tr");
-        const td = document.createElement("td");
-        td.colSpan = 5;
-        td.style.textAlign = "center";
-        td.textContent = "No products added yet.";
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-        return;
-      }
-
-      // Group products by category
-     // Group products by category
-const grouped = {};
-products.forEach(product => {
-  if (!grouped[product.category]) grouped[product.category] = [];
-  grouped[product.category].push(product);
-});
-
-      // For each category group, add header row, then product rows
-      for (const category of Object.keys(grouped).sort((a,b) => a.localeCompare(b))) {
-        const headerRow = document.createElement("tr");
-        headerRow.classList.add("category-header-row");
-        const th = document.createElement("td");
-        th.colSpan = 5;
-        th.textContent = category;
-        headerRow.appendChild(th);
-        tbody.appendChild(headerRow);
-
-        grouped[category].forEach(prod => {
-  const tr = document.createElement("tr");
-  const index = products.indexOf(prod);  // ✅ correct live index
-
-  // Editable product name cell
-  const nameCell = document.createElement("td");
-  nameCell.contentEditable = "true";
-  nameCell.textContent = prod.name;
-  nameCell.classList.add("editable");
-  nameCell.dataset.index = index;
-  nameCell.dataset.field = "name";
-  tr.appendChild(nameCell);
-
-  // Editable price cell
-  const priceCell = document.createElement("td");
-  priceCell.contentEditable = "true";
-  priceCell.textContent = prod.price.toFixed(2);
-  priceCell.classList.add("editable");
-  priceCell.dataset.index = index;
-  priceCell.dataset.field = "price";
-  tr.appendChild(priceCell);
-
-  // Editable unisex cell
-  const unisexCell = document.createElement("td");
-  const select = document.createElement("select");
-  select.innerHTML = `<option value="Yes">Yes</option><option value="No">No</option>`;
-  select.value = prod.unisex;
-  select.dataset.index = index;
-  select.dataset.field = "unisex";
-  select.addEventListener("change", onSelectChange);
-  unisexCell.appendChild(select);
-  tr.appendChild(unisexCell);
-
-  // Sizes cell
-  const sizesCell = document.createElement("td");
-  sizesCell.classList.add("sizes-cell");
-  if (prod.sizes) {
-    sizeLabels.forEach(size => {
-      const input = document.createElement("input");
-      input.type = "number";
-      input.min = 0;
-      input.value = prod.sizes[size] || 0;
-      input.dataset.index = index;
-      input.dataset.size = size;
-      input.addEventListener("change", onSizeQtyChange);
-      sizesCell.appendChild(input);
-    });
-  } else {
-    sizesCell.textContent = "-";
-  }
-  tr.appendChild(sizesCell);
-
-  // Actions cell
-  const actionsCell = document.createElement("td");
-  actionsCell.classList.add("actions-cell");
-  const deleteBtn = document.createElement("button");
-  deleteBtn.textContent = "Delete";
-  deleteBtn.dataset.index = index;
-  deleteBtn.addEventListener("click", onDeleteProduct);
-  actionsCell.appendChild(deleteBtn);
-  tr.appendChild(actionsCell);
-
-  tbody.appendChild(tr);
-});
+    function toggleGender(selected) {
+      const male = document.getElementById("productGenderMale");
+      const female = document.getElementById("productGenderFemale");
+      if (selected === "M" && male.checked) {
+        female.checked = false;
+      } else if (selected === "F" && female.checked) {
+        male.checked = false;
       }
     }
-
-    // Handle inline contentEditable changes for name and price
-    document.querySelector("#productTable tbody").addEventListener("blur", e => {
-      if (!e.target.classList.contains("editable")) return;
-      const index = parseInt(e.target.dataset.index);
-      const field = e.target.dataset.field;
-      let value = e.target.textContent.trim();
-
-      if (field === "price") {
-        const parsed = parseFloat(value);
-        if (isNaN(parsed) || parsed < 0) {
-          alert("Please enter a valid price.");
-          e.target.textContent = products[index].price.toFixed(2);
-          return;
-        }
-        value = parsed;
-      }
-      if (field === "name" && !value) {
-        alert("Product name cannot be empty.");
-        e.target.textContent = products[index].name;
-        return;
-      }
-
-      products[index][field] = value;
-      saveProducts();
-    }, true);
-
-    // Handle select change for unisex column
-    function onSelectChange(e) {
-      const index = parseInt(e.target.dataset.index);
-      const value = e.target.value;
-      products[index].unisex = value;
-      saveProducts();
-    }
-
-    // Handle sizes quantity input changes
-    function onSizeQtyChange(e) {
-      const index = parseInt(e.target.dataset.index);
-      const size = e.target.dataset.size;
-      let val = parseInt(e.target.value);
-      if (isNaN(val) || val < 0) {
-        alert("Quantity must be a non-negative integer.");
-        e.target.value = products[index].sizes[size];
-        return;
-      }
-      products[index].sizes[size] = val;
-      saveProducts();
-    }
-
-    // Delete product handler
-    function onDeleteProduct(e) {
-      const index = parseInt(e.target.dataset.index);
-      if (!confirm("Are you sure you want to delete this product?")) return;
-      products.splice(index, 1);
-      saveProducts();
-      renderProductTable();
-    }
-    
-  
-
-  
-    
   </script>
-
+  <script src="inventory.js"></script>
+  <script src="menu-overlay.js"></script>
 </body>
 </html>
