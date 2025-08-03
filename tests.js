@@ -44,8 +44,23 @@ document.getElementById("addProductForm").addEventListener("submit", function (e
     };
   };
 
-  if (imageFile) reader.readAsDataURL(imageFile);
-  else reader.onload(); // trigger with no image
+  if (imageFile) {
+    reader.readAsDataURL(imageFile);
+  } else {
+    // No image file — directly add product with image = null
+    const imageData = null;
+    const defaultSizes = ["S", "M", "L", "XL", "2XL"];
+    const variants = hasSizes ? defaultSizes.map(size => ({ size, stock: 0 })) : [{ size: "One Size", stock: 0 }];
+
+    const newProduct = { name, category, price, gender, variants, image: imageData };
+    const tx = db.transaction("products", "readwrite");
+    const store = tx.objectStore("products");
+    store.add(newProduct);
+    tx.oncomplete = () => {
+      document.getElementById("addProductForm").reset();
+      displayInventory();
+    };
+  }
 });
 
 function displayInventory() {
@@ -506,75 +521,4 @@ function handleInventoryImport(event) {
         importedProducts.forEach(prod => store.add(prod));
         tx.oncomplete = () => {
           displayInventory();
-          alert("Inventory imported successfully!");
-        };
-      };
-    } catch (err) {
-      alert("Failed to import inventory: " + err.message);
-      console.error(err);
-    }
-  };
-  reader.readAsArrayBuffer(file);
-  event.target.value = "";
-}
-
-// Export Discounts to Excel
-function exportDiscounts() {
-  const tx = db.transaction("discounts", "readonly");
-  const store = tx.objectStore("discounts");
-  const discounts = [];
-  store.openCursor().onsuccess = function (event) {
-    const cursor = event.target.result;
-    if (cursor) {
-      discounts.push(cursor.value);
-      cursor.continue();
-    } else {
-      const wb = XLSX.utils.book_new();
-      const ws = jsonToWorksheet(discounts);
-      XLSX.utils.book_append_sheet(wb, ws, "Discounts");
-      XLSX.writeFile(wb, "discounts_export.xlsx");
-    }
-  };
-}
-
-// Import Discounts from Excel
-function handleDiscountImport(event) {
-  const file = event.target.files[0];
-  if (!file) {
-    alert("No file selected.");
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    try {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const importedDiscounts = XLSX.utils.sheet_to_json(sheet);
-
-      const tx = db.transaction("discounts", "readwrite");
-      const store = tx.objectStore("discounts");
-      store.clear().onsuccess = () => {
-        importedDiscounts.forEach(disc => store.put(disc));
-        tx.oncomplete = () => {
-          loadDiscounts();
-          alert("Discounts imported successfully!");
-        };
-      };
-    } catch (err) {
-      alert("Failed to import discounts: " + err.message);
-      console.error(err);
-    }
-  };
-  reader.readAsArrayBuffer(file);
-  event.target.value = "";
-}
-
-// --- Make sure these functions are global if needed ---
-window.exportInventory = exportInventory;
-window.handleInventoryImport = handleInventoryImport;
-window.exportDiscounts = exportDiscounts;
-window.handleDiscountImport = handleDiscountImport;
-window.loadDiscounts = loadDiscounts;
-
+          alert("Inventory imported successfully
