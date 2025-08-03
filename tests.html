@@ -2,193 +2,232 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Product & Discount Manager</title>
+  <title>Inventory Manager</title>
   <style>
-    table, th, td {
-      border: 1px solid black;
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1, h2 {
+      margin-bottom: 10px;
+    }
+    button {
+      margin: 5px;
+      padding: 5px 10px;
+    }
+    table {
+      width: 100%;
       border-collapse: collapse;
+      margin-top: 20px;
     }
     th, td {
+      border: 1px solid #ccc;
       padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
     }
     .hidden {
       display: none;
     }
-    .category-header {
-      background-color: #f0f0f0;
-      font-weight: bold;
+    .form-section {
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h2>Product Manager</h2>
-  <form id="productForm">
-    <input type="text" id="name" placeholder="Product Name" required />
-    <input type="text" id="category" placeholder="Category" required />
-    <input type="number" id="price" placeholder="Price ($)" required />
-    <label><input type="checkbox" id="hasSizes" /> Has Sizes</label>
-    <button type="submit">Add Product</button>
-  </form><button onclick="toggleView('product')">Products</button> <button onclick="toggleView('discount')">Discounts</button> <button onclick="exportToExcel('productTable', 'products.xlsx')">Export Products</button> <input type="file" accept=".xlsx" onchange="importFromExcel(event, 'product')" />
-
-  <div id="productSection">
-    <table id="productTable"></table>
-  </div>  <div id="discountSection" class="hidden">
-    <form id="discountForm">
-      <input type="text" id="discountName" placeholder="Discount Name" required />
-      <select id="discountType" required>
+  <h1>Inventory Manager</h1>
+  <div>
+    <button onclick="showProductManager()">Inventory</button>
+    <button onclick="showDiscountManager()">Discount</button>
+    <button onclick="exportData()">Export</button>
+    <input type="file" onchange="importData(event)" />
+  </div>
+  <h2 id="form-title">Product Manager</h2>
+  <div class="form-section" id="product-form-section">
+    <form id="product-form" onsubmit="addProduct(event)">
+      <input type="text" id="category" placeholder="Category" required />
+      <input type="text" id="name" placeholder="Product Name" required />
+      <input type="number" id="price" placeholder="Price" step="0.01" required />
+      <label><input type="checkbox" id="has-sizes" /> Has Sizes</label>
+      <button type="submit">Add Product</button>
+    </form>
+  </div>  <div class="form-section hidden" id="discount-form-section">
+    <form id="discount-form" onsubmit="addDiscount(event)">
+      <input type="text" id="discount-product" placeholder="Product Name" required />
+      <select id="discount-type">
         <option value="%">% Off</option>
         <option value="$">$ Off</option>
       </select>
-      <input type="number" id="discountAmount" placeholder="Amount" required />
+      <input type="number" id="discount-amount" placeholder="Amount" step="0.01" required />
       <button type="submit">Add Discount</button>
-    </form><button onclick="exportToExcel('discountTable', 'discounts.xlsx')">Export Discounts</button>
-<input type="file" accept=".xlsx" onchange="importFromExcel(event, 'discount')" />
+    </form>
+  </div>  <table id="product-table">
+    <thead>
+      <tr><th colspan="5">Category: <span id="category-header"></span></th></tr>
+      <tr>
+        <th>Product Name</th>
+        <th>Price</th>
+        <th>Sizes</th>
+        <th>Quantities</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>  <table id="discount-table" class="hidden">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>  <script>
+    let products = JSON.parse(localStorage.getItem('products') || '[]');
+    let discounts = JSON.parse(localStorage.getItem('discounts') || '[]');
 
-<table id="discountTable">
-  <thead>
-    <tr><th>Name</th><th>Type</th><th>Amount</th><th>Actions</th></tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-  </div>  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>  <script>
-    let products = JSON.parse(localStorage.getItem('products')) || [];
-    let discounts = JSON.parse(localStorage.getItem('discounts')) || [];
-
-    const productForm = document.getElementById('productForm');
-    const discountForm = document.getElementById('discountForm');
-    const productTable = document.getElementById('productTable');
-    const discountTableBody = document.querySelector('#discountTable tbody');
-
-    function toggleView(section) {
-      document.getElementById('productSection').classList.toggle('hidden', section !== 'product');
-      document.getElementById('discountSection').classList.toggle('hidden', section !== 'discount');
-    }
-
-    productForm.onsubmit = function(e) {
-      e.preventDefault();
-      const name = document.getElementById('name').value;
-      const category = document.getElementById('category').value;
-      const price = parseFloat(document.getElementById('price').value);
-      const hasSizes = document.getElementById('hasSizes').checked;
-      const sizes = hasSizes ? { XS: 0, S: 0, M: 0, L: 0, XL: 0, '2XL': 0, '3XL': 0, '4XL': 0 } : null;
-      products.push({ name, category, price, sizes });
-      saveAndRenderProducts();
-      productForm.reset();
-    }
-
-    discountForm.onsubmit = function(e) {
-      e.preventDefault();
-      const name = document.getElementById('discountName').value;
-      const type = document.getElementById('discountType').value;
-      const amount = parseFloat(document.getElementById('discountAmount').value);
-      discounts.push({ name, type, amount });
-      localStorage.setItem('discounts', JSON.stringify(discounts));
-      renderDiscounts();
-      discountForm.reset();
-    }
-
-    function saveAndRenderProducts() {
+    function saveData() {
       localStorage.setItem('products', JSON.stringify(products));
-      renderProducts();
+      localStorage.setItem('discounts', JSON.stringify(discounts));
     }
 
     function renderProducts() {
-      productTable.innerHTML = '';
-      const sorted = [...products].sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
-      let currentCategory = '';
-      sorted.forEach((p, index) => {
-        if (p.category !== currentCategory) {
-          currentCategory = p.category;
-          const headerRow = productTable.insertRow();
-          const headerCell = headerRow.insertCell();
-          headerCell.colSpan = 4;
-          headerCell.textContent = currentCategory;
-          headerCell.classList.add('category-header');
-        }
-        const row = productTable.insertRow();
-        row.innerHTML = `
-          <td contenteditable="true">${p.name}</td>
-          <td contenteditable="true">${p.price}</td>
-          <td>${p.sizes ? JSON.stringify(p.sizes) : ''}</td>
-          <td><button onclick="deleteProduct(${index})">Delete</button></td>
-        `;
-        row.oninput = () => {
-          const cells = row.querySelectorAll('td');
-          products[index].name = cells[0].innerText;
-          products[index].price = parseFloat(cells[1].innerText);
-          saveAndRenderProducts();
-        }
+      const tbody = document.querySelector('#product-table tbody');
+      tbody.innerHTML = '';
+      let grouped = {};
+      products.forEach(p => {
+        if (!grouped[p.category]) grouped[p.category] = [];
+        grouped[p.category].push(p);
+      });
+
+      const sortedCategories = Object.keys(grouped).sort();
+      sortedCategories.forEach(cat => {
+        const catProducts = grouped[cat].sort((a, b) => a.name.localeCompare(b.name));
+        catProducts.forEach(product => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td contenteditable>${product.name}</td>
+            <td contenteditable>${product.price.toFixed(2)}</td>
+            <td>${product.hasSizes ? 'Yes' : 'No'}</td>
+            <td>${product.hasSizes ? JSON.stringify(product.sizes || {}) : '-'}</td>
+            <td><button onclick="editProduct(this)">Edit</button></td>
+          `;
+          tbody.appendChild(row);
+        });
       });
     }
 
     function renderDiscounts() {
-      discountTableBody.innerHTML = '';
-      discounts.forEach((d, index) => {
-        const row = discountTableBody.insertRow();
+      const tbody = document.querySelector('#discount-table tbody');
+      tbody.innerHTML = '';
+      discounts.forEach(discount => {
+        const row = document.createElement('tr');
         row.innerHTML = `
-          <td contenteditable="true">${d.name}</td>
-          <td contenteditable="true">${d.type}</td>
-          <td contenteditable="true">${d.amount}</td>
-          <td><button onclick="deleteDiscount(${index})">Delete</button></td>
+          <td contenteditable>${discount.product}</td>
+          <td contenteditable>${discount.type}</td>
+          <td contenteditable>${discount.amount}</td>
+          <td><button onclick="editDiscount(this)">Edit</button></td>
         `;
-        row.oninput = () => {
-          const cells = row.querySelectorAll('td');
-          discounts[index].name = cells[0].innerText;
-          discounts[index].type = cells[1].innerText;
-          discounts[index].amount = parseFloat(cells[2].innerText);
-          localStorage.setItem('discounts', JSON.stringify(discounts));
-        }
+        tbody.appendChild(row);
       });
     }
 
-    function deleteProduct(index) {
-      products.splice(index, 1);
-      saveAndRenderProducts();
+    function addProduct(event) {
+      event.preventDefault();
+      const category = document.getElementById('category').value;
+      const name = document.getElementById('name').value;
+      const price = parseFloat(document.getElementById('price').value);
+      const hasSizes = document.getElementById('has-sizes').checked;
+      if (!category || !name || isNaN(price)) return;
+      products.push({ category, name, price, hasSizes });
+      saveData();
+      renderProducts();
+      document.getElementById('product-form').reset();
     }
 
-    function deleteDiscount(index) {
-      discounts.splice(index, 1);
-      localStorage.setItem('discounts', JSON.stringify(discounts));
+    function addDiscount(event) {
+      event.preventDefault();
+      const product = document.getElementById('discount-product').value;
+      const type = document.getElementById('discount-type').value;
+      const amount = parseFloat(document.getElementById('discount-amount').value);
+      if (!product || isNaN(amount)) return;
+      discounts.push({ product, type, amount });
+      saveData();
       renderDiscounts();
+      document.getElementById('discount-form').reset();
     }
 
-    function exportToExcel(tableId, filename) {
-      const table = document.getElementById(tableId);
-      const wb = XLSX.utils.table_to_book(table);
-      XLSX.writeFile(wb, filename);
+    function editProduct(btn) {
+      const row = btn.closest('tr');
+      const name = row.children[0].innerText;
+      const price = parseFloat(row.children[1].innerText);
+      const index = products.findIndex(p => p.name === name);
+      if (index !== -1) {
+        products[index].name = name;
+        products[index].price = price;
+        saveData();
+      }
     }
 
-    function importFromExcel(event, type) {
+    function editDiscount(btn) {
+      const row = btn.closest('tr');
+      const product = row.children[0].innerText;
+      const type = row.children[1].innerText;
+      const amount = parseFloat(row.children[2].innerText);
+      const index = discounts.findIndex(d => d.product === product);
+      if (index !== -1) {
+        discounts[index].type = type;
+        discounts[index].amount = amount;
+        saveData();
+      }
+    }
+
+    function showProductManager() {
+      document.getElementById('form-title').innerText = 'Product Manager';
+      document.getElementById('product-form-section').classList.remove('hidden');
+      document.getElementById('discount-form-section').classList.add('hidden');
+      document.getElementById('product-table').classList.remove('hidden');
+      document.getElementById('discount-table').classList.add('hidden');
+    }
+
+    function showDiscountManager() {
+      document.getElementById('form-title').innerText = 'Discount Manager';
+      document.getElementById('product-form-section').classList.add('hidden');
+      document.getElementById('discount-form-section').classList.remove('hidden');
+      document.getElementById('product-table').classList.add('hidden');
+      document.getElementById('discount-table').classList.remove('hidden');
+    }
+
+    function exportData() {
+      const data = { products, discounts };
+      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'inventory.json';
+      a.click();
+    }
+
+    function importData(event) {
       const file = event.target.files[0];
       const reader = new FileReader();
-      reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet);
-        if (type === 'product') {
-          products = rows.map(r => ({
-            name: r['Name'],
-            category: r['Category'],
-            price: parseFloat(r['Price']),
-            sizes: r['Sizes'] ? JSON.parse(r['Sizes']) : null
-          }));
-          saveAndRenderProducts();
-        } else {
-          discounts = rows.map(r => ({
-            name: r['Name'],
-            type: r['Type'],
-            amount: parseFloat(r['Amount'])
-          }));
-          localStorage.setItem('discounts', JSON.stringify(discounts));
+      reader.onload = e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (Array.isArray(data.products)) products = data.products;
+          if (Array.isArray(data.discounts)) discounts = data.discounts;
+          saveData();
+          renderProducts();
           renderDiscounts();
+        } catch (err) {
+          alert('Invalid file format');
         }
-      }
-      reader.readAsArrayBuffer(file);
+      };
+      reader.readAsText(file);
     }
 
-    // Initial render
     renderProducts();
     renderDiscounts();
   </script></body>
