@@ -116,6 +116,36 @@
   let productData = [];
   let discountData = [];
 
+function addProduct() {
+  const category = document.getElementById("category").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const price = parseFloat(document.getElementById("price").value);
+  const quantity = parseInt(document.getElementById("quantity").value);
+  const unisex = document.getElementById("unisex").value;
+  const hasSizes = document.getElementById("hasSizes").value;
+
+  if (!category || !name || isNaN(price) || isNaN(quantity)) {
+    alert("Please fill in all required fields correctly.");
+    return;
+  }
+
+  const sizes = hasSizes === "Yes"
+    ? { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0, XXXXL: 0 }
+    : null;
+
+  productData.push({ category, name, price, quantity, unisex, sizes });
+  displayProductTable();
+  saveData();
+
+  // Clear form inputs
+  document.getElementById("category").value = "";
+  document.getElementById("name").value = "";
+  document.getElementById("price").value = "";
+  document.getElementById("quantity").value = "";
+  document.getElementById("unisex").value = "Yes";
+  document.getElementById("hasSizes").value = "No";
+}
+
   // ADDED: Load from localStorage if available
   window.addEventListener("DOMContentLoaded", () => {
     const savedProducts = localStorage.getItem("productData");
