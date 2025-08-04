@@ -53,10 +53,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const addRequest = store.add(newProduct);
 
-        addRequest.onsuccess = () => {
-          showMessage("✅ Product added successfully.");
-          addForm.reset();
-        };
+        addRequest.onsuccess = (event) => {
+  alert("Product added to IndexedDB with ID: " + event.target.result);
+  showMessage("✅ Product added successfully.");
+  addForm.reset();
+  displayInventory(); // Make sure this is here
+};
 
         addRequest.onerror = (event) => {
           showMessage("❌ Error adding product: " + event.target.error);
