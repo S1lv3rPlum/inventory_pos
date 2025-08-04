@@ -92,28 +92,115 @@
     document.getElementById("productForm").reset();
   });
 
-  function renderTable() {
-  const tbody = document.querySelector("#productTable tbody");
-  tbody.innerHTML = "";
+  let currentlyEditingRow = null;
 
-  products.forEach((prod, index) => {
-    const tr = document.createElement("tr");
+function renderTable() {
+  const tableBody = document.getElementById("productTableBody");
+  tableBody.innerHTML = "";
 
-    tr.innerHTML = `
-      <td>${prod.category}</td>
-      <td>${prod.name}</td>
-      <td>${prod.price.toFixed(2)}</td>
-      <td>${prod.unisex}</td>
-      <td>${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}</td>
-      <td>
-        <button onclick="editRow(${index})">Edit</button>
-        <button onclick="deleteRow(${index})">Delete</button>
-      </td>
-    `;
+  const transaction = db.transaction(["products"], "readonly");
+  const store = transaction.objectStore("products");
+  const request = store.getAll();
 
-    tbody.appendChild(tr);
-  });
+  request.onsuccess = () => {
+    const products = request.result;
+    products.forEach((product) => {
+      const row = document.createElement("tr");
+
+      const nameCell = document.createElement("td");
+      nameCell.textContent = product.name;
+
+      const priceCell = document.createElement("td");
+      priceCell.textContent = product.price.toFixed(2);
+
+      const quantityCell = document.createElement("td");
+      quantityCell.textContent = product.quantity;
+
+      const actionsCell = document.createElement("td");
+
+      const editButton = document.createElement("button");
+      editButton.textContent = "Edit";
+      editButton.classList.add("px-3", "py-1", "bg-yellow-400", "text-black", "rounded", "mr-2");
+
+      const deleteButton = document.createElement("button");
+      deleteButton.textContent = "Delete";
+      deleteButton.classList.add("px-3", "py-1", "bg-red-500", "text-white", "rounded");
+
+      editButton.addEventListener("click", () => {
+        if (currentlyEditingRow && currentlyEditingRow !== row) {
+          cancelEdit(currentlyEditingRow);
+        }
+
+        if (editButton.textContent === "Edit") {
+          currentlyEditingRow = row;
+          makeRowEditable(row, product, editButton);
+        } else {
+          saveRowEdit(row, product.id, editButton);
+          currentlyEditingRow = null;
+        }
+      });
+
+      deleteButton.addEventListener("click", () => {
+        const tx = db.transaction(["products"], "readwrite");
+        const store = tx.objectStore("products");
+        store.delete(product.id);
+        tx.oncomplete = renderTable;
+      });
+
+      actionsCell.appendChild(editButton);
+      actionsCell.appendChild(deleteButton);
+
+      row.appendChild(nameCell);
+      row.appendChild(priceCell);
+      row.appendChild(quantityCell);
+      row.appendChild(actionsCell);
+      tableBody.appendChild(row);
+    });
+  };
 }
+
+function makeRowEditable(row, product, editButton) {
+  const [nameCell, priceCell, quantityCell] = row.children;
+
+  nameCell.innerHTML = `<input type="text" value="${product.name}" class="w-full px-1 border rounded" />`;
+  priceCell.innerHTML = `<input type="number" value="${product.price}" step="0.01" class="w-full px-1 border rounded" />`;
+  quantityCell.innerHTML = `<input type="number" value="${product.quantity}" class="w-full px-1 border rounded" />`;
+
+  editButton.textContent = "Save";
+}
+
+function saveRowEdit(row, productId, editButton) {
+  const [nameCell, priceCell, quantityCell] = row.children;
+
+  const updatedProduct = {
+    id: productId,
+    name: nameCell.querySelector("input").value.trim(),
+    price: parseFloat(priceCell.querySelector("input").value),
+    quantity: parseInt(quantityCell.querySelector("input").value),
+  };
+
+  const tx = db.transaction(["products"], "readwrite");
+  const store = tx.objectStore("products");
+  store.put(updatedProduct);
+
+  tx.oncomplete = () => {
+    renderTable();
+  };
+}
+
+function cancelEdit(row) {
+  const cancelTx = db.transaction(["products"], "readonly");
+  const store = cancelTx.objectStore("products");
+  const id = parseInt(row.children[3].querySelector("button").dataset.id); // You can also store the product in a row.dataset if preferred
+
+  const getReq = store.get(id);
+  getReq.onsuccess = () => {
+    const product = getReq.result;
+    renderTable(); // This resets everything including the edited row
+  };
+}
+
+
 
 function editRow(index) {
   const prod = products[index];
