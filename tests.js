@@ -91,6 +91,8 @@ button:hover {
 }
 `;
 document.head.appendChild(style);
+let products = JSON.parse(localStorage.getItem("products")) || [];
+let discounts = JSON.parse(localStorage.getItem("discounts")) || [];
 
 // Size labels
 const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
@@ -109,6 +111,7 @@ if (stored) {
 // ⬆️ Save to localStorage whenever products change
 function saveToLocalStorage() {
   localStorage.setItem("products", JSON.stringify(products));
+  localStorage.setItem("discounts", JSON.stringify(discounts));
 }
 
 // DOM elements
@@ -405,3 +408,6 @@ switchTab("inventory");
   renderTable(); // This should be defined somewhere
   form.reset();
 });
+
+renderTable();
+renderDiscounts();
