@@ -4,7 +4,7 @@ style.textContent = `
   body {
     font-family: sans-serif;
     padding: 20px;
-    max-width: 600px;
+    max-width: 900px;
     margin: auto;
   }
 
@@ -12,7 +12,7 @@ style.textContent = `
     margin-bottom: 20px;
   }
 
-  input, select, button {
+  input, select {
     margin-right: 10px;
     padding: 5px;
   }
@@ -37,7 +37,7 @@ style.textContent = `
     box-sizing: border-box;
   }
 
-  button.edit {
+  button.edit, button.save {
     background-color: #fff7a8;
     border: none;
     padding: 5px 8px;
@@ -57,107 +57,179 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Sizes labels for later usage if hasSizes is "Yes"
+// Size labels
 const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 
-// Store products in memory for now
+// Store products in memory
 let products = [];
 
-// Abstracted data access layer
-const dataService = (function () {
-  let products = [];
-  let editingIndex = null;
-
-  function addProduct(product) {
-    if (editingIndex !== null) {
-      products[editingIndex] = product;
-      editingIndex = null;
-    } else {
-      products.push(product);
-    }
-    renderTable();
-  }
-
-  function deleteProduct(index) {
-    products.splice(index, 1);
-    renderTable();
-  }
-
-  function editProduct(index) {
-    const product = products[index];
-    addForm.name.value = product.name;
-    addForm.price.value = product.price;
-    addForm.quantity.value = product.quantity;
-    addForm.category.value = product.category;
-    addForm.unisex.value = product.unisex;
-    addForm.hasSizes.value = product.hasSizes;
-    editingIndex = index;
-  }
-
-  function getProducts() {
-    return products;
-  }
-
-  return { addProduct, deleteProduct, editProduct, getProducts };
-})();
-
+// DOM elements
 const addForm = document.getElementById("addProductForm");
 const tableBody = document.querySelector("#inventoryTable tbody");
 
-// Handle form submission
-addForm.addEventListener("submit", function (event) {
-  event.preventDefault();
+// Handle form submission to add product
+addForm.addEventListener("submit", (e) => {
+  e.preventDefault();
 
-  // Collect the form data
   const product = {
-    name: addForm.name.value.trim(),
-    price: parseFloat(addForm.price.value),
-    quantity: parseInt(addForm.quantity.value),
     category: addForm.category.value.trim(),
+    name: addForm.name.value.trim(),
     unisex: addForm.unisex.value,
-    hasSizes: addForm.hasSizes.value
+    hasSizes: addForm.hasSizes.value,
+    sizes: null,
   };
 
-  // If hasSizes === "Yes", initialize sizes object with zeros
   if (product.hasSizes === "Yes") {
     product.sizes = sizeLabels.reduce((acc, size) => {
       acc[size] = 0;
       return acc;
     }, {});
-  } else {
-    product.sizes = null;
   }
 
-  dataService.addProduct(product);
+  products.push(product);
   addForm.reset();
+  renderTable();
 });
 
-// Render inventory table
+// Render the entire inventory table
 function renderTable() {
-  const products = dataService.getProducts();
   tableBody.innerHTML = "";
 
   products.forEach((product, index) => {
     const row = document.createElement("tr");
 
-    row.innerHTML = `
-      <td><span class="category">${product.category}</span></td>
-      <td><span class="name">${product.name}</span></td>
-      <td><span class="gender">${product.unisex}</span></td>
-      ${sizeLabels.map(size => 
-        `<td><span class="size-${size}">${product.sizes ? product.sizes[size] : "-"}</span></td>`
-      ).join('')}
-      <td>
-        <button class="delete-btn">🗑️ Delete</button>
-      </td>
-    `;
+    if (product.hasSizes === "Yes") {
+      // With sizes
+      row.innerHTML = `
+        <td class="category"><span>${product.category}</span></td>
+        <td class="name"><span>${product.name}</span></td>
+        <td class="unisex"><span>${product.unisex}</span></td>
+        ${sizeLabels.map(size => `<td class="size-${size}"><span>${product.sizes[size]}</span></td>`).join('')}
+        <td class="actions">
+          <button class="edit">✏️</button>
+          <button class="delete">🗑️</button>
+        </td>
+      `;
+    } else {
+      // Without sizes - show dashes for sizes columns
+      row.innerHTML = `
+        <td class="category"><span>${product.category}</span></td>
+        <td class="name"><span>${product.name}</span></td>
+        <td class="unisex"><span>${product.unisex}</span></td>
+        ${sizeLabels.map(() => `<td>-</td>`).join('')}
+        <td class="actions">
+          <button class="edit">✏️</button>
+          <button class="delete">🗑️</button>
+        </td>
+      `;
+    }
 
-    row.querySelector(".delete-btn").addEventListener("click", () => {
-      dataService.deleteProduct(index);
+    // Delete button
+    row.querySelector(".delete").addEventListener("click", () => {
+      products.splice(index, 1);
+      renderTable();
+    });
+
+    // Edit / Save button
+    const editBtn = row.querySelector(".edit");
+    editBtn.addEventListener("click", () => {
+      if (row.classList.contains("editing")) {
+        // Save changes
+        saveRow(row, index);
+      } else {
+        // If another row is editing, cancel it first
+        cancelAllEdits();
+        makeRowEditable(row, product);
+      }
     });
 
     tableBody.appendChild(row);
   });
+}
+
+// Cancel edits on all rows
+function cancelAllEdits() {
+  document.querySelectorAll("tr.editing").forEach(row => {
+    row.classList.remove("editing");
+    // Re-render the table to reset all rows
+    renderTable();
+  });
+}
+
+// Make the given row editable (replace spans with inputs/selects)
+function makeRowEditable(row, product) {
+  row.classList.add("editing");
+
+  // Category
+  const categoryCell = row.querySelector(".category");
+  const categoryText = categoryCell.querySelector("span").textContent;
+  categoryCell.innerHTML = `<input type="text" class="edit-category" value="${categoryText}" />`;
+
+  // Name
+  const nameCell = row.querySelector(".name");
+  const nameText = nameCell.querySelector("span").textContent;
+  nameCell.innerHTML = `<input type="text" class="edit-name" value="${nameText}" />`;
+
+  // Unisex select
+  const unisexCell = row.querySelector(".unisex");
+  const unisexText = unisexCell.querySelector("span").textContent;
+  unisexCell.innerHTML = `
+    <select class="edit-unisex">
+      <option value="Yes" ${unisexText === "Yes" ? "selected" : ""}>Yes</option>
+      <option value="No" ${unisexText === "No" ? "selected" : ""}>No</option>
+    </select>
+  `;
+
+  // Sizes or dashes cells
+  sizeLabels.forEach(size => {
+    const cell = row.querySelector(`.size-${size}`);
+    if (product.hasSizes === "Yes") {
+      const val = product.sizes[size];
+      cell.innerHTML = `<input type="number" min="0" class="edit-size" data-size="${size}" value="${val}" />`;
+    } else {
+      cell.textContent = "-";
+    }
+  });
+
+  // Change Edit button to Save
+  const editBtn = row.querySelector(".edit");
+  editBtn.textContent = "✅ Save";
+  editBtn.classList.add("save");
+  editBtn.classList.remove("edit");
+}
+
+// Save edited row values back to products array
+function saveRow(row, index) {
+  // Grab edited values
+  const newCategory = row.querySelector(".edit-category").value.trim();
+  const newName = row.querySelector(".edit-name").value.trim();
+  const newUnisex = row.querySelector(".edit-unisex").value;
+  let newHasSizes = "No"; // default
+
+  // Sizes inputs
+  let newSizes = null;
+  // Check if any size inputs present
+  const sizeInputs = row.querySelectorAll(".edit-size");
+  if (sizeInputs.length) {
+    newHasSizes = "Yes";
+    newSizes = {};
+    sizeInputs.forEach(input => {
+      const sizeKey = input.dataset.size;
+      const val = parseInt(input.value);
+      newSizes[sizeKey] = isNaN(val) || val < 0 ? 0 : val;
+    });
+  }
+
+  // Update product in array
+  products[index] = {
+    category: newCategory,
+    name: newName,
+    unisex: newUnisex,
+    hasSizes: newHasSizes,
+    sizes: newSizes,
+  };
+
+  renderTable();
 }
 
 // Initial render
