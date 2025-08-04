@@ -89,6 +89,18 @@ button:hover {
   background-color: #f0f0f0;
   font-weight: bold;
 }
+
+/* Hide number input spinners for most browsers */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* For Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
 `;
 document.head.appendChild(style);
 
