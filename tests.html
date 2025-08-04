@@ -118,27 +118,43 @@ function renderTable() {
 
       const actionsCell = document.createElement("td");
 
-      const editButton = document.createElement("button");
-      editButton.textContent = "Edit";
-      editButton.classList.add("px-3", "py-1", "bg-yellow-400", "text-black", "rounded", "mr-2");
+     const editButton = document.createElement("button");
+editButton.textContent = "Edit";
+editButton.classList.add("edit-btn");
 
-      const deleteButton = document.createElement("button");
-      deleteButton.textContent = "Delete";
-      deleteButton.classList.add("px-3", "py-1", "bg-red-500", "text-white", "rounded");
+editButton.addEventListener("click", () => {
+  const isEditing = editButton.textContent === "Save";
 
-      editButton.addEventListener("click", () => {
-        if (currentlyEditingRow && currentlyEditingRow !== row) {
-          cancelEdit(currentlyEditingRow);
-        }
+  if (!isEditing) {
+    // Switching to edit mode
+    editButton.textContent = "Save";
+    editButton.classList.add("editing");
 
-        if (editButton.textContent === "Edit") {
-          currentlyEditingRow = row;
-          makeRowEditable(row, product, editButton);
-        } else {
-          saveRowEdit(row, product.id, editButton);
-          currentlyEditingRow = null;
-        }
-      });
+    // Make row cells editable
+    for (let i = 0; i < row.cells.length - 2; i++) { // skip buttons
+      const cell = row.cells[i];
+      const input = document.createElement("input");
+      input.value = cell.textContent;
+      cell.textContent = "";
+      cell.appendChild(input);
+    }
+  } else {
+    // Switching out of edit mode (saving)
+    editButton.textContent = "Edit";
+    editButton.classList.remove("editing");
+
+    // Save input values back to table cells
+    for (let i = 0; i < row.cells.length - 2; i++) {
+      const cell = row.cells[i];
+      const input = cell.querySelector("input");
+      if (input) {
+        cell.textContent = input.value;
+      }
+    }
+
+    // TODO: Update IndexedDB or storage here
+  }
+});
 
       deleteButton.addEventListener("click", () => {
         const tx = db.transaction(["products"], "readwrite");
