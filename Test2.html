@@ -1,33 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Product Table</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventory Manager</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <form id="productForm">
-    <input type="text" id="name" placeholder="Name" required />
-    <input type="number" id="price" placeholder="Price" required />
-    <input type="text" id="category" placeholder="Category" />
-    <select id="unisex">
-      <option value="Unisex">Unisex</option>
-      <option value="Men">Men</option>
-      <option value="Women">Women</option>
-    </select>
-    <label>
-      <input type="checkbox" id="hasSizes" />
-      Has Sizes
+  <h1>Inventory Manager</h1>
+
+  <form id="addProductForm">
+    <input name="name" required placeholder="Name" />
+    <input name="price" required type="number" step="0.01" placeholder="Price" />
+    <input name="quantity" required type="number" placeholder="Quantity" />
+    <label>Category: <input type="text" name="category" required /></label>
+    <label>Unisex:
+      <select name="unisex" required>
+        <option value="">--Select--</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+    </label>
+    <label>Has Sizes:
+      <select name="hasSizes" required>
+        <option value="">--Select--</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
     </label>
     <button type="submit">Add Product</button>
   </form>
 
-  <table id="productTable" border="1">
+  <table id="inventoryTable">
     <thead>
       <tr>
         <th>Name</th>
         <th>Price</th>
+        <th>Quantity</th>
         <th>Category</th>
-        <th>Gender</th>
+        <th>Unisex</th>
         <th>Has Sizes</th>
         <th>XS</th>
         <th>S</th>
