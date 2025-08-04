@@ -1,3 +1,61 @@
+// Inject styles directly into the page
+const style = document.createElement("style");
+style.textContent = `
+  body {
+    font-family: sans-serif;
+    padding: 20px;
+    max-width: 600px;
+    margin: auto;
+  }
+
+  form {
+    margin-bottom: 20px;
+  }
+
+  input {
+    margin-right: 10px;
+    padding: 5px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    background-color: #f0f0f0;
+  }
+
+  td, th {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+  }
+
+  .editing input {
+    width: 100%;
+  }
+
+  button.edit {
+    background-color: #fff7a8;
+    border: none;
+    padding: 5px 8px;
+    cursor: pointer;
+  }
+
+  button.delete {
+    background-color: #ffb3b3;
+    border: none;
+    padding: 5px 8px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    opacity: 0.8;
+  }
+`;
+document.head.appendChild(style);
+
 // Store products in memory for now
 let products = [];
 
