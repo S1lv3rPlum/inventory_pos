@@ -107,6 +107,7 @@
       <td>${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}</td>
       <td>
         <button onclick="editRow(${index})">Edit</button>
+        <button onclick="deleteRow(${index})">Delete</button>
       </td>
     `;
 
@@ -162,6 +163,13 @@ function saveRow(index) {
   // sizes remain unchanged for now
 
   renderTable();
+}
+
+function deleteRow(index) {
+  if (confirm("Are you sure you want to delete this product?")) {
+    products.splice(index, 1); // remove from array
+    renderTable(); // refresh view
+  }
 }
 
   function deleteProduct(index) {
