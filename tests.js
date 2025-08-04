@@ -139,40 +139,37 @@ addForm.addEventListener("submit", (e) => {
 // Render the inventory table with categories and products
 function renderTable() {
   tableBody.innerHTML = "";
-
-  // Group and sort products
   const grouped = {};
+
+  // Group products by category
   products.forEach(product => {
-    if (!grouped[product.category]) {
-      grouped[product.category] = [];
-    }
+    if (!grouped[product.category]) grouped[product.category] = [];
     grouped[product.category].push(product);
   });
 
-  const sortedCategories = Object.keys(grouped).sort();
-
-  sortedCategories.forEach(category => {
+  for (const [category, items] of Object.entries(grouped)) {
     // Category header row
     const categoryRow = document.createElement("tr");
+    categoryRow.classList.add("category-row");
     categoryRow.innerHTML = `
-      <td colspan="${4 + sizeLabels.length}" style="font-weight:bold; background-color:#f0f0f0;">
-        ${category}
-      </td>
+      <td colspan="${4 + sizeLabels.length + 1}"><strong>${category}</strong></td>
     `;
     tableBody.appendChild(categoryRow);
 
-    // Sort products within category
-    grouped[category].sort((a, b) => a.name.localeCompare(b.name));
-
-    // Product rows
-    grouped[category].forEach((product, index) => {
+    items.forEach(product => {
       const row = document.createElement("tr");
+
+      const productIndex = products.findIndex(p =>
+        p.name === product.name &&
+        p.category === product.category &&
+        p.unisex === product.unisex
+      );
 
       if (product.hasSizes === "Yes") {
         row.innerHTML = `
           <td class="name"><span>${product.name}</span></td>
           <td class="unisex"><span>${product.unisex}</span></td>
-          ${sizeLabels.map(size => `<td><span>${product.sizes[size]}</span></td>`).join('')}
+          ${sizeLabels.map(size => `<td class="size-${size}"><span>${product.sizes[size]}</span></td>`).join('')}
           <td>
             <div class="actions">
               <button class="edit">✏️</button>
@@ -195,16 +192,19 @@ function renderTable() {
       }
 
       tableBody.appendChild(row);
-    });
-  });
-}
 
-// Cancel editing on all rows
-function cancelAllEdits() {
-  document.querySelectorAll("tr.editing").forEach(row => {
-    row.classList.remove("editing");
-    renderTable();
-  });
+      // Wire up the buttons
+      const editBtn = row.querySelector(".edit");
+      const deleteBtn = row.querySelector(".delete");
+
+      if (editBtn) {
+        editBtn.addEventListener("click", () => handleEdit(productIndex));
+      }
+      if (deleteBtn) {
+        deleteBtn.addEventListener("click", () => handleDelete(productIndex));
+      }
+    });
+  }
 }
 
 // Make a row editable with inputs/selects
