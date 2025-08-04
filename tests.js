@@ -263,6 +263,7 @@ genderCell.innerHTML = `
     }
   });
 
+console.log("Size inputs created for editing:", row.querySelectorAll(".edit-size"));
   const editBtn = row.querySelector(".edit");
   editBtn.textContent = "✅ Save";
   editBtn.classList.add("save");
