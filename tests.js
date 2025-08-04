@@ -399,3 +399,32 @@ discountForm.addEventListener("submit", (e) => {
 // Initial Render
 renderDiscounts();
 switchTab("inventory");
+
+const inventory = [];
+
+document.getElementById("addProductForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const form = e.target;
+  const newProduct = {
+    name: form.name.value,
+    price: parseFloat(form.price.value),
+    category: form.category.value,
+    unisex: form.unisex.value,
+    hasSizes: form.hasSizes.value,
+    sizes: {
+      XS: 0,
+      S: 0,
+      M: 0,
+      L: 0,
+      XL: 0,
+      "2XL": 0,
+      "3XL": 0,
+      "4XL": 0
+    }
+  };
+
+  inventory.push(newProduct);
+  renderTable(); // This should be defined somewhere
+  form.reset();
+});
