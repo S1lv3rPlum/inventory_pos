@@ -86,23 +86,27 @@
   });
 
   function renderTable() {
-    const tbody = document.querySelector("#productTable tbody");
-    tbody.innerHTML = "";
+  const tbody = document.querySelector("#productTable tbody");
+  tbody.innerHTML = "";
 
-    products.forEach(prod => {
-      const tr = document.createElement("tr");
+  products.forEach((prod, index) => {
+    const tr = document.createElement("tr");
 
-      tr.innerHTML = `
-        <td>${prod.category}</td>
-        <td>${prod.name}</td>
-        <td>${prod.price.toFixed(2)}</td>
-        <td>${prod.unisex}</td>
-        <td>${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}</td>
-      `;
+    tr.innerHTML = `
+      <td>${prod.category}</td>
+      <td>${prod.name}</td>
+      <td>${prod.price.toFixed(2)}</td>
+      <td>${prod.unisex}</td>
+      <td>${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}</td>
+      <td>
+        <button onclick="editProduct(${index})">Edit</button>
+        <button onclick="deleteProduct(${index})">Delete</button>
+      </td>
+    `;
 
-      tbody.appendChild(tr);
-    });
-  }
+    tbody.appendChild(tr);
+  });
+}
 </script>
 
 </body>
