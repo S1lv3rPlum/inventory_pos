@@ -142,6 +142,15 @@ addForm.addEventListener("submit", (e) => {
 function renderTable() {
   tableBody.innerHTML = "";
 
+
+const categoryRow = document.createElement('tr');
+categoryRow.innerHTML = `
+  <td colspan="11" style="font-weight:bold; background:#f9f9f9;">${category}</td>
+  <td class="action-btns">
+    <button class="edit-category">Edit</button>
+    <button class="delete-category">Delete</button>
+  </td>
+`;
   // Group products by category
   const grouped = {};
   products.forEach(product => {
