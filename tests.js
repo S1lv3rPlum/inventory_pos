@@ -1,93 +1,99 @@
+let db;
+
 document.addEventListener("DOMContentLoaded", () => {
-  const request = indexedDB.open("BandPOSDB", 2);
+  const request = indexedDB.open("BandPOSDB", 1);
 
-  request.onupgradeneeded = (event) => {
-    const db = event.target.result;
-
+  request.onupgradeneeded = function (event) {
+    db = event.target.result;
     if (!db.objectStoreNames.contains("products")) {
       db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
-      showMessage("🛠️ Object store 'products' created.");
+    }
+  };
+
+  request.onsuccess = function (event) {
+    db = event.target.result;
+    console.log("✅ DB opened");
+    displayInventory();
+  };
+
+  request.onerror = function () {
+    alert("❌ Failed to open DB");
+  };
+
+  const addForm = document.getElementById("addProductForm");
+  addForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const name = document.getElementById("productName").value.trim();
+    const category = document.getElementById("productCategory").value.trim();
+    const price = parseFloat(document.getElementById("productPrice").value);
+    const hasSizes = document.getElementById("productHasSizes").checked;
+    const gender = document.getElementById("productGenderMale").checked
+      ? "M"
+      : document.getElementById("productGenderFemale").checked
+      ? "F"
+      : "";
+
+    const imageFile = document.getElementById("productImage").files[0];
+    const reader = new FileReader();
+
+    reader.onload = function () {
+      const imageData = reader.result || null;
+
+      const sizes = hasSizes
+        ? ["S", "M", "L", "XL", "2XL"].map(size => ({ size, stock: 0 }))
+        : [{ size: "One Size", stock: 0 }];
+
+      const newProduct = {
+        name,
+        category,
+        price,
+        gender,
+        image: imageData,
+        variants: sizes
+      };
+
+      const tx = db.transaction("products", "readwrite");
+      const store = tx.objectStore("products");
+      const request = store.add(newProduct);
+
+      request.onsuccess = function () {
+        alert("✅ Product added!");
+        addForm.reset();
+        displayInventory();
+      };
+
+      request.onerror = function (e) {
+        alert("❌ Error: " + e.target.error);
+      };
+    };
+
+    if (imageFile) {
+      reader.readAsDataURL(imageFile);
     } else {
-      showMessage("ℹ️ Object store 'products' already exists.");
+      reader.onload(); // run with null image
     }
-  };
-
-  request.onsuccess = (event) => {
-    const db = event.target.result;
-    showMessage("✅ IndexedDB opened successfully");
-
-    const addForm = document.getElementById("addProductForm");
-    if (!addForm) {
-      showMessage("❌ Form not found in DOM.");
-      return;
-    }
-
-    showMessage("✅ Form found. Attaching submit listener.");
-
-    addForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      showMessage("🟢 Add product form submitted");
-
-      const name = document.getElementById("productName").value.trim();
-      const price = parseFloat(document.getElementById("productPrice").value);
-      const quantity = parseInt(document.getElementById("productQuantity").value);
-
-      if (!name || isNaN(price) || isNaN(quantity)) {
-        showMessage("⚠️ Please fill in all fields correctly.");
-        return;
-      }
-
-      showMessage(`📦 Creating transaction...`);
-
-      try {
-        const transaction = db.transaction(["products"], "readwrite");
-
-        transaction.onerror = () => {
-          showMessage("❌ Transaction error.");
-        };
-
-        const store = transaction.objectStore("products");
-
-        const newProduct = { name, price, quantity };
-        showMessage(`📤 Adding product: ${JSON.stringify(newProduct)}`);
-
-        const addRequest = store.add(newProduct);
-
-        addRequest.onsuccess = (event) => {
-  alert("Product added to IndexedDB with ID: " + event.target.result);
-  showMessage("✅ Product added successfully.");
-  addForm.reset();
-  displayInventory(); // Make sure this is here
-};
-
-        addRequest.onerror = (event) => {
-          showMessage("❌ Error adding product: " + event.target.error);
-        };
-      } catch (err) {
-        showMessage("❌ Exception during add: " + err.message);
-      }
-    });
-  };
-
-  request.onerror = (event) => {
-    showMessage("❌ Database error: " + event.target.errorCode);
-  };
+  });
 });
 
-function showMessage(msg) {
-  let log = document.getElementById("debugLog");
-  if (!log) {
-    log = document.createElement("div");
-    log.id = "debugLog";
-    log.style.border = "1px solid #aaa";
-    log.style.padding = "10px";
-    log.style.marginTop = "20px";
-    log.style.background = "#f9f9f9";
-    log.style.fontSize = "14px";
-    document.body.appendChild(log);
-  }
+function displayInventory() {
+  const tx = db.transaction("products", "readonly");
+  const store = tx.objectStore("products");
+  const request = store.getAll();
 
-  const p = document.createElement("p");
-  p.textContent = msg;
-  log.appendChild(p);
+  request.onsuccess = function () {
+    const table = document.querySelector("#inventoryTable tbody");
+    table.innerHTML = "";
+
+    request.result.forEach((product) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${product.name}</td>
+        <td>${product.category}</td>
+        <td>$${product.price.toFixed(2)}</td>
+        <td>${product.variants.map(v => v.size).join(", ")}</td>
+      `;
+      table.appendChild(row);
+    });
+  };
 }
