@@ -1,5 +1,97 @@
 console.log("JS is running");
 
+// Inject styles directly into the page
+const style = document.createElement("style");
+style.textContent = `
+/* Remove spinners in Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Remove spinners in Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+body {
+  font-family: sans-serif;
+  padding: 20px;
+  max-width: 900px;
+  margin: auto;
+}
+
+form {
+  margin-bottom: 20px;
+}
+
+input, select {
+  margin-right: 10px;
+  padding: 5px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background-color: #f0f0f0;
+}
+
+td, th {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+
+.editing input, .editing select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button.edit, button.save {
+  background-color: #fff7a8;
+  border: none;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+button.delete {
+  background-color: #ffb3b3;
+  border: none;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+#tabs button {
+  margin-right: 10px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.edit-btn,
+.delete-btn {
+  padding: 4px 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.category-header {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+`;
+document.head.appendChild(style);
+
 // Size labels
 const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 
@@ -47,87 +139,238 @@ addForm.addEventListener("submit", (e) => {
 // Render the inventory table with categories and products
 function renderTable() {
   tableBody.innerHTML = "";
-  const grouped = {};
 
   // Group products by category
+  const grouped = {};
   products.forEach(product => {
-    if (!grouped[product.category]) grouped[product.category] = [];
+    if (!grouped[product.category]) {
+      grouped[product.category] = [];
+    }
     grouped[product.category].push(product);
   });
 
-  for (const [category, items] of Object.entries(grouped)) {
-    // Category header row
-    const categoryRow = document.createElement("tr");
-    categoryRow.classList.add("category-row");
-    categoryRow.innerHTML = `
-      <td colspan="${4 + sizeLabels.length + 1}"><strong>${category}</strong></td>
+  const sortedCategories = Object.keys(grouped).sort();
+
+  sortedCategories.forEach(category => {
+    // Add a category header row
+    const headerRow = document.createElement("tr");
+    headerRow.classList.add("category-header");
+    headerRow.innerHTML = `
+      <td colspan="${4 + sizeLabels.length}">
+        <strong>${category}</strong>
+      </td>
+      <td class="actions">
+        <button class="edit-category" data-category="${category}">✏️</button>
+        <button class="delete-category" data-category="${category}">🗑️</button>
+      </td>
     `;
-    tableBody.appendChild(categoryRow);
+    tableBody.appendChild(headerRow);
 
-    items.forEach(product => {
+    // Sort products alphabetically by name
+    const sortedProducts = grouped[category].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+
+    sortedProducts.forEach((product) => {
       const row = document.createElement("tr");
-
-      const productIndex = products.findIndex(p =>
-        p.name === product.name &&
-        p.category === product.category &&
-        p.unisex === product.unisex
-      );
 
       if (product.hasSizes === "Yes") {
         row.innerHTML = `
+          <td class="category"><span>${product.category}</span></td>
           <td class="name"><span>${product.name}</span></td>
           <td class="unisex"><span>${product.unisex}</span></td>
-          ${sizeLabels.map(size => `<td class="size-${size}"><span>${product.sizes[size]}</span></td>`).join('')}
-          <td>
-            <div class="actions">
-              <button class="edit">✏️</button>
-              <button class="delete">🗑️</button>
-            </div>
+          ${sizeLabels.map(size => `<td class="size-${size}"><span>${product.sizes[size] || ''}</span></td>`).join('')}
+          <td class="actions">
+            <button class="edit">✏️</button>
+            <button class="delete">🗑️</button>
           </td>
         `;
       } else {
         row.innerHTML = `
+          <td class="category"><span>${product.category}</span></td>
           <td class="name"><span>${product.name}</span></td>
           <td class="unisex"><span>${product.unisex}</span></td>
           ${sizeLabels.map(() => `<td>-</td>`).join('')}
-          <td>
-            <div class="actions">
-              <button class="edit">✏️</button>
-              <button class="delete">🗑️</button>
-            </div>
+          <td class="actions">
+            <button class="edit">✏️</button>
+            <button class="delete">🗑️</button>
           </td>
         `;
       }
 
-      tableBody.appendChild(row);
+      // Add event listener for delete button
+      row.querySelector(".delete").addEventListener("click", () => {
+        const index = products.indexOf(product);
+        if (index > -1) {
+          products.splice(index, 1);
+          saveToLocalStorage();
+          renderTable();
+        }
+      });
 
-      // Wire up the buttons
+      // Add event listener for edit/save toggle button
       const editBtn = row.querySelector(".edit");
-      const deleteBtn = row.querySelector(".delete");
+      editBtn.addEventListener("click", () => {
+        if (row.classList.contains("editing")) {
+          saveRow(row, products.indexOf(product));
+        } else {
+          cancelAllEdits();
+          makeRowEditable(row, product);
+        }
+      });
 
-      if (editBtn) {
-        editBtn.addEventListener("click", () => handleEdit(productIndex));
-      }
-      if (deleteBtn) {
-        deleteBtn.addEventListener("click", () => handleDelete(productIndex));
-      }
+      tableBody.appendChild(row);
+    });
+  });
+}
+
+// Cancel editing on all rows
+function cancelAllEdits() {
+  document.querySelectorAll("tr.editing").forEach(row => {
+    row.classList.remove("editing");
+    renderTable();
+  });
+}
+
+// Make a row editable with inputs/selects
+function makeRowEditable(row, product) {
+  row.classList.add("editing");
+
+  const categoryCell = row.querySelector(".category");
+  const categoryText = categoryCell.querySelector("span").textContent;
+  categoryCell.innerHTML = `<input type="text" class="edit-category" value="${categoryText}" />`;
+
+  const nameCell = row.querySelector(".name");
+  const nameText = nameCell.querySelector("span").textContent;
+  nameCell.innerHTML = `<input type="text" class="edit-name" value="${nameText}" />`;
+
+  const unisexCell = row.querySelector(".unisex");
+  const unisexText = unisexCell.querySelector("span").textContent;
+  unisexCell.innerHTML = `
+    <select class="edit-unisex">
+      <option value="Yes" ${unisexText === "Yes" ? "selected" : ""}>Yes</option>
+      <option value="No" ${unisexText === "No" ? "selected" : ""}>No</option>
+    </select>
+  `;
+
+  sizeLabels.forEach(size => {
+    const cell = row.querySelector(`.size-${size}`);
+    if (product.hasSizes === "Yes") {
+      const val = product.sizes[size];
+      cell.innerHTML = `<input type="number" min="0" class="edit-size" data-size="${size}" value="${val}" />`;
+    } else {
+      cell.textContent = "-";
+    }
+  });
+
+  const editBtn = row.querySelector(".edit");
+  editBtn.textContent = "✅ Save";
+  editBtn.classList.add("save");
+  editBtn.classList.remove("edit");
+}
+
+// Save edited row back to products array
+function saveRow(row, index) {
+  const newCategory = row.querySelector(".edit-category").value.trim();
+  const newName = row.querySelector(".edit-name").value.trim();
+  const newUnisex = row.querySelector(".edit-unisex").value;
+  let newHasSizes = "No";
+  let newSizes = null;
+
+  const sizeInputs = row.querySelectorAll(".edit-size");
+  if (sizeInputs.length) {
+    newHasSizes = "Yes";
+    newSizes = {};
+    sizeInputs.forEach(input => {
+      const sizeKey = input.dataset.size;
+      const val = parseInt(input.value);
+      newSizes[sizeKey] = isNaN(val) || val < 0 ? 0 : val;
     });
   }
-}
 
-// Handle editing a product
-function handleEdit(productIndex) {
-  const product = products[productIndex];
-  console.log("Edit product:", product);
-  // Implement the edit functionality as needed
-}
+  products[index] = {
+    category: newCategory,
+    name: newName,
+    unisex: newUnisex,
+    hasSizes: newHasSizes,
+    sizes: newSizes,
+  };
 
-// Handle deleting a product
-function handleDelete(productIndex) {
-  products.splice(productIndex, 1);
   saveToLocalStorage();
   renderTable();
 }
 
-// Initial render call
+// === Section Toggle Logic ===
+function switchTab(tab) {
+  document.getElementById("inventoryTable").parentElement.style.display = tab === "inventory" ? "block" : "none";
+  document.getElementById("discountSection").style.display = tab === "discounts" ? "block" : "none";
+  document.getElementById("addProductForm").style.display = tab === "inventory" ? "block" : "none";
+  document.getElementById("sectionTitle").textContent = tab.charAt(0).toUpperCase() + tab.slice(1);
+}
+
+// === Discount Logic ===
+const discountForm = document.getElementById("addDiscountForm");
+const discountTable = document.getElementById("discountTable").querySelector("tbody");
+
+// Render discounts in table
+function renderDiscounts() {
+  discountTable.innerHTML = "";
+  discounts.forEach((discount, index) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td contenteditable="true" oninput="updateDiscountField(${index}, 'name', this.innerText)">${discount.name}</td>
+      <td>
+        <select onchange="updateDiscountField(${index}, 'type', this.value)">
+          <option value="Percentage" ${discount.type === "Percentage" ? "selected" : ""}>Percentage</option>
+          <option value="Fixed" ${discount.type === "Fixed" ? "selected" : ""}>Fixed</option>
+          <option value="BOGO" ${discount.type === "BOGO" ? "selected" : ""}>BOGO</option>
+        </select>
+      </td>
+      <td contenteditable="true" oninput="updateDiscountField(${index}, 'value', this.innerText)">${discount.value}</td>
+      <td><button onclick="deleteDiscount(${index})">Delete</button></td>
+    `;
+    discountTable.appendChild(row);
+  });
+}
+
+// Update discount field called from inline handlers
+function updateDiscountField(index, field, value) {
+  if (field === "value") {
+    value = parseFloat(value);
+    if (isNaN(value)) return;
+  }
+  discounts[index][field] = value;
+  saveToLocalStorage();
+  renderDiscounts();
+}
+
+// Delete discount
+function deleteDiscount(index) {
+  discounts.splice(index, 1);
+  saveToLocalStorage();
+  renderDiscounts();
+}
+
+// Attach update and delete functions to window so inline handlers can access them
+window.updateDiscountField = updateDiscountField;
+window.deleteDiscount = deleteDiscount;
+
+// Discount form submit handler
+discountForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const formData = new FormData(discountForm);
+  const newDiscount = {
+    name: formData.get("discountName"),
+    type: formData.get("discountType"),
+    value: parseFloat(formData.get("discountValue"))
+  };
+  discounts.push(newDiscount);
+  saveToLocalStorage();
+  renderDiscounts();
+  discountForm.reset();
+});
+
+// Initial render calls
 renderTable();
+renderDiscounts();
+switchTab("inventory");
