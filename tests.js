@@ -156,7 +156,7 @@ function renderTable() {
     const headerRow = document.createElement("tr");
     headerRow.classList.add("category-header");
     headerRow.innerHTML = `
-      <td colspan="${4 + sizeLabels.length}">
+      <td colspan="${3 + sizeLabels.length}">
         <strong>${category}</strong>
       </td>
       <td class="actions">
