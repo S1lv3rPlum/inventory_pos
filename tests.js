@@ -83,6 +83,10 @@ button:hover {
   font-size: 0.9rem;
   cursor: pointer;
 }
+.category-header {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
 `;
 document.head.appendChild(style);
 
