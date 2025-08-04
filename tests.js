@@ -1,116 +1,109 @@
-let db;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inventory Manager</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; }
+  h1 { text-align: center; }
+  label { margin-right: 15px; display: inline-block; margin-bottom: 10px; }
+  input, select { padding: 5px; font-size: 14px; }
+  button { margin-top: 10px; padding: 8px 15px; cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
+</style>
+</head>
+<body>
 
-document.addEventListener("DOMContentLoaded", () => {
-  const request = indexedDB.open("BandPOSDB", 1);
+<h1>Inventory Manager</h1>
 
-  request.onupgradeneeded = function (event) {
-    db = event.target.result;
-    if (!db.objectStoreNames.contains("products")) {
-      db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
+<form id="productForm">
+  <label>Category: <input type="text" id="category" required /></label>
+  <label>Product Name: <input type="text" id="productName" required /></label>
+  <label>Price: <input type="number" id="price" step="0.01" min="0" required /></label>
+  <label>
+    Unisex:
+    <select id="unisex" required>
+      <option value="">-- Select --</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+  </label>
+  <label>
+    Has Sizes:
+    <select id="hasSizes" required>
+      <option value="">-- Select --</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+  </label>
+  <br />
+  <button type="submit">Add Product</button>
+</form>
+
+<table id="productTable" aria-label="Inventory product list">
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Name</th>
+      <th>Price</th>
+      <th>Unisex</th>
+      <th>Sizes</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  const products = [];
+  const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
+
+  document.getElementById("productForm").addEventListener("submit", e => {
+    e.preventDefault();
+
+    const category = document.getElementById("category").value.trim();
+    const name = document.getElementById("productName").value.trim();
+    const price = parseFloat(document.getElementById("price").value);
+    const unisex = document.getElementById("unisex").value;
+    const hasSizes = document.getElementById("hasSizes").value;
+
+    if (!category || !name || isNaN(price) || !unisex || !hasSizes) {
+      alert("Please fill in all required fields.");
+      return;
     }
-  };
 
-  request.onsuccess = function (event) {
-    db = event.target.result;
-    console.log("IndexedDB opened successfully.");
-    displayInventory();
-  };
+    const sizes = hasSizes === "Yes" ? sizeLabels.reduce((acc, size) => {
+      acc[size] = 0;
+      return acc;
+    }, {}) : null;
 
-  request.onerror = function (event) {
-    console.error("Error opening IndexedDB:", event.target.error);
-  };
+    products.push({ category, name, price, unisex, sizes });
 
-  const addForm = document.getElementById("addProductForm");
-  if (addForm) {
-    addForm.addEventListener("submit", function (e) {
-      e.preventDefault();
+    renderTable();
 
-      const name = document.getElementById("productName").value.trim();
-      const category = document.getElementById("productCategory").value.trim();
-      const price = parseFloat(document.getElementById("productPrice").value);
-      const hasSizes = document.getElementById("productHasSizes")?.checked || false;
-      const gender = document.getElementById("productGenderMale")?.checked
-        ? "M"
-        : document.getElementById("productGenderFemale")?.checked
-        ? "F"
-        : "";
+    document.getElementById("productForm").reset();
+  });
 
-      const imageInput = document.getElementById("productImage");
-      const imageFile = imageInput?.files[0];
-      const reader = new FileReader();
+  function renderTable() {
+    const tbody = document.querySelector("#productTable tbody");
+    tbody.innerHTML = "";
 
-      reader.onload = function () {
-        const imageData = reader.result || null;
-        const defaultSizes = ["S", "M", "L", "XL", "2XL"];
-        const variants = hasSizes
-          ? defaultSizes.map((size) => ({ size, stock: 0 }))
-          : [{ size: "One Size", stock: 0 }];
+    products.forEach(prod => {
+      const tr = document.createElement("tr");
 
-        const newProduct = {
-          name,
-          category,
-          price,
-          gender,
-          variants,
-          image: imageData,
-        };
-
-        const tx = db.transaction("products", "readwrite");
-        const store = tx.objectStore("products");
-        const addRequest = store.add(newProduct);
-
-        addRequest.onsuccess = () => {
-          console.log("✅ Product added successfully.");
-          addForm.reset();
-          displayInventory();
-        };
-
-        addRequest.onerror = (event) => {
-          console.error("❌ Error adding product:", event.target.error);
-        };
-      };
-
-      if (imageFile) {
-        reader.readAsDataURL(imageFile);
-      } else {
-        reader.onload();
-      }
-    });
-  }
-});
-
-function displayInventory() {
-  const table = document.getElementById("inventoryTable");
-  if (!table) return;
-
-  // Clear existing rows
-  table.innerHTML = "";
-
-  const tx = db.transaction("products", "readonly");
-  const store = tx.objectStore("products");
-  const request = store.openCursor();
-
-  request.onsuccess = function (event) {
-    const cursor = event.target.result;
-    if (cursor) {
-      const product = cursor.value;
-      const row = document.createElement("tr");
-
-      row.innerHTML = `
-        <td>${product.name}</td>
-        <td>${product.category}</td>
-        <td>$${product.price.toFixed(2)}</td>
-        <td>${product.gender}</td>
-        <td>${product.variants.map(v => v.size).join(", ")}</td>
-        <td>${product.image ? `<img src="${product.image}" width="50">` : "No Image"}</td>
+      tr.innerHTML = `
+        <td>${prod.category}</td>
+        <td>${prod.name}</td>
+        <td>${prod.price.toFixed(2)}</td>
+        <td>${prod.unisex}</td>
+        <td>${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}</td>
       `;
 
-      table.appendChild(row);
-      cursor.continue();
-    }
-  };
+      tbody.appendChild(tr);
+    });
+  }
+</script>
 
-  request.onerror = function (event) {
-    console.error("Error displaying inventory:", event.target.error);
-  };
-}
+</body>
+</html>
