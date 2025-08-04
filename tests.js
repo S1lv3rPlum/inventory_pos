@@ -138,73 +138,53 @@ addForm.addEventListener("submit", (e) => {
 
 // Render the inventory table with categories and products
 function renderTable() {
-  tableBody.innerHTML = "";
-  const grouped = {};
+  const products = JSON.parse(localStorage.getItem("products")) || [];
+  const tableBody = document.querySelector("#inventoryTable tbody");
+  tableBody.innerHTML = ""; // Clear previous rows
 
-  // Group products by category
-  products.forEach(product => {
-    if (!grouped[product.category]) grouped[product.category] = [];
-    grouped[product.category].push(product);
+  console.log("Rendering table...");
+  console.log("Products in localStorage:", products);
+
+  const groupedProducts = {};
+
+  // Group by category
+  products.forEach((product) => {
+    if (!groupedProducts[product.category]) {
+      groupedProducts[product.category] = [];
+    }
+    groupedProducts[product.category].push(product);
   });
 
-  for (const [category, items] of Object.entries(grouped)) {
-    // Category header row
+  // For each category
+  Object.keys(groupedProducts).forEach((category) => {
+    // Add category row
     const categoryRow = document.createElement("tr");
     categoryRow.classList.add("category-row");
-    categoryRow.innerHTML = `
-      <td colspan="${4 + sizeLabels.length + 1}"><strong>${category}</strong></td>
-    `;
+    categoryRow.innerHTML = `<td colspan="12" style="font-weight:bold;">${category}</td>`;
     tableBody.appendChild(categoryRow);
 
-    items.forEach(product => {
+    // Add product rows under this category
+    groupedProducts[category].forEach((product, index) => {
       const row = document.createElement("tr");
 
-      const productIndex = products.findIndex(p =>
-        p.name === product.name &&
-        p.category === product.category &&
-        p.unisex === product.unisex
-      );
+      const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 
-      if (product.hasSizes === "Yes") {
-        row.innerHTML = `
-          <td class="name"><span>${product.name}</span></td>
-          <td class="unisex"><span>${product.unisex}</span></td>
-          ${sizeLabels.map(size => `<td class="size-${size}"><span>${product.sizes[size]}</span></td>`).join('')}
-          <td>
-            <div class="actions">
-              <button class="edit">✏️</button>
-              <button class="delete">🗑️</button>
-            </div>
-          </td>
-        `;
-      } else {
-        row.innerHTML = `
-          <td class="name"><span>${product.name}</span></td>
-          <td class="unisex"><span>${product.unisex}</span></td>
-          ${sizeLabels.map(() => `<td>-</td>`).join('')}
-          <td>
-            <div class="actions">
-              <button class="edit">✏️</button>
-              <button class="delete">🗑️</button>
-            </div>
-          </td>
-        `;
-      }
+      row.innerHTML = `
+        <td></td> <!-- empty category cell -->
+        <td class="name"><span>${product.name}</span></td>
+        <td class="unisex"><span>${product.unisex}</span></td>
+        ${sizeLabels.map(() => `<td>-</td>`).join("")}
+        <td>
+          <div class="actions">
+            <button class="edit" data-index="${index}">✏️</button>
+            <button class="delete" data-index="${index}">🗑️</button>
+          </div>
+        </td>
+      `;
 
       tableBody.appendChild(row);
-
-      // Wire up the buttons
-      const editBtn = row.querySelector(".edit");
-      const deleteBtn = row.querySelector(".delete");
-
-      if (editBtn) {
-        editBtn.addEventListener("click", () => handleEdit(productIndex));
-      }
-      if (deleteBtn) {
-        deleteBtn.addEventListener("click", () => handleDelete(productIndex));
-      }
     });
-  }
+  });
 }
 
 // Make a row editable with inputs/selects
