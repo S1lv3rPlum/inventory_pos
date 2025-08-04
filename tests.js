@@ -101,6 +101,13 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+.form-field {
+  width: 200px; /* adjust to whatever fits your layout */
+  box-sizing: border-box;
+  padding: 6px;
+  margin: 4px 0;
+}
 `;
 document.head.appendChild(style);
 
