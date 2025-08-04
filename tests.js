@@ -64,167 +64,53 @@ const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 let products = [];
 
 // Abstracted data access layer
-const dataService = {
-  getProducts() {
-    return [...products]; // return a shallow copy
-  },
+const dataService = (function () { let products = []; let editingIndex = null;
 
-  addProduct(product) {
-    products.push(product);
-    renderTable();
-  },
+function addProduct(product) { if (editingIndex !== null) { products[editingIndex] = product; editingIndex = null; } else { products.push(product); } renderTable(); }
 
-  updateProduct(index, updatedProduct) {
-    products[index] = updatedProduct;
-    renderTable();
-  },
+function deleteProduct(index) { products.splice(index, 1); renderTable(); }
 
-  deleteProduct(index) {
-    products.splice(index, 1);
-    renderTable();
-  }
-};
+function editProduct(index) { const product = products[index]; addForm.name.value = product.name; addForm.price.value = product.price; addForm.quantity.value = product.quantity; addForm.category.value = product.category; addForm.unisex.value = product.unisex; addForm.hasSizes.value = product.hasSizes; editingIndex = index; }
 
-// DOM elements
-const addForm = document.getElementById("addProductForm");
-const tableBody = document.querySelector("#inventoryTable tbody");
+function getProducts() { return products; }
 
-// Handle form submission
-addForm.addEventListener("submit", (event) => {
-  event.preventDefault();
+return { addProduct, deleteProduct, editProduct, getProducts, }; })();
 
-  // Build product from form values
-  const product = {
-    name: addForm.name.value.trim(),
-    price: parseFloat(addForm.price.value),
-    quantity: parseInt(addForm.quantity.value),
-    category: addForm.category.value.trim(),
-    unisex: addForm.unisex.value,
-    hasSizes: addForm.hasSizes.value
-  };
+const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"]; const addForm = document.getElementById("addForm"); const tableBody = document.querySelector("#productTable tbody");
 
-  // If hasSizes === "Yes", initialize sizes object with zeros
-  if (product.hasSizes) {
-  const sizeKeys = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
-  sizeKeys.forEach(size => {
-    row.innerHTML += `<td><span class="size-${size}">${product.sizes?.[size] ?? 0}</span></td>`;
+addForm.addEventListener("submit", (event) => { event.preventDefault();
+
+const product = { name: addForm.name.value.trim(), price: parseFloat(addForm.price.value), quantity: parseInt(addForm.quantity.value), category: addForm.category.value.trim(), unisex: addForm.unisex.value, hasSizes: addForm.hasSizes.value, };
+
+if (product.hasSizes === "Yes") { product.sizes = sizeLabels.reduce((acc, size) => { acc[size] = 0; return acc; }, {}); } else { product.sizes = null; }
+
+dataService.addProduct(product); addForm.reset(); });
+
+function renderTable() { tableBody.innerHTML = ""; const products = dataService.getProducts();
+
+products.forEach((product, index) => { const row = document.createElement("tr"); row.innerHTML = <td><span class="name">${product.name}</span></td> <td><span class="price">${product.price.toFixed(2)}</span></td> <td><span class="quantity">${product.quantity}</span></td> <td><span class="category">${product.category}</span></td> <td><span class="unisex">${product.unisex}</span></td> <td><span class="hasSizes">${product.hasSizes}</span></td>;
+
+if (product.hasSizes === "Yes") {
+  sizeLabels.forEach(size => {
+    const sizeCell = document.createElement("td");
+    sizeCell.innerHTML = `<span class="size-${size}">${product.sizes?.[size] ?? 0}</span>`;
+    row.appendChild(sizeCell);
   });
-} else {
-  const sizeCols = 8;
-  for (let i = 0; i < sizeCols; i++) {
-    row.innerHTML += '<td>-</td>';
-  }
 }
 
-  dataService.addProduct(product);
-  addForm.reset();
-});
-
-// Render inventory table
-function renderTable() {
-  const products = dataService.getProducts();
-  tableBody.innerHTML = "";
-
-  products.forEach((product, index) => {
-    const row = document.createElement("tr");
-
-   row.innerHTML = `
-  <td><span class="category">${product.category}</span></td>
-  <td><span class="name">${product.name}</span></td>
-  <td><span class="gender">${product.gender}</span></td>
-  <td><span class="qty-xs">${product.sizes?.XS ?? 0}</span></td>
-  <td><span class="qty-s">${product.sizes?.S ?? 0}</span></td>
-  <td><span class="qty-m">${product.sizes?.M ?? 0}</span></td>
-  <td><span class="qty-l">${product.sizes?.L ?? 0}</span></td>
-  <td><span class="qty-xl">${product.sizes?.XL ?? 0}</span></td>
-  <td><span class="qty-2xl">${product.sizes?.["2XL"] ?? 0}</span></td>
-  <td><span class="qty-3xl">${product.sizes?.["3XL"] ?? 0}</span></td>
-  <td><span class="qty-4xl">${product.sizes?.["4XL"] ?? 0}</span></td>
-  <td>
-    <button class="edit">✏️</button>
-    <button class="delete">🗑️</button>
-  </td>
+const actions = document.createElement("td");
+actions.innerHTML = `
+  <button class="edit">✏️</button>
+  <button class="delete">🗑️</button>
 `;
+row.appendChild(actions);
 
-    // Edit button
-    row.querySelector(".edit").addEventListener("click", () => {
-      toggleEditRow(row, index);
-    });
+row.querySelector(".edit").addEventListener("click", () => dataService.editProduct(index));
+row.querySelector(".delete").addEventListener("click", () => dataService.deleteProduct(index));
 
-    // Delete button
-    row.querySelector(".delete").addEventListener("click", () => {
-      dataService.deleteProduct(index);
-    });
+tableBody.appendChild(row);
 
-    tableBody.appendChild(row);
-  });
-}
+}); }
 
-// Toggle edit mode for a row
-function toggleEditRow(row, index) {
-  const isEditing = row.classList.contains("editing");
-
-  if (isEditing) {
-    // Save edits
-    const newName = row.querySelector("input.name").value.trim();
-    const newPrice = parseFloat(row.querySelector("input.price").value);
-    const newQty = parseInt(row.querySelector("input.quantity").value);
-    const newCategory = row.querySelector("input.category").value.trim();
-    const newUnisex = row.querySelector("select.unisex").value;
-    const newHasSizes = row.querySelector("select.hasSizes").value;
-
-    // If hasSizes is now "Yes" and sizes is null, initialize sizes object
-    if (newHasSizes === "Yes" && (!products[index].sizes || Object.keys(products[index].sizes).length === 0)) {
-      products[index].sizes = sizeLabels.reduce((acc, size) => {
-        acc[size] = 0;
-        return acc;
-      }, {});
-    } else if (newHasSizes === "No") {
-      products[index].sizes = null;
-    }
-
-    const updatedProduct = {
-      ...products[index], // keep sizes if they exist
-      name: newName,
-      price: newPrice,
-      quantity: newQty,
-      category: newCategory,
-      unisex: newUnisex,
-      hasSizes: newHasSizes
-    };
-
-    dataService.updateProduct(index, updatedProduct);
-    row.classList.remove("editing");
-  } else {
-    // Exit edit mode for any other rows
-    document.querySelectorAll("tr.editing").forEach(r => r.classList.remove("editing"));
-
-    // Enter edit mode - replace spans with inputs/selects
-    const name = row.querySelector(".name").textContent;
-    const price = row.querySelector(".price").textContent;
-    const quantity = row.querySelector(".quantity").textContent;
-    const category = row.querySelector(".category").textContent;
-    const unisex = row.querySelector(".unisex").textContent;
-    const hasSizes = row.querySelector(".hasSizes").textContent;
-
-    row.classList.add("editing");
-
-    row.querySelector(".name").innerHTML = `<input class="name" value="${name}" />`;
-    row.querySelector(".price").innerHTML = `<input class="price" type="number" step="0.01" value="${price}" />`;
-    row.querySelector(".quantity").innerHTML = `<input class="quantity" type="number" value="${quantity}" />`;
-    row.querySelector(".category").innerHTML = `<input class="category" value="${category}" />`;
-    row.querySelector(".unisex").innerHTML = `
-      <select class="unisex">
-        <option value="Yes" ${unisex === "Yes" ? "selected" : ""}>Yes</option>
-        <option value="No" ${unisex === "No" ? "selected" : ""}>No</option>
-      </select>`;
-    row.querySelector(".hasSizes").innerHTML = `
-      <select class="hasSizes">
-        <option value="Yes" ${hasSizes === "Yes" ? "selected" : ""}>Yes</option>
-        <option value="No" ${hasSizes === "No" ? "selected" : ""}>No</option>
-      </select>`;
-  }
-}
-
-// Initial render
 renderTable();
+
