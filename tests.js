@@ -66,6 +66,9 @@ button.delete {
 button:hover {
   opacity: 0.8;
 }
+#tabs button {
+  margin-right: 10px;
+}
 `;
 document.head.appendChild(style);
 
@@ -250,3 +253,74 @@ function saveRow(row, index) {
 
 // Initial render
 renderTable();
+
+// === Section Toggle Logic ===
+function switchTab(tab) {
+  document.getElementById("inventoryTable").parentElement.style.display = tab === "inventory" ? "block" : "none";
+  document.getElementById("discountSection").style.display = tab === "discounts" ? "block" : "none";
+  document.getElementById("addProductForm").style.display = tab === "inventory" ? "block" : "none";
+  document.getElementById("sectionTitle").textContent = tab.charAt(0).toUpperCase() + tab.slice(1);
+}
+
+// === Discount Logic ===
+const discountForm = document.getElementById("addDiscountForm");
+const discountTable = document.getElementById("discountTable").querySelector("tbody");
+
+let discounts = JSON.parse(localStorage.getItem("discounts")) || [];
+
+function saveDiscounts() {
+  localStorage.setItem("discounts", JSON.stringify(discounts));
+}
+
+function renderDiscounts() {
+  discountTable.innerHTML = "";
+  discounts.forEach((discount, index) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td contenteditable="true" oninput="updateDiscountField(${index}, 'name', this.innerText)">${discount.name}</td>
+      <td>
+        <select onchange="updateDiscountField(${index}, 'type', this.value)">
+          <option value="Percentage" ${discount.type === "Percentage" ? "selected" : ""}>Percentage</option>
+          <option value="Fixed" ${discount.type === "Fixed" ? "selected" : ""}>Fixed</option>
+          <option value="BOGO" ${discount.type === "BOGO" ? "selected" : ""}>BOGO</option>
+        </select>
+      </td>
+      <td contenteditable="true" oninput="updateDiscountField(${index}, 'value', this.innerText)">${discount.value}</td>
+      <td><button onclick="deleteDiscount(${index})">Delete</button></td>
+    `;
+    discountTable.appendChild(row);
+  });
+}
+
+function updateDiscountField(index, field, value) {
+  if (field === "value") {
+    value = parseFloat(value);
+    if (isNaN(value)) return;
+  }
+  discounts[index][field] = value;
+  saveDiscounts();
+}
+
+function deleteDiscount(index) {
+  discounts.splice(index, 1);
+  saveDiscounts();
+  renderDiscounts();
+}
+
+discountForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const formData = new FormData(discountForm);
+  const newDiscount = {
+    name: formData.get("name"),
+    type: formData.get("type"),
+    value: parseFloat(formData.get("value"))
+  };
+  discounts.push(newDiscount);
+  saveDiscounts();
+  renderDiscounts();
+  discountForm.reset();
+});
+
+// Initial Render
+renderDiscounts();
+switchTab("inventory");
