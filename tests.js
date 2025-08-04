@@ -16,8 +16,6 @@ style.textContent = `
 /* ... keep your other styles here ... */
 `;
 
-}
-
 /* Remove spinners in Firefox */
 input[type="number"] {
   -moz-appearance: textfield;
