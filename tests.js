@@ -134,9 +134,11 @@ function renderTable() {
         <td class="name"><span>${product.name}</span></td>
         <td class="unisex"><span>${product.unisex}</span></td>
         ${sizeLabels.map(size => `<td class="size-${size}"><span>${product.sizes[size]}</span></td>`).join('')}
-        <td class="actions">
+        <td>
+        <div class="actions">
           <button class="edit">✏️</button>
-          <button class="delete">🗑️</button>
+          <button class="delete">🗑️</button
+          </div>>
         </td>
       `;
     } else {
