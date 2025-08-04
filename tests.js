@@ -69,6 +69,20 @@ button:hover {
 #tabs button {
   margin-right: 10px;
 }
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.edit-btn,
+.delete-btn {
+  padding: 4px 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
 `;
 document.head.appendChild(style);
 
