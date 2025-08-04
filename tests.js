@@ -178,7 +178,7 @@ function renderTable() {
         row.innerHTML = `
           <td class="category"><span>${product.category}</span></td>
           <td class="name"><span>${product.name}</span></td>
-          <td class="unisex"><span>${product.unisex}</span></td>
+          <td class="gender"><span>${product.gender}</span></td>
           ${sizeLabels.map(size => `<td class="size-${size}"><span>${product.sizes[size] || ''}</span></td>`).join('')}
           <td class="actions">
             <button class="edit">✏️</button>
@@ -244,14 +244,14 @@ function makeRowEditable(row, product) {
   const nameText = nameCell.querySelector("span").textContent;
   nameCell.innerHTML = `<input type="text" class="edit-name" value="${nameText}" />`;
 
-  const unisexCell = row.querySelector(".unisex");
-  const unisexText = unisexCell.querySelector("span").textContent;
-  unisexCell.innerHTML = `
-    <select class="edit-unisex">
-      <option value="Yes" ${unisexText === "Yes" ? "selected" : ""}>Yes</option>
-      <option value="No" ${unisexText === "No" ? "selected" : ""}>No</option>
-    </select>
-  `;
+  const genderText = unisexCell.querySelector("span").textContent;
+unisexCell.innerHTML = `
+  <select class="edit-gender">
+    <option value="M" ${genderText === "M" ? "selected" : ""}>M</option>
+    <option value="F" ${genderText === "F" ? "selected" : ""}>F</option>
+    <option value="U" ${genderText === "U" ? "selected" : ""}>Unisex</option>
+  </select>
+`;
 
   sizeLabels.forEach(size => {
     const cell = row.querySelector(`.size-${size}`);
