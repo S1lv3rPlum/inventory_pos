@@ -542,3 +542,10 @@ input[type="number"] {
   background-color: #f9f9f9;
   font-size: 0.9rem;
 }
+
+
+/* table themes*/
+.editing {
+  background-color: #4CAF50;  /* green background */
+  color: white;
+}
