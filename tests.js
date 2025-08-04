@@ -355,3 +355,29 @@ switchTab("inventory");
   padding-right: 16px; /* Adjust this value if you want more/less space */
   background-color: white; /* Ensures the space is white if needed */
 }
+
+function handleEdit(rowIndex) {
+  const product = products[rowIndex];
+  if (!product) return;
+
+  // Populate the form fields with existing product data
+  document.getElementById("productCategory").value = product.category;
+  document.getElementById("productName").value = product.name;
+  document.getElementById("productUnisex").value = product.unisex;
+  document.getElementById("productHasSizes").value = product.hasSizes;
+
+  if (product.hasSizes === "Yes") {
+    for (let size in product.sizes) {
+      document.getElementById(`size-${size}`).value = product.sizes[size];
+    }
+  } else {
+    sizeLabels.forEach(size => {
+      document.getElementById(`size-${size}`).value = "";
+    });
+  }
+
+  // Remove the product from the array so re-submitting updates it
+  products.splice(rowIndex, 1);
+  saveProducts();
+  renderTable();
+}
