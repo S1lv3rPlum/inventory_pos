@@ -244,6 +244,7 @@ function makeRowEditable(row, product) {
   const nameText = nameCell.querySelector("span").textContent;
   nameCell.innerHTML = `<input type="text" class="edit-name" value="${nameText}" />`;
 
+  const genderCell = row.querySelector(".gender");
   const genderText = genderCell.querySelector("span").textContent;
 genderCell.innerHTML = `
   <select class="edit-gender">
