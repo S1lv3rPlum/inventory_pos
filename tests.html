@@ -1,97 +1,38 @@
-let db;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Band POS</title>
+  <style>
+    img { max-width: 50px; }
+    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Add Product</h1>
+  <form id="productForm">
+    <label>Name: <input type="text" id="productName" required></label><br>
+    <label>Category: <input type="text" id="productCategory" required></label><br>
+    <label>Price: <input type="number" id="productPrice" step="0.01" required></label><br>
+    <label>Gender:
+      <input type="radio" name="gender" value="M" required> M
+      <input type="radio" name="gender" value="F"> F
+    </label><br>
+    <label>Has Sizes? <input type="checkbox" id="productHasSizes"></label><br>
+    <label>Image: <input type="file" id="productImage" accept="image/*"></label><br>
+    <button type="submit">Add Product</button>
+  </form>
 
-// Open the DB
-const request = indexedDB.open("BandPOSDB", 1);
+  <h2>Inventory</h2>
+  <table id="productTable">
+    <thead>
+      <tr>
+        <th>Name</th><th>Category</th><th>Price</th><th>Gender</th><th>Variants</th><th>Image</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-request.onupgradeneeded = function (event) {
-  db = event.target.result;
-  if (!db.objectStoreNames.contains("products")) {
-    db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
-  }
-};
-
-request.onsuccess = function (event) {
-  db = event.target.result;
-  setupForm();
-  loadInventory();
-};
-
-request.onerror = function (event) {
-  alert("Failed to open database: " + event.target.errorCode);
-};
-
-// Set up form listener
-function setupForm() {
-  const form = document.getElementById("productForm");
-
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-
-    const name = document.getElementById("productName").value.trim();
-    const category = document.getElementById("productCategory").value.trim();
-    const price = parseFloat(document.getElementById("productPrice").value);
-    const gender = document.querySelector('input[name="gender"]:checked')?.value || "";
-    const hasSizes = document.getElementById("productHasSizes").checked;
-    const imageInput = document.getElementById("productImage").files[0];
-
-    const variants = hasSizes
-      ? ["S", "M", "L", "XL", "2XL"].map(size => ({ size, stock: 0 }))
-      : [{ size: "One Size", stock: 0 }];
-
-    const newProduct = {
-      name, category, price, gender, variants, image: null
-    };
-
-    if (imageInput) {
-      const reader = new FileReader();
-      reader.onload = function () {
-        newProduct.image = reader.result;
-        saveProduct(newProduct);
-      };
-      reader.readAsDataURL(imageInput);
-    } else {
-      saveProduct(newProduct);
-    }
-
-    form.reset();
-  });
-}
-
-// Save product to DB
-function saveProduct(product) {
-  const tx = db.transaction("products", "readwrite");
-  const store = tx.objectStore("products");
-  store.add(product).onsuccess = () => {
-    loadInventory();
-  };
-}
-
-// Display inventory in table
-function loadInventory() {
-  const tableBody = document.querySelector("#productTable tbody");
-  tableBody.innerHTML = "";
-
-  const tx = db.transaction("products", "readonly");
-  const store = tx.objectStore("products");
-  const request = store.openCursor();
-
-  request.onsuccess = function (event) {
-    const cursor = event.target.result;
-    if (cursor) {
-      const product = cursor.value;
-      const row = document.createElement("tr");
-
-      row.innerHTML = `
-        <td>${product.name}</td>
-        <td>${product.category}</td>
-        <td>$${product.price.toFixed(2)}</td>
-        <td>${product.gender}</td>
-        <td>${product.variants.map(v => `${v.size}: ${v.stock}`).join(", ")}</td>
-        <td>${product.image ? `<img src="${product.image}" />` : "None"}</td>
-      `;
-
-      tableBody.appendChild(row);
-      cursor.continue();
-    }
-  };
-}
+  <script src="app.js"></script>
+</body>
+</html>
