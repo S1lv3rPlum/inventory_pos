@@ -198,7 +198,7 @@ function renderTable() {
           <td class="category"><span>${product.category}</span></td>
           <td class="name"><span>${product.name}</span></td>
           <td class="gender"><span>${product.gender}</span></td>
-          ${sizeLabels.map(size => `<td class="size-${size}"><span>${product.sizes[size] || ''}</span></td>`).join('')}
+          ${sizeLabels.map(size => `<td class="size-${size}"><span>${product.sizes[size] ?? ''}</span></td>`).join('')}
           <td class="actions">
             <button class="edit">✏️</button>
             <button class="delete">🗑️</button>
@@ -269,7 +269,7 @@ genderCell.innerHTML = `
   <select class="edit-gender">
     <option value="M" ${genderText === "M" ? "selected" : ""}>M</option>
     <option value="F" ${genderText === "F" ? "selected" : ""}>F</option>
-    <option value="U" ${genderText === "U" ? "selected" : ""}>gender</option>
+    <option value="U" ${genderText === "U" ? "selected" : ""}Unisex</option>
   </select>
 `;
 
