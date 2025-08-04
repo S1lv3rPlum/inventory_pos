@@ -104,14 +104,17 @@ addForm.addEventListener("submit", (event) => {
   };
 
   // If hasSizes === "Yes", initialize sizes object with zeros
-  if (product.hasSizes === "Yes") {
-    product.sizes = sizeLabels.reduce((acc, size) => {
-      acc[size] = 0;
-      return acc;
-    }, {});
-  } else {
-    product.sizes = null;
+  if (product.hasSizes) {
+  const sizeKeys = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
+  sizeKeys.forEach(size => {
+    row.innerHTML += `<td><span class="size-${size}">${product.sizes?.[size] ?? 0}</span></td>`;
+  });
+} else {
+  const sizeCols = 8;
+  for (let i = 0; i < sizeCols; i++) {
+    row.innerHTML += '<td>-</td>';
   }
+}
 
   dataService.addProduct(product);
   addForm.reset();
