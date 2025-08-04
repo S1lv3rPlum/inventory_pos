@@ -1,6 +1,18 @@
 // Inject styles directly into the page
 const style = document.createElement("style");
 style.textContent = `
+/* Remove spinners in Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Remove spinners in Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
   body {
     font-family: sans-serif;
     padding: 20px;
