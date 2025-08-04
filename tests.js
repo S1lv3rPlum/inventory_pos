@@ -128,18 +128,23 @@ function renderTable() {
   products.forEach((product, index) => {
     const row = document.createElement("tr");
 
-    row.innerHTML = `
-      <td><span class="name">${product.name}</span></td>
-      <td><span class="price">${product.price.toFixed(2)}</span></td>
-      <td><span class="quantity">${product.quantity}</span></td>
-      <td><span class="category">${product.category}</span></td>
-      <td><span class="unisex">${product.unisex}</span></td>
-      <td><span class="hasSizes">${product.hasSizes}</span></td>
-      <td>
-        <button class="edit">✏️</button>
-        <button class="delete">🗑️</button>
-      </td>
-    `;
+   row.innerHTML = `
+  <td><span class="category">${product.category}</span></td>
+  <td><span class="name">${product.name}</span></td>
+  <td><span class="gender">${product.gender}</span></td>
+  <td><span class="qty-xs">${product.sizes?.XS ?? 0}</span></td>
+  <td><span class="qty-s">${product.sizes?.S ?? 0}</span></td>
+  <td><span class="qty-m">${product.sizes?.M ?? 0}</span></td>
+  <td><span class="qty-l">${product.sizes?.L ?? 0}</span></td>
+  <td><span class="qty-xl">${product.sizes?.XL ?? 0}</span></td>
+  <td><span class="qty-2xl">${product.sizes?.["2XL"] ?? 0}</span></td>
+  <td><span class="qty-3xl">${product.sizes?.["3XL"] ?? 0}</span></td>
+  <td><span class="qty-4xl">${product.sizes?.["4XL"] ?? 0}</span></td>
+  <td>
+    <button class="edit">✏️</button>
+    <button class="delete">🗑️</button>
+  </td>
+`;
 
     // Edit button
     row.querySelector(".edit").addEventListener("click", () => {
