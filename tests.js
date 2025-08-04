@@ -189,7 +189,7 @@ function renderTable() {
         row.innerHTML = `
           <td class="category"><span>${product.category}</span></td>
           <td class="name"><span>${product.name}</span></td>
-          <td class="unisex"><span>${product.unisex}</span></td>
+          <td class="gender"><span>${product.gender}</span></td>
           ${sizeLabels.map(() => `<td>-</td>`).join('')}
           <td class="actions">
             <button class="edit">✏️</button>
@@ -244,12 +244,12 @@ function makeRowEditable(row, product) {
   const nameText = nameCell.querySelector("span").textContent;
   nameCell.innerHTML = `<input type="text" class="edit-name" value="${nameText}" />`;
 
-  const genderText = unisexCell.querySelector("span").textContent;
-unisexCell.innerHTML = `
+  const genderText = genderCell.querySelector("span").textContent;
+genderCell.innerHTML = `
   <select class="edit-gender">
     <option value="M" ${genderText === "M" ? "selected" : ""}>M</option>
     <option value="F" ${genderText === "F" ? "selected" : ""}>F</option>
-    <option value="U" ${genderText === "U" ? "selected" : ""}>Unisex</option>
+    <option value="U" ${genderText === "U" ? "selected" : ""}>gender</option>
   </select>
 `;
 
@@ -273,7 +273,7 @@ unisexCell.innerHTML = `
 function saveRow(row, index) {
   const newCategory = row.querySelector(".edit-category").value.trim();
   const newName = row.querySelector(".edit-name").value.trim();
-  const newUnisex = row.querySelector(".edit-unisex").value;
+  const newGender = row.querySelector(".edit-gender").value;
   let newHasSizes = "No";
   let newSizes = null;
 
@@ -291,7 +291,7 @@ function saveRow(row, index) {
   products[index] = {
     category: newCategory,
     name: newName,
-    unisex: newUnisex,
+    gender: newGender,
     hasSizes: newHasSizes,
     sizes: newSizes,
   };
