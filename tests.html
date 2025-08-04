@@ -58,6 +58,7 @@
 <script>
   const products = [];
   const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
+  let editingIndex = null;
 
   document.getElementById("productForm").addEventListener("submit", e => {
     e.preventDefault();
@@ -78,55 +79,58 @@
       return acc;
     }, {}) : null;
 
-    products.push({ category, name, price, unisex, sizes });
+    const newProduct = { category, name, price, unisex, sizes };
+
+    if (editingIndex !== null) {
+      products[editingIndex] = newProduct;
+      editingIndex = null;
+    } else {
+      products.push(newProduct);
+    }
 
     renderTable();
-
     document.getElementById("productForm").reset();
   });
 
   function renderTable() {
-  const tbody = document.querySelector("#productTable tbody");
-  tbody.innerHTML = "";
+    const tbody = document.querySelector("#productTable tbody");
+    tbody.innerHTML = "";
 
-  products.forEach((prod, index) => {
-    const tr = document.createElement("tr");
+    products.forEach((prod, index) => {
+      const tr = document.createElement("tr");
 
-    tr.innerHTML = `
-      <td>${prod.category}</td>
-      <td>${prod.name}</td>
-      <td>${prod.price.toFixed(2)}</td>
-      <td>${prod.unisex}</td>
-      <td>${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}</td>
-      <td>
-        <button onclick="editProduct(${index})">Edit</button>
-        <button onclick="deleteProduct(${index})">Delete</button>
-      </td>
-    `;
+      tr.innerHTML = `
+        <td>${prod.category}</td>
+        <td>${prod.name}</td>
+        <td>${prod.price.toFixed(2)}</td>
+        <td>${prod.unisex}</td>
+        <td>${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}</td>
+        <td>
+          <button onclick="editProduct(${index})">Edit</button>
+          <button onclick="deleteProduct(${index})">Delete</button>
+        </td>
+      `;
 
-    tbody.appendChild(tr);
-  });
-}
-
-function deleteProduct(index) {
-  if (confirm("Are you sure you want to delete this product?")) {
-    products.splice(index, 1);
-    renderTable();
+      tbody.appendChild(tr);
+    });
   }
-}
 
-function editProduct(index) {
-  const prod = products[index];
-  document.getElementById("category").value = prod.category;
-  document.getElementById("productName").value = prod.name;
-  document.getElementById("price").value = prod.price;
-  document.getElementById("unisex").value = prod.unisex;
-  document.getElementById("hasSizes").value = prod.sizes ? "Yes" : "No";
+  function deleteProduct(index) {
+    if (confirm("Are you sure you want to delete this product?")) {
+      products.splice(index, 1);
+      renderTable();
+    }
+  }
 
-  products.splice(index, 1); // Remove from list so it can be re-added on form submit
-  renderTable();
-}
-
+  function editProduct(index) {
+    const prod = products[index];
+    document.getElementById("category").value = prod.category;
+    document.getElementById("productName").value = prod.name;
+    document.getElementById("price").value = prod.price;
+    document.getElementById("unisex").value = prod.unisex;
+    document.getElementById("hasSizes").value = prod.sizes ? "Yes" : "No";
+    editingIndex = index;
+  }
 </script>
 
 </body>
