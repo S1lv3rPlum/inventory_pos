@@ -98,6 +98,16 @@ button:hover {
   font-weight: bold;
 }
 
+.toggle-buttons {
+  margin-bottom: 1rem;
+}
+
+.toggle-buttons button {
+  padding: 10px;
+  margin-right: 10px;
+  font-size: 1rem;
+}
+
 /* Hide number input spinners for most browsers */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
@@ -405,3 +415,18 @@ discountForm.addEventListener("submit", (e) => {
 renderTable();
 renderDiscounts();
 switchTab("inventory");
+
+const showProductsBtn = document.getElementById('showProducts');
+const showDiscountsBtn = document.getElementById('showDiscounts');
+const productSection = document.getElementById('productSection');
+const discountSection = document.getElementById('discountSection');
+
+showProductsBtn.addEventListener('click', () => {
+  productSection.style.display = 'block';
+  discountSection.style.display = 'none';
+});
+
+showDiscountsBtn.addEventListener('click', () => {
+  productSection.style.display = 'none';
+  discountSection.style.display = 'block';
+});
