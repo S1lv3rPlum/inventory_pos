@@ -1,5 +1,5 @@
-
 console.log("JS is running");
+
 // Inject styles directly into the page
 const style = document.createElement("style");
 style.textContent = `
@@ -91,24 +91,15 @@ button:hover {
 }
 `;
 document.head.appendChild(style);
-let products = JSON.parse(localStorage.getItem("products")) || [];
-let discounts = JSON.parse(localStorage.getItem("discounts")) || [];
 
 // Size labels
 const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 
-// ⬇️ Load from localStorage if available
-let products = [];
-const stored = localStorage.getItem("products");
-if (stored) {
-  try {
-    products = JSON.parse(stored);
-  } catch (e) {
-    console.error("Failed to parse stored products:", e);
-  }
-}
+// Load from localStorage if available
+let products = JSON.parse(localStorage.getItem("products")) || [];
+let discounts = JSON.parse(localStorage.getItem("discounts")) || [];
 
-// ⬆️ Save to localStorage whenever products change
+// Save to localStorage whenever products or discounts change
 function saveToLocalStorage() {
   localStorage.setItem("products", JSON.stringify(products));
   localStorage.setItem("discounts", JSON.stringify(discounts));
@@ -118,12 +109,11 @@ function saveToLocalStorage() {
 const addForm = document.getElementById("addProductForm");
 const tableBody = document.querySelector("#inventoryTable tbody");
 
-// Use your existing 'products' array loaded from localStorage at top
-
-// Form submit handler
+// Form submit handler for adding a product
 addForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
+  // Build product object with values from form inputs
   const product = {
     category: addForm.category.value.trim(),
     name: addForm.name.value.trim(),
@@ -132,6 +122,7 @@ addForm.addEventListener("submit", (e) => {
     sizes: null,
   };
 
+  // Initialize sizes counts to zero if product has sizes
   if (product.hasSizes === "Yes") {
     product.sizes = sizeLabels.reduce((acc, size) => {
       acc[size] = 0;
@@ -139,16 +130,15 @@ addForm.addEventListener("submit", (e) => {
     }, {});
   }
 
-  products.push(product);
-  saveToLocalStorage();
-  addForm.reset();
-  renderTable();
+  products.push(product);       // Add new product to products array
+  saveToLocalStorage();         // Save updated data
+  addForm.reset();              // Clear the form inputs
+  renderTable();                // Re-render the product table
 });
 
-// Render the entire inventory table
+// Render the inventory table with categories and products
 function renderTable() {
   tableBody.innerHTML = "";
-
 
   // Group products by category
   const grouped = {};
@@ -181,7 +171,7 @@ function renderTable() {
       a.name.localeCompare(b.name)
     );
 
-    sortedProducts.forEach((product, index) => {
+    sortedProducts.forEach((product) => {
       const row = document.createElement("tr");
 
       if (product.hasSizes === "Yes") {
@@ -208,13 +198,17 @@ function renderTable() {
         `;
       }
 
-      // ✅ Add event listeners INSIDE the loop
+      // Add event listener for delete button
       row.querySelector(".delete").addEventListener("click", () => {
-        products.splice(products.indexOf(product), 1);
-        saveToLocalStorage();
-        renderTable();
+        const index = products.indexOf(product);
+        if (index > -1) {
+          products.splice(index, 1);
+          saveToLocalStorage();
+          renderTable();
+        }
       });
 
+      // Add event listener for edit/save toggle button
       const editBtn = row.querySelector(".edit");
       editBtn.addEventListener("click", () => {
         if (row.classList.contains("editing")) {
@@ -227,31 +221,10 @@ function renderTable() {
 
       tableBody.appendChild(row);
     });
-
-  // Re-attach any row-level event listeners here if needed
+  });
 }
 
-function groupProductsByCategory(products) {
-  const categories = {};
-
-  for (const product of products) {
-    if (!categories[product.category]) {
-      categories[product.category] = [];
-    }
-    categories[product.category].push(product);
-  }
-
-  return Object.keys(categories)
-    .sort()
-    .map(category => ({
-      name: category,
-      products: categories[category].sort((a, b) => a.name.localeCompare(b.name))
-    }));
-}
-
-   
-
-// Cancel edits on all rows
+// Cancel editing on all rows
 function cancelAllEdits() {
   document.querySelectorAll("tr.editing").forEach(row => {
     row.classList.remove("editing");
@@ -259,7 +232,7 @@ function cancelAllEdits() {
   });
 }
 
-// Make the given row editable
+// Make a row editable with inputs/selects
 function makeRowEditable(row, product) {
   row.classList.add("editing");
 
@@ -296,7 +269,7 @@ function makeRowEditable(row, product) {
   editBtn.classList.remove("edit");
 }
 
-// Save edited row values back to products array
+// Save edited row back to products array
 function saveRow(row, index) {
   const newCategory = row.querySelector(".edit-category").value.trim();
   const newName = row.querySelector(".edit-name").value.trim();
@@ -323,14 +296,9 @@ function saveRow(row, index) {
     sizes: newSizes,
   };
 
-  saveToLocalStorage(); // Save after edit
+  saveToLocalStorage();
   renderTable();
 }
-
-// Initial render
-renderTable();
-
-<td class="category"><span></span></td>  // empty cell
 
 // === Section Toggle Logic ===
 function switchTab(tab) {
@@ -344,12 +312,7 @@ function switchTab(tab) {
 const discountForm = document.getElementById("addDiscountForm");
 const discountTable = document.getElementById("discountTable").querySelector("tbody");
 
-let discounts = JSON.parse(localStorage.getItem("discounts")) || [];
-
-function saveDiscounts() {
-  localStorage.setItem("discounts", JSON.stringify(discounts));
-}
-
+// Render discounts in table
 function renderDiscounts() {
   discountTable.innerHTML = "";
   discounts.forEach((discount, index) => {
@@ -370,44 +333,44 @@ function renderDiscounts() {
   });
 }
 
+// Update discount field called from inline handlers
 function updateDiscountField(index, field, value) {
   if (field === "value") {
     value = parseFloat(value);
     if (isNaN(value)) return;
   }
   discounts[index][field] = value;
-  saveDiscounts();
-}
-
-function deleteDiscount(index) {
-  discounts.splice(index, 1);
-  saveDiscounts();
+  saveToLocalStorage();
   renderDiscounts();
 }
 
+// Delete discount
+function deleteDiscount(index) {
+  discounts.splice(index, 1);
+  saveToLocalStorage();
+  renderDiscounts();
+}
+
+// Attach update and delete functions to window so inline handlers can access them
+window.updateDiscountField = updateDiscountField;
+window.deleteDiscount = deleteDiscount;
+
+// Discount form submit handler
 discountForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const formData = new FormData(discountForm);
   const newDiscount = {
-    name: formData.get("name"),
-    type: formData.get("type"),
-    value: parseFloat(formData.get("value"))
+    name: formData.get("discountName"),
+    type: formData.get("discountType"),
+    value: parseFloat(formData.get("discountValue"))
   };
   discounts.push(newDiscount);
-  saveDiscounts();
+  saveToLocalStorage();
   renderDiscounts();
   discountForm.reset();
 });
 
-// Initial Render
-renderDiscounts();
-switchTab("inventory");
-
-
-  inventory.push(newProduct);
-  renderTable(); // This should be defined somewhere
-  form.reset();
-});
-
+// Initial render calls
 renderTable();
 renderDiscounts();
+switchTab("inventory");
