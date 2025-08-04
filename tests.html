@@ -107,6 +107,26 @@
     tbody.appendChild(tr);
   });
 }
+
+function deleteProduct(index) {
+  if (confirm("Are you sure you want to delete this product?")) {
+    products.splice(index, 1);
+    renderTable();
+  }
+}
+
+function editProduct(index) {
+  const prod = products[index];
+  document.getElementById("category").value = prod.category;
+  document.getElementById("productName").value = prod.name;
+  document.getElementById("price").value = prod.price;
+  document.getElementById("unisex").value = prod.unisex;
+  document.getElementById("hasSizes").value = prod.sizes ? "Yes" : "No";
+
+  products.splice(index, 1); // Remove from list so it can be re-added on form submit
+  renderTable();
+}
+
 </script>
 
 </body>
