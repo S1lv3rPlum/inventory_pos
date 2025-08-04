@@ -115,12 +115,12 @@ addForm.addEventListener("submit", (e) => {
 
   // Build product object with values from form inputs
   const product = {
-    category: addForm.category.value.trim(),
-    name: addForm.name.value.trim(),
-    unisex: addForm.unisex.value,
-    hasSizes: addForm.hasSizes.value,
-    sizes: null,
-  };
+  category: addForm.category.value.trim(),
+  name: addForm.name.value.trim(),
+  gender: addForm.gender.value,   // changed from unisex
+  hasSizes: addForm.hasSizes.value,
+  sizes: null,
+};
 
   // Initialize sizes counts to zero if product has sizes
   if (product.hasSizes === "Yes") {
