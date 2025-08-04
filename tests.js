@@ -15,7 +15,7 @@ style.textContent = `
 
 /* ... keep your other styles here ... */
 `;
-  margin: 0;
+
 }
 
 /* Remove spinners in Firefox */
