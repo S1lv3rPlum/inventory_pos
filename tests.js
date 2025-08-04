@@ -349,3 +349,9 @@ discountForm.addEventListener("submit", (e) => {
 renderTable();
 renderDiscounts();
 switchTab("inventory");
+
+.table-scroll {
+  overflow-x: auto;
+  padding-right: 16px; /* Adjust this value if you want more/less space */
+  background-color: white; /* Ensures the space is white if needed */
+}
