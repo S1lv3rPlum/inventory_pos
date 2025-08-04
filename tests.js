@@ -115,7 +115,9 @@ function saveToLocalStorage() {
 const addForm = document.getElementById("addProductForm");
 const tableBody = document.querySelector("#inventoryTable tbody");
 
-// Handle form submission to add product
+// Use your existing 'products' array loaded from localStorage at top
+
+// Form submit handler
 addForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
@@ -135,7 +137,7 @@ addForm.addEventListener("submit", (e) => {
   }
 
   products.push(product);
-  saveToLocalStorage(); // Save after adding
+  saveToLocalStorage();
   addForm.reset();
   renderTable();
 });
@@ -329,6 +331,8 @@ function saveRow(row, index) {
 // Initial render
 renderTable();
 
+<td class="category"><span></span></td>  // empty cell
+
 // === Section Toggle Logic ===
 function switchTab(tab) {
   document.getElementById("inventoryTable").parentElement.style.display = tab === "inventory" ? "block" : "none";
@@ -400,29 +404,6 @@ discountForm.addEventListener("submit", (e) => {
 renderDiscounts();
 switchTab("inventory");
 
-const inventory = [];
-
-document.getElementById("addProductForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-
-  const form = e.target;
-  const newProduct = {
-    name: form.name.value,
-    price: parseFloat(form.price.value),
-    category: form.category.value,
-    unisex: form.unisex.value,
-    hasSizes: form.hasSizes.value,
-    sizes: {
-      XS: 0,
-      S: 0,
-      M: 0,
-      L: 0,
-      XL: 0,
-      "2XL": 0,
-      "3XL": 0,
-      "4XL": 0
-    }
-  };
 
   inventory.push(newProduct);
   renderTable(); // This should be defined somewhere
