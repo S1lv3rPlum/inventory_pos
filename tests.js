@@ -178,7 +178,7 @@ function renderTable() {
       a.name.localeCompare(b.name)
     );
 
-    sortedProducts.forEach(product => {
+    sortedProducts.forEach((product, index) => {
       const row = document.createElement("tr");
 
       if (product.hasSizes === "Yes") {
@@ -205,9 +205,25 @@ function renderTable() {
         `;
       }
 
+      // ✅ Add event listeners INSIDE the loop
+      row.querySelector(".delete").addEventListener("click", () => {
+        products.splice(products.indexOf(product), 1);
+        saveToLocalStorage();
+        renderTable();
+      });
+
+      const editBtn = row.querySelector(".edit");
+      editBtn.addEventListener("click", () => {
+        if (row.classList.contains("editing")) {
+          saveRow(row, products.indexOf(product));
+        } else {
+          cancelAllEdits();
+          makeRowEditable(row, product);
+        }
+      });
+
       tableBody.appendChild(row);
     });
-  });
 
   // Re-attach any row-level event listeners here if needed
 }
@@ -230,27 +246,7 @@ function groupProductsByCategory(products) {
     }));
 }
 
-    // Delete button
-    row.querySelector(".delete").addEventListener("click", () => {
-      products.splice(index, 1);
-      saveToLocalStorage(); // Save after delete
-      renderTable();
-    });
-
-    // Edit / Save button
-    const editBtn = row.querySelector(".edit");
-    editBtn.addEventListener("click", () => {
-      if (row.classList.contains("editing")) {
-        saveRow(row, index);
-      } else {
-        cancelAllEdits();
-        makeRowEditable(row, product);
-      }
-    });
-
-    tableBody.appendChild(row);
-  });
-}
+   
 
 // Cancel edits on all rows
 function cancelAllEdits() {
