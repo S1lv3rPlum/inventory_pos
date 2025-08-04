@@ -13,67 +13,80 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-  body {
-    font-family: sans-serif;
-    padding: 20px;
-    max-width: 900px;
-    margin: auto;
-  }
+body {
+  font-family: sans-serif;
+  padding: 20px;
+  max-width: 900px;
+  margin: auto;
+}
 
-  form {
-    margin-bottom: 20px;
-  }
+form {
+  margin-bottom: 20px;
+}
 
-  input, select {
-    margin-right: 10px;
-    padding: 5px;
-  }
+input, select {
+  margin-right: 10px;
+  padding: 5px;
+}
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
 
-  thead {
-    background-color: #f0f0f0;
-  }
+thead {
+  background-color: #f0f0f0;
+}
 
-  td, th {
-    border: 1px solid #ccc;
-    padding: 8px;
-    text-align: left;
-  }
+td, th {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
 
-  .editing input, .editing select {
-    width: 100%;
-    box-sizing: border-box;
-  }
+.editing input, .editing select {
+  width: 100%;
+  box-sizing: border-box;
+}
 
-  button.edit, button.save {
-    background-color: #fff7a8;
-    border: none;
-    padding: 5px 8px;
-    cursor: pointer;
-  }
+button.edit, button.save {
+  background-color: #fff7a8;
+  border: none;
+  padding: 5px 8px;
+  cursor: pointer;
+}
 
-  button.delete {
-    background-color: #ffb3b3;
-    border: none;
-    padding: 5px 8px;
-    cursor: pointer;
-  }
+button.delete {
+  background-color: #ffb3b3;
+  border: none;
+  padding: 5px 8px;
+  cursor: pointer;
+}
 
-  button:hover {
-    opacity: 0.8;
-  }
+button:hover {
+  opacity: 0.8;
+}
 `;
 document.head.appendChild(style);
 
 // Size labels
 const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 
-// Store products in memory
+// ⬇️ Load from localStorage if available
 let products = [];
+const stored = localStorage.getItem("products");
+if (stored) {
+  try {
+    products = JSON.parse(stored);
+  } catch (e) {
+    console.error("Failed to parse stored products:", e);
+  }
+}
+
+// ⬆️ Save to localStorage whenever products change
+function saveToLocalStorage() {
+  localStorage.setItem("products", JSON.stringify(products));
+}
 
 // DOM elements
 const addForm = document.getElementById("addProductForm");
@@ -99,6 +112,7 @@ addForm.addEventListener("submit", (e) => {
   }
 
   products.push(product);
+  saveToLocalStorage(); // Save after adding
   addForm.reset();
   renderTable();
 });
@@ -139,6 +153,7 @@ function renderTable() {
     // Delete button
     row.querySelector(".delete").addEventListener("click", () => {
       products.splice(index, 1);
+      saveToLocalStorage(); // Save after delete
       renderTable();
     });
 
@@ -146,10 +161,8 @@ function renderTable() {
     const editBtn = row.querySelector(".edit");
     editBtn.addEventListener("click", () => {
       if (row.classList.contains("editing")) {
-        // Save changes
         saveRow(row, index);
       } else {
-        // If another row is editing, cancel it first
         cancelAllEdits();
         makeRowEditable(row, product);
       }
@@ -163,26 +176,22 @@ function renderTable() {
 function cancelAllEdits() {
   document.querySelectorAll("tr.editing").forEach(row => {
     row.classList.remove("editing");
-    // Re-render the table to reset all rows
     renderTable();
   });
 }
 
-// Make the given row editable (replace spans with inputs/selects)
+// Make the given row editable
 function makeRowEditable(row, product) {
   row.classList.add("editing");
 
-  // Category
   const categoryCell = row.querySelector(".category");
   const categoryText = categoryCell.querySelector("span").textContent;
   categoryCell.innerHTML = `<input type="text" class="edit-category" value="${categoryText}" />`;
 
-  // Name
   const nameCell = row.querySelector(".name");
   const nameText = nameCell.querySelector("span").textContent;
   nameCell.innerHTML = `<input type="text" class="edit-name" value="${nameText}" />`;
 
-  // Unisex select
   const unisexCell = row.querySelector(".unisex");
   const unisexText = unisexCell.querySelector("span").textContent;
   unisexCell.innerHTML = `
@@ -192,7 +201,6 @@ function makeRowEditable(row, product) {
     </select>
   `;
 
-  // Sizes or dashes cells
   sizeLabels.forEach(size => {
     const cell = row.querySelector(`.size-${size}`);
     if (product.hasSizes === "Yes") {
@@ -203,7 +211,6 @@ function makeRowEditable(row, product) {
     }
   });
 
-  // Change Edit button to Save
   const editBtn = row.querySelector(".edit");
   editBtn.textContent = "✅ Save";
   editBtn.classList.add("save");
@@ -212,15 +219,12 @@ function makeRowEditable(row, product) {
 
 // Save edited row values back to products array
 function saveRow(row, index) {
-  // Grab edited values
   const newCategory = row.querySelector(".edit-category").value.trim();
   const newName = row.querySelector(".edit-name").value.trim();
   const newUnisex = row.querySelector(".edit-unisex").value;
-  let newHasSizes = "No"; // default
-
-  // Sizes inputs
+  let newHasSizes = "No";
   let newSizes = null;
-  // Check if any size inputs present
+
   const sizeInputs = row.querySelectorAll(".edit-size");
   if (sizeInputs.length) {
     newHasSizes = "Yes";
@@ -232,7 +236,6 @@ function saveRow(row, index) {
     });
   }
 
-  // Update product in array
   products[index] = {
     category: newCategory,
     name: newName,
@@ -241,6 +244,7 @@ function saveRow(row, index) {
     sizes: newSizes,
   };
 
+  saveToLocalStorage(); // Save after edit
   renderTable();
 }
 
