@@ -1,3 +1,5 @@
+
+console.log("JS is running");
 // Inject styles directly into the page
 const style = document.createElement("style");
 style.textContent = `
