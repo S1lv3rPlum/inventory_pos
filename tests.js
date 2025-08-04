@@ -140,7 +140,7 @@ addForm.addEventListener("submit", (e) => {
 function renderTable() {
   tableBody.innerHTML = "";
 
-  // Group products by category
+  // Group and sort products
   const grouped = {};
   products.forEach(product => {
     if (!grouped[product.category]) {
@@ -152,72 +152,47 @@ function renderTable() {
   const sortedCategories = Object.keys(grouped).sort();
 
   sortedCategories.forEach(category => {
-    // Add a category header row
-    const headerRow = document.createElement("tr");
-    headerRow.classList.add("category-header");
-    headerRow.innerHTML = `
-      <td colspan="${4 + sizeLabels.length}">
-        <strong>${category}</strong>
-      </td>
-      <td class="actions">
-        <button class="edit-category" data-category="${category}">✏️</button>
-        <button class="delete-category" data-category="${category}">🗑️</button>
+    // Category header row
+    const categoryRow = document.createElement("tr");
+    categoryRow.innerHTML = `
+      <td colspan="${4 + sizeLabels.length}" style="font-weight:bold; background-color:#f0f0f0;">
+        ${category}
       </td>
     `;
-    tableBody.appendChild(headerRow);
+    tableBody.appendChild(categoryRow);
 
-    // Sort products alphabetically by name
-    const sortedProducts = grouped[category].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
+    // Sort products within category
+    grouped[category].sort((a, b) => a.name.localeCompare(b.name));
 
-    sortedProducts.forEach((product) => {
+    // Product rows
+    grouped[category].forEach((product, index) => {
       const row = document.createElement("tr");
 
       if (product.hasSizes === "Yes") {
         row.innerHTML = `
-          <td class="category"><span>${product.category}</span></td>
           <td class="name"><span>${product.name}</span></td>
           <td class="unisex"><span>${product.unisex}</span></td>
-          ${sizeLabels.map(size => `<td class="size-${size}"><span>${product.sizes[size] || ''}</span></td>`).join('')}
-          <td class="actions">
-            <button class="edit">✏️</button>
-            <button class="delete">🗑️</button>
+          ${sizeLabels.map(size => `<td><span>${product.sizes[size]}</span></td>`).join('')}
+          <td>
+            <div class="actions">
+              <button class="edit">✏️</button>
+              <button class="delete">🗑️</button>
+            </div>
           </td>
         `;
       } else {
         row.innerHTML = `
-          <td class="category"><span>${product.category}</span></td>
           <td class="name"><span>${product.name}</span></td>
           <td class="unisex"><span>${product.unisex}</span></td>
           ${sizeLabels.map(() => `<td>-</td>`).join('')}
-          <td class="actions">
-            <button class="edit">✏️</button>
-            <button class="delete">🗑️</button>
+          <td>
+            <div class="actions">
+              <button class="edit">✏️</button>
+              <button class="delete">🗑️</button>
+            </div>
           </td>
         `;
       }
-
-      // Add event listener for delete button
-      row.querySelector(".delete").addEventListener("click", () => {
-        const index = products.indexOf(product);
-        if (index > -1) {
-          products.splice(index, 1);
-          saveToLocalStorage();
-          renderTable();
-        }
-      });
-
-      // Add event listener for edit/save toggle button
-      const editBtn = row.querySelector(".edit");
-      editBtn.addEventListener("click", () => {
-        if (row.classList.contains("editing")) {
-          saveRow(row, products.indexOf(product));
-        } else {
-          cancelAllEdits();
-          makeRowEditable(row, product);
-        }
-      });
 
       tableBody.appendChild(row);
     });
