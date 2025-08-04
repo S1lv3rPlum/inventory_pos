@@ -93,27 +93,76 @@
   });
 
   function renderTable() {
-    const tbody = document.querySelector("#productTable tbody");
-    tbody.innerHTML = "";
+  const tbody = document.querySelector("#productTable tbody");
+  tbody.innerHTML = "";
 
-    products.forEach((prod, index) => {
-      const tr = document.createElement("tr");
+  products.forEach((prod, index) => {
+    const tr = document.createElement("tr");
 
-      tr.innerHTML = `
-        <td>${prod.category}</td>
-        <td>${prod.name}</td>
-        <td>${prod.price.toFixed(2)}</td>
-        <td>${prod.unisex}</td>
-        <td>${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}</td>
-        <td>
-          <button onclick="editProduct(${index})">Edit</button>
-          <button onclick="deleteProduct(${index})">Delete</button>
-        </td>
-      `;
+    tr.innerHTML = `
+      <td>${prod.category}</td>
+      <td>${prod.name}</td>
+      <td>${prod.price.toFixed(2)}</td>
+      <td>${prod.unisex}</td>
+      <td>${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}</td>
+      <td>
+        <button onclick="editRow(${index})">Edit</button>
+      </td>
+    `;
 
-      tbody.appendChild(tr);
-    });
+    tbody.appendChild(tr);
+  });
+}
+
+function editRow(index) {
+  const prod = products[index];
+  const tbody = document.querySelector("#productTable tbody");
+  const tr = tbody.children[index];
+
+  tr.innerHTML = `
+    <td><input type="text" value="${prod.category}" /></td>
+    <td><input type="text" value="${prod.name}" /></td>
+    <td><input type="number" value="${prod.price}" step="0.01" min="0" /></td>
+    <td>
+      <select>
+        <option value="Yes" ${prod.unisex === "Yes" ? "selected" : ""}>Yes</option>
+        <option value="No" ${prod.unisex === "No" ? "selected" : ""}>No</option>
+      </select>
+    </td>
+    <td>
+      ${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}
+    </td>
+    <td>
+      <button onclick="saveRow(${index})">Save</button>
+      <button onclick="renderTable()">Cancel</button>
+    </td>
+  `;
+}
+
+function saveRow(index) {
+  const tbody = document.querySelector("#productTable tbody");
+  const tr = tbody.children[index];
+  const inputs = tr.querySelectorAll("input, select");
+
+  const updatedCategory = inputs[0].value.trim();
+  const updatedName = inputs[1].value.trim();
+  const updatedPrice = parseFloat(inputs[2].value);
+  const updatedUnisex = inputs[3].value;
+
+  if (!updatedCategory || !updatedName || isNaN(updatedPrice) || !updatedUnisex) {
+    alert("Please fill in all required fields.");
+    return;
   }
+
+  products[index].category = updatedCategory;
+  products[index].name = updatedName;
+  products[index].price = updatedPrice;
+  products[index].unisex = updatedUnisex;
+
+  // sizes remain unchanged for now
+
+  renderTable();
+}
 
   function deleteProduct(index) {
     if (confirm("Are you sure you want to delete this product?")) {
