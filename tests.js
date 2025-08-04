@@ -1,5 +1,9 @@
 let db;
 
+// TEMP: Delete old DB to reset schema
+indexedDB.deleteDatabase("BandPOSDB");
+alert("Old IndexedDB deleted. Refresh the page, then remove this code.");
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM loaded");
   const request = indexedDB.open("BandPOSDB", 2);
