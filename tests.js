@@ -283,6 +283,8 @@ genderCell.innerHTML = `
     }
   });
 
+nameCell.querySelector("input").focus();
+
 console.log("Size inputs created for editing:", row.querySelectorAll(".edit-size"));
   const editBtn = row.querySelector(".edit");
   editBtn.textContent = "✅ Save";
