@@ -1,51 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Product Inventory</title>
-  <style>
-    img { max-height: 50px; }
-    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
-    th { background-color: #f0f0f0; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inventory Manager</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; }
+  h1 { text-align: center; }
+  label { margin-right: 15px; display: inline-block; margin-bottom: 10px; }
+  input, select { padding: 5px; font-size: 14px; }
+  button { margin-top: 10px; padding: 8px 15px; cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
+</style>
 </head>
 <body>
 
-  <h1>Add a Product</h1>
-  <form id="addProductForm">
-    <label>Product Name: <input type="text" id="productName" required></label><br><br>
+<h1>Inventory Manager</h1>
 
-    <label>Category: <input type="text" id="productCategory" required></label><br><br>
+<form id="productForm">
+  <label>Category: <input type="text" id="category" required /></label>
+  <label>Product Name: <input type="text" id="productName" required /></label>
+  <label>Price: <input type="number" id="price" step="0.01" min="0" required /></label>
+  <label>
+    Unisex:
+    <select id="unisex" required>
+      <option value="">-- Select --</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+  </label>
+  <label>
+    Has Sizes:
+    <select id="hasSizes" required>
+      <option value="">-- Select --</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+  </label>
+  <br />
+  <button type="submit">Add Product</button>
+</form>
 
-    <label>Price: <input type="number" step="0.01" id="productPrice" required></label><br><br>
+<table id="productTable" aria-label="Inventory product list">
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Name</th>
+      <th>Price</th>
+      <th>Unisex</th>
+      <th>Sizes</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-    <label>Has Sizes? <input type="checkbox" id="productHasSizes"></label><br><br>
+<script>
+  const products = [];
+  const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 
-    Gender: 
-    <label><input type="radio" name="gender" id="productGenderMale"> Male</label>
-    <label><input type="radio" name="gender" id="productGenderFemale"> Female</label><br><br>
+  document.getElementById("productForm").addEventListener("submit", e => {
+    e.preventDefault();
 
-    <label>Product Image: <input type="file" id="productImage" accept="image/*"></label><br><br>
+    const category = document.getElementById("category").value.trim();
+    const name = document.getElementById("productName").value.trim();
+    const price = parseFloat(document.getElementById("price").value);
+    const unisex = document.getElementById("unisex").value;
+    const hasSizes = document.getElementById("hasSizes").value;
 
-    <button type="submit">Add Product</button>
-  </form>
+    if (!category || !name || isNaN(price) || !unisex || !hasSizes) {
+      alert("Please fill in all required fields.");
+      return;
+    }
 
-  <h2>Inventory</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Category</th>
-        <th>Price</th>
-        <th>Gender</th>
-        <th>Sizes</th>
-        <th>Image</th>
-      </tr>
-    </thead>
-    <tbody id="inventoryTable"></tbody>
-  </table>
+    const sizes = hasSizes === "Yes" ? sizeLabels.reduce((acc, size) => {
+      acc[size] = 0;
+      return acc;
+    }, {}) : null;
 
-  <script src="tests.js"></script>
+    products.push({ category, name, price, unisex, sizes });
+
+    renderTable();
+
+    document.getElementById("productForm").reset();
+  });
+
+  function renderTable() {
+    const tbody = document.querySelector("#productTable tbody");
+    tbody.innerHTML = "";
+
+    products.forEach(prod => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${prod.category}</td>
+        <td>${prod.name}</td>
+        <td>${prod.price.toFixed(2)}</td>
+        <td>${prod.unisex}</td>
+        <td>${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}</td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+  }
+</script>
+
 </body>
 </html>
