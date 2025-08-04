@@ -345,10 +345,7 @@ discountForm.addEventListener("submit", (e) => {
   discountForm.reset();
 });
 
-// Initial render calls
-renderTable();
-renderDiscounts();
-switchTab("inventory");
+
 
 .table-scroll {
   overflow-x: auto;
@@ -381,3 +378,9 @@ function handleEdit(rowIndex) {
   saveProducts();
   renderTable();
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderTable();
+  renderDiscounts();
+  switchTab("inventory");
+});
