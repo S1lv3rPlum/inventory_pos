@@ -359,8 +359,41 @@ function handleEdit(rowIndex) {
   renderTable();
 }
 
+<script>
 document.addEventListener("DOMContentLoaded", () => {
-  renderTable();
-  renderDiscounts();
-  switchTab("inventory");
+  console.log("Page loaded.");
+
+  // Just to test — show what’s in storage
+  const saved = localStorage.getItem("products");
+  console.log("Stored products:", saved);
+
+  const tableBody = document.querySelector("#inventoryTable tbody");
+  tableBody.innerHTML = "";
+
+  if (!saved) {
+    tableBody.innerHTML = "<tr><td colspan='12'>No products saved yet.</td></tr>";
+    return;
+  }
+
+  const products = JSON.parse(saved);
+  if (!Array.isArray(products) || products.length === 0) {
+    tableBody.innerHTML = "<tr><td colspan='12'>Product list is empty.</td></tr>";
+    return;
+  }
+
+  products.forEach((product) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${product.category || ""}</td>
+      <td>${product.name || ""}</td>
+      <td>${product.unisex || ""}</td>
+      <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+      <td>
+        <button>✏️</button>
+        <button>🗑️</button>
+      </td>
+    `;
+    tableBody.appendChild(row);
+  });
 });
+</script>
