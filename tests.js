@@ -1,109 +1,103 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Inventory Manager</title>
-<style>
-  body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; }
-  h1 { text-align: center; }
-  label { margin-right: 15px; display: inline-block; margin-bottom: 10px; }
-  input, select { padding: 5px; font-size: 14px; }
-  button { margin-top: 10px; padding: 8px 15px; cursor: pointer; }
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-  th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
-</style>
-</head>
-<body>
+// Store products in memory for now
+let products = [];
 
-<h1>Inventory Manager</h1>
+// Abstracted data access layer
+const dataService = {
+  getProducts() {
+    return [...products]; // return a shallow copy
+  },
 
-<form id="productForm">
-  <label>Category: <input type="text" id="category" required /></label>
-  <label>Product Name: <input type="text" id="productName" required /></label>
-  <label>Price: <input type="number" id="price" step="0.01" min="0" required /></label>
-  <label>
-    Unisex:
-    <select id="unisex" required>
-      <option value="">-- Select --</option>
-      <option value="Yes">Yes</option>
-      <option value="No">No</option>
-    </select>
-  </label>
-  <label>
-    Has Sizes:
-    <select id="hasSizes" required>
-      <option value="">-- Select --</option>
-      <option value="Yes">Yes</option>
-      <option value="No">No</option>
-    </select>
-  </label>
-  <br />
-  <button type="submit">Add Product</button>
-</form>
-
-<table id="productTable" aria-label="Inventory product list">
-  <thead>
-    <tr>
-      <th>Category</th>
-      <th>Name</th>
-      <th>Price</th>
-      <th>Unisex</th>
-      <th>Sizes</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<script>
-  const products = [];
-  const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
-
-  document.getElementById("productForm").addEventListener("submit", e => {
-    e.preventDefault();
-
-    const category = document.getElementById("category").value.trim();
-    const name = document.getElementById("productName").value.trim();
-    const price = parseFloat(document.getElementById("price").value);
-    const unisex = document.getElementById("unisex").value;
-    const hasSizes = document.getElementById("hasSizes").value;
-
-    if (!category || !name || isNaN(price) || !unisex || !hasSizes) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-
-    const sizes = hasSizes === "Yes" ? sizeLabels.reduce((acc, size) => {
-      acc[size] = 0;
-      return acc;
-    }, {}) : null;
-
-    products.push({ category, name, price, unisex, sizes });
-
+  addProduct(product) {
+    products.push(product);
     renderTable();
+  },
 
-    document.getElementById("productForm").reset();
-  });
+  updateProduct(index, updatedProduct) {
+    products[index] = updatedProduct;
+    renderTable();
+  },
 
-  function renderTable() {
-    const tbody = document.querySelector("#productTable tbody");
-    tbody.innerHTML = "";
-
-    products.forEach(prod => {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td>${prod.category}</td>
-        <td>${prod.name}</td>
-        <td>${prod.price.toFixed(2)}</td>
-        <td>${prod.unisex}</td>
-        <td>${prod.sizes ? Object.keys(prod.sizes).join(", ") : "-"}</td>
-      `;
-
-      tbody.appendChild(tr);
-    });
+  deleteProduct(index) {
+    products.splice(index, 1);
+    renderTable();
   }
-</script>
+};
 
-</body>
-</html>
+// DOM elements
+const addForm = document.getElementById("addProductForm");
+const tableBody = document.querySelector("#inventoryTable tbody");
+
+// Handle form submission
+addForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const product = {
+    name: addForm.name.value,
+    price: parseFloat(addForm.price.value),
+    quantity: parseInt(addForm.quantity.value),
+  };
+
+  dataService.addProduct(product);
+  addForm.reset();
+});
+
+// Render inventory table
+function renderTable() {
+  const products = dataService.getProducts();
+  tableBody.innerHTML = "";
+
+  products.forEach((product, index) => {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td><span class="name">${product.name}</span></td>
+      <td><span class="price">${product.price.toFixed(2)}</span></td>
+      <td><span class="quantity">${product.quantity}</span></td>
+      <td>
+        <button class="edit">✏️</button>
+        <button class="delete">🗑️</button>
+      </td>
+    `;
+
+    // Edit button
+    row.querySelector(".edit").addEventListener("click", () => {
+      toggleEditRow(row, index);
+    });
+
+    // Delete button
+    row.querySelector(".delete").addEventListener("click", () => {
+      dataService.deleteProduct(index);
+    });
+
+    tableBody.appendChild(row);
+  });
+}
+
+// Toggle edit mode for a row
+function toggleEditRow(row, index) {
+  const isEditing = row.classList.contains("editing");
+
+  if (isEditing) {
+    // Save edits
+    const newName = row.querySelector("input.name").value;
+    const newPrice = parseFloat(row.querySelector("input.price").value);
+    const newQty = parseInt(row.querySelector("input.quantity").value);
+
+    const updatedProduct = { name: newName, price: newPrice, quantity: newQty };
+    dataService.updateProduct(index, updatedProduct);
+    row.classList.remove("editing");
+  } else {
+    // Exit edit mode for any other rows
+    document.querySelectorAll("tr.editing").forEach(r => r.classList.remove("editing"));
+
+    // Enter edit mode
+    const name = row.querySelector(".name").textContent;
+    const price = row.querySelector(".price").textContent;
+    const quantity = row.querySelector(".quantity").textContent;
+
+    row.classList.add("editing");
+    row.querySelector(".name").innerHTML = `<input class="name" value="${name}" />`;
+    row.querySelector(".price").innerHTML = `<input class="price" type="number" step="0.01" value="${price}" />`;
+    row.querySelector(".quantity").innerHTML = `<input class="quantity" type="number" value="${quantity}" />`;
+  }
+}
