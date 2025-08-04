@@ -3,10 +3,18 @@ console.log("JS is running");
 // Inject styles directly into the page
 const style = document.createElement("style");
 style.textContent = `
-/* Remove spinners in Chrome, Safari, Edge, Opera */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
+/* REMOVE SPINNERS — only on .edit-size fields */
+.edit-size::-webkit-inner-spin-button,
+.edit-size::-webkit-outer-spin-button {
   -webkit-appearance: none;
+  margin: 0;
+}
+.edit-size {
+  -moz-appearance: textfield;
+}
+
+/* ... keep your other styles here ... */
+`;
   margin: 0;
 }
 
