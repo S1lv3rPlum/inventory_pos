@@ -1,56 +1,88 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Inventory Manager</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f0f0f0; }
+    input[type="text"], input[type="number"], select { margin-right: 5px; }
+    .tab-buttons { margin-bottom: 10px; }
+    .tab-buttons button { margin-right: 10px; padding: 5px 10px; }
+    .hidden { display: none; }
+    .action-btns button { margin-right: 5px; }
+  </style>
 </head>
 <body>
-  <h1>Inventory Manager</h1>
+  <h1>Inventory Manager</h1>  <div class="tab-buttons">
+    <button id="inventoryTab" class="active-tab">Inventory</button>
+    <button id="discountsTab">Discounts</button>
+  </div>  <h2 id="sectionTitle">Inventory Table</h2>  <!-- Inventory Section -->  <div id="inventorySection">
+    <form id="addProductForm">
+      <input name="name" required placeholder="Name" />
+      <input name="price" required type="number" step="0.01" placeholder="Price" />
+      <input name="category" required placeholder="Category" />
+      <label>Unisex:
+        <select name="unisex" required>
+          <option value="">--Select--</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+      </label>
+      <label>Has Sizes:
+        <select name="hasSizes" required>
+          <option value="">--Select--</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+      </label>
+      <button type="submit">Add Product</button>
+    </form><table id="inventoryTable">
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Product</th>
+      <th>Gender</th>
+      <th>XS</th>
+      <th>S</th>
+      <th>M</th>
+      <th>L</th>
+      <th>XL</th>
+      <th>2XL</th>
+      <th>3XL</th>
+      <th>4XL</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <form id="addProductForm">
-    <input name="name" required placeholder="Name" />
-    <input name="price" required type="number" step="0.01" placeholder="Price" />
-    <input name="quantity" required type="number" placeholder="Quantity" />
-    <label>Category: <input type="text" name="category" required /></label>
-    <label>Unisex:
-      <select name="unisex" required>
-        <option value="">--Select--</option>
-        <option value="Yes">Yes</option>
-        <option value="No">No</option>
-      </select>
-    </label>
-    <label>Has Sizes:
-      <select name="hasSizes" required>
-        <option value="">--Select--</option>
-        <option value="Yes">Yes</option>
-        <option value="No">No</option>
-      </select>
-    </label>
-    <button type="submit">Add Product</button>
-  </form>
+  </div>  <!-- Discount Section -->  <div id="discountSection" class="hidden">
+    <form id="addDiscountForm">
+      <input name="discountName" required placeholder="Discount Name" />
+      <label>Type:
+        <select name="discountType" required>
+          <option value="">--Select--</option>
+          <option value="Percentage">Percentage</option>
+          <option value="Flat">Flat</option>
+        </select>
+      </label>
+      <input name="discountValue" required type="number" step="0.01" placeholder="Value" />
+      <button type="submit">Add Discount</button>
+    </form><table id="discountTable">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Value</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <table id="inventoryTable">
-    <thead>
-      <tr>
-        <th>Category</th>
-        <th>Product</th>
-        <th>Gender</th>
-        <th>XS</th>
-        <th>S</th>
-        <th>M</th>
-        <th>L</th>
-        <th>XL</th>
-        <th>2XL</th>
-        <th>3XL</th>
-        <th>4XL</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <script src="tests.js"></script>
-</body>
+  </div>  <script src="tests.js"></script></body>
 </html>
