@@ -203,56 +203,47 @@ function cancelAllEdits() {
 }
 
 // Make a row editable with inputs/selects
-function makeRowEditable(row, product, hasSizes) {
-  const cells = row.querySelectorAll("td");
+function makeRowEditable(row, product) {
+  row.classList.add("editing");
 
-  // Product Name - always editable
-  const nameCell = cells[0];
-  const nameInput = document.createElement("input");
-  nameInput.type = "text";
-  nameInput.value = nameCell.textContent;
-  nameCell.textContent = "";
-  nameCell.appendChild(nameInput);
 
-  // Gender - always editable
-  const genderCell = cells[1];
-  const genderInput = document.createElement("select");
-  ["Unisex", "Male", "Female"].forEach((optionValue) => {
-    const option = document.createElement("option");
-    option.value = optionValue;
-    option.textContent = optionValue;
-    if (genderCell.textContent === optionValue) {
-      option.selected = true;
-    }
-    genderInput.appendChild(option);
-  });
-  genderCell.textContent = "";
-  genderCell.appendChild(genderInput);
+  const nameCell = row.querySelector(".name");
+  const nameText = nameCell.querySelector("span").textContent;
+  nameCell.innerHTML = `<input type="text" class="edit-name" value="${nameText}" />`;
 
-  // Sizes - conditionally editable
-  const sizeLabels = ["S", "M", "L", "XL", "2XL", "3XL", "4XL"];
-  for (let i = 0; i < sizeLabels.length; i++) {
-    const sizeCell = cells[2 + i]; // size cells start at index 2
-    if (hasSizes || sizeLabels[i] === "M") {
-      const sizeInput = document.createElement("input");
-      sizeInput.type = "number";
-      sizeInput.min = "0";
-      sizeInput.value = sizeCell.textContent;
-      sizeCell.textContent = "";
-      sizeCell.appendChild(sizeInput);
-    }
-  }
+  const genderCell = row.querySelector(".gender");
+  const genderText = genderCell.querySelector("span").textContent;
+  genderCell.innerHTML = `
+    <select class="edit-gender">
+      <option value="M" ${genderText === "M" ? "selected" : ""}>M</option>
+      <option value="F" ${genderText === "F" ? "selected" : ""}>F</option>
+      <option value="U" ${genderText === "U" ? "selected" : ""}>Unisex</option>
+    </select>
+  `;
 
-  // Replace Edit button with Save button
-  const actionsCell = cells[cells.length - 1];
-  const editButton = actionsCell.querySelector("button");
-  editButton.textContent = "Save";
-  editButton.onclick = function () {
-  saveRow(row, products.indexOf(product));
-};
+  sizeLabels.forEach(size => {
+    const cell = row.querySelector(`.size-${size}`);
+    if (product.hasSizes === "Yes") {
+      const val = product.sizes[size];
+      cell.innerHTML = `<input type="number" min="0" class="edit-size" data-size="${size}" value="${val}" />`;
+    } else {
+    if (size === "M") {
+  const val = product.sizes["M"] ?? 0;
+  cell.innerHTML = `<input type="number" min="0" class="edit-size" data-size="M" value="${val}" />`;
+} else {
+  cell.textContent = "-";
 }
+}
+});
 
 
+  nameCell.querySelector("input").focus();
+
+  const editBtn = row.querySelector(".edit");
+  editBtn.textContent = "✅ Save";
+  editBtn.classList.add("save");
+  editBtn.classList.remove("edit");
+}
 
 // Save edited row back to products array
 function saveRow(row, index) {
