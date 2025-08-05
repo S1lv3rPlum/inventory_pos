@@ -93,16 +93,19 @@ function renderTable() {
           </td>
         `;
       } else {
-        row.innerHTML = `
-          <td class="name"><span>${product.name}</span></td>
-          <td class="gender"><span>${product.gender}</span></td>
-          ${sizeLabels.map(() => `<td>-</td>`).join('')}
-          <td class="actions">
-            <button class="edit">✏️</button>
-            <button class="delete">🗑️</button>
-          </td>
-        `;
-      }
+  row.innerHTML = `
+    <td class="name"><span>${product.name}</span></td>
+    <td class="gender"><span>${product.gender}</span></td>
+    ${sizeLabels.map(size => 
+      size === "M" ? 
+        `<td class="size-M"><span>${product.sizes.M}</span></td>` : 
+        `<td>-</td>`).join('')}
+    <td class="actions">
+      <button class="edit">✏️</button>
+      <button class="delete">🗑️</button>
+    </td>
+  `;
+}
 
       // Add event listener for delete button
       row.querySelector(".delete").addEventListener("click", () => {
@@ -126,6 +129,29 @@ function renderTable() {
       });
 
       tableBody.appendChild(row);
+    });
+  });
+}
+
+function renderDiscountTable() {
+  const discountTableBody = document.querySelector("#discountTable tbody");
+  discountTableBody.innerHTML = ""; // Clear existing rows
+
+  discounts.forEach((discount, index) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${discount.name}</td>
+      <td>${discount.type}</td>
+      <td>${discount.value}</td>
+      <td>
+        <button class="delete-discount" data-index="${index}">🗑️</button>
+      </td>
+    `;
+    discountTableBody.appendChild(row);
+
+    row.querySelector(".delete-discount").addEventListener("click", () => {
+      discounts.splice(index, 1);
+      renderDiscountTable();
     });
   });
 }
@@ -215,34 +241,21 @@ function saveRow(row, index) {
 
 // Initial render call
 renderTable();
-
+renderDiscountTable();
 
   const showProductsBtn = document.getElementById("showProducts");
   const showDiscountsBtn = document.getElementById("showDiscounts");
 
-  const productSection = document.getElementById("productSection");
-  const discountSection = document.getElementById("discountSection");
-
-  showProductsBtn.addEventListener("click", () => {
-    productSection.style.display = "block";
-    discountSection.style.display = "none";
-  });
-
-  showDiscountsBtn.addEventListener("click", () => {
-    productSection.style.display = "none";
-    discountSection.style.display = "block";
-
-    // Optionally add a "coming soon" message
-    if (!discountSection.innerHTML.trim()) {
-      discountSection.innerHTML = "<p>Coming soon...</p>";
-    }
-  });
+  const productSection = document.getElementById. = "block";
+// Get form element
+const discountForm = document.getElementById("addDiscountForm");
+const discountTableBody = document.querySelector("#discountTable tbody");
+  
 
 // Initialize discounts array
 let discounts = [];
 
-// Get form element
-const discountForm = document.getElementById("addDiscountForm");
+
 
 discountForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -257,9 +270,10 @@ discountForm.addEventListener("submit", (e) => {
     alert("Discount name must be unique.");
     return;
   }
-
+2
   // Add discount to array
   discounts.push({ name, type, value });
+renderDiscountTable();
 
   // Clear form
   discountForm.reset();
@@ -267,3 +281,7 @@ discountForm.addEventListener("submit", (e) => {
   // Log discounts so far
   console.log("Discounts:", discounts);
 });
+
+// bottom Section
+discountSection.style.display = "none";
+productSection.style.display = "block";
