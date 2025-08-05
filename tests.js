@@ -209,12 +209,24 @@ function saveRow(row, index) {
 // Initial render call
 renderTable();
 
-function showDiscounts() {
-  document.getElementById('discounts-section').style.display = 'block';
-  document.getElementById('inventory-section').style.display = 'none';
-}
 
-function showInventory() {
-  document.getElementById('discounts-section').style.display = 'none';
-  document.getElementById('inventory-section').style.display = 'block';
-}
+  const showProductsBtn = document.getElementById("showProducts");
+  const showDiscountsBtn = document.getElementById("showDiscounts");
+
+  const productSection = document.getElementById("productSection");
+  const discountSection = document.getElementById("discountSection");
+
+  showProductsBtn.addEventListener("click", () => {
+    productSection.style.display = "block";
+    discountSection.style.display = "none";
+  });
+
+  showDiscountsBtn.addEventListener("click", () => {
+    productSection.style.display = "none";
+    discountSection.style.display = "block";
+
+    // Optionally add a "coming soon" message
+    if (!discountSection.innerHTML.trim()) {
+      discountSection.innerHTML = "<p>Coming soon...</p>";
+    }
+  });
