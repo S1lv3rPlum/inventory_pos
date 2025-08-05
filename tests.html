@@ -136,27 +136,30 @@
 
   <!-- Inventory Section -->
   <div id="inventorySection">
-    <form id="addProductForm">
-      <input type="text" id="productName" class="form-field" placeholder="Product Name">
-<input type="text" id="productCategory" class="form-field" placeholder="Category">
-<input type="number" id="productPrice" class="form-field" placeholder="Price">
-      <label>Gender:
-  <select name="gender" required>
-    <option value="">--Select--</option>
-    <option value="M">M</option>
-    <option value="F">F</option>
-    <option value="U">Unisex</option>
-  </select>
-</label>
-      <label>Has Sizes:
-        <select name="hasSizes" required>
-          <option value="">--Select--</option>
-          <option value="Yes">Yes</option>
-          <option value="No">No</option>
-        </select>
-      </label>
-      <button type="submit">Add Product</button>
-    </form>
+   <form id="addProductForm">
+  <input type="text" name="name" required placeholder="Product Name" />
+  <input type="text" name="category" required placeholder="Category" />
+  <input type="number" name="price" placeholder="Price" />
+  
+  <label>Gender:
+    <select name="gender" required>
+      <option value="">--Select--</option>
+      <option value="M">M</option>
+      <option value="F">F</option>
+      <option value="U">Unisex</option>
+    </select>
+  </label>
+  
+  <label>Has Sizes:
+    <select name="hasSizes" required>
+      <option value="">--Select--</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+  </label>
+
+  <button type="submit">Add Product</button>
+</form>
 
     <div class="table-scroll">
       <table id="inventoryTable">
