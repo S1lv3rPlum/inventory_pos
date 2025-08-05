@@ -80,7 +80,7 @@ function renderTable() {
 
       if (product.hasSizes === "Yes") {
         row.innerHTML = `
-          <span>${product.category}</span></td>
+          <td class="category"><span>${product.category}</span></td>
           <td class="name"><span>${product.name}</span></td>
           <td class="gender"><span>${product.gender}</span></td>
           ${sizeLabels.map(size => `<td class="size-${size}"><span>${product.sizes[size] ?? ''}</span></td>`).join('')}
