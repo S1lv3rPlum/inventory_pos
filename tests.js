@@ -199,10 +199,9 @@ function makeRowEditable(row, product) {
   cell.textContent = "-";
 }
 
-window.addEventListener("DOMContentLoaded", function () {
+window.addEventListener("DOMContentLoaded", () => {
   renderProductTable();
-});
-  }
+  renderDiscountTable(); // ← This is what's missing
 });
 
   nameCell.querySelector("input").focus();
