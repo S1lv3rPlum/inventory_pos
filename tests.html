@@ -31,17 +31,7 @@
       color: #333;
       text-align: center;
     }
-    /* Remove spinners in WebKit browsers (Chrome, Safari, etc.) */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Remove spinners in Firefox */
-input[type="number"] {
-  -moz-appearance: textfield;
-}
+    
 
     form {
       display: flex;
@@ -140,6 +130,18 @@ input[type="number"] {
         padding: 4px;
       }
     }
+
+/* Remove spinners in WebKit browsers (Chrome, Safari, etc.) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Remove spinners in Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
 
   </style>
 </head>
