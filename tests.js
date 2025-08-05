@@ -4,6 +4,9 @@ const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 // Load from localStorage if available
 let products = JSON.parse(localStorage.getItem("products")) || [];
 
+// Initialize discounts array
+let discounts = [];
+
 // Save to localStorage whenever products change
 function saveToLocalStorage() {
   localStorage.setItem("products", JSON.stringify(products));
@@ -256,8 +259,7 @@ const discountForm = document.getElementById("addDiscountForm");
 const discountTableBody = document.querySelector("#discountTable tbody");
   
 
-// Initialize discounts array
-let discounts = [];
+
 
 
 
@@ -293,5 +295,5 @@ productSection.style.display = "block";
 
 window.addEventListener("DOMContentLoaded", function () {
   renderTable();
-  renderDiscountTable
+  renderDiscountTable();
 });
