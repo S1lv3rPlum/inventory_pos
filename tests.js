@@ -77,6 +77,35 @@ function renderTable() {
     `;
     tableBody.appendChild(headerRow);
 
+// EDIT CATEGORY button
+headerRow.querySelector(".edit-category").addEventListener("click", () => {
+  // Prompt user for new category name (or implement inline editing as you prefer)
+  const newCategory = prompt("Enter new category name:", category);
+  if (!newCategory || newCategory.trim() === "" || newCategory === category) return;
+
+  // Update all products in this category to the new category name
+  products.forEach(product => {
+    if (product.category === category) {
+      product.category = newCategory.trim();
+    }
+  });
+
+  saveToLocalStorage();
+  renderTable();
+});
+
+// DELETE CATEGORY button
+headerRow.querySelector(".delete-category").addEventListener("click", () => {
+  // Confirm deletion
+  if (!confirm(`Delete all products in category "${category}"? This cannot be undone.`)) return;
+
+  // Remove all products in this category
+  products = products.filter(product => product.category !== category);
+
+  saveToLocalStorage();
+  renderTable();
+});
+
     // Sort products alphabetically by name
     const sortedProducts = grouped[category].sort((a, b) =>
       a.name.localeCompare(b.name)
