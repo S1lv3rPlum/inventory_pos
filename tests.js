@@ -202,10 +202,7 @@ function makeRowEditable(row, product) {
   cell.textContent = "-";
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-  renderTable();
-  renderDiscountTable(); // ← This is what's missing
-});
+
 
   nameCell.querySelector("input").focus();
 
@@ -246,9 +243,6 @@ function saveRow(row, index) {
   renderTable();
 }
 
-// Initial render call
-renderTable();
-renderDiscountTable();
 
   const showProductsBtn = document.getElementById("showProducts");
   const showDiscountsBtn = document.getElementById("showDiscounts");
@@ -293,7 +287,8 @@ const discountSection = document.getElementById("discountSection");
 discountSection.style.display = "none";
 productSection.style.display = "block";
 
-window.addEventListener("DOMContentLoaded", function () {
+
+window.addEventListener("DOMContentLoaded", () => {
   renderTable();
-  renderDiscountTable();
+  renderDiscountTable(); // ← This is what's missing
 });
