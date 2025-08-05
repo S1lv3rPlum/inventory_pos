@@ -288,7 +288,10 @@ discountSection.style.display = "none";
 productSection.style.display = "block";
 
 
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", function () {
+  alert("DOM fully loaded!");
   renderTable();
-  renderDiscountTable(); // ← This is what's missing
+  alert("Rendered main table");
+  renderDiscountTable();
+  alert("Rendered discount table");
 });
