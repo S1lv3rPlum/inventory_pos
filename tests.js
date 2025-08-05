@@ -201,6 +201,7 @@ function makeRowEditable(row, product) {
 } else {
   cell.textContent = "-";
 }
+}
 });
 
 
