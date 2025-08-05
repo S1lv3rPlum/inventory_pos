@@ -198,6 +198,10 @@ function makeRowEditable(row, product) {
 } else {
   cell.textContent = "-";
 }
+
+window.addEventListener("DOMContentLoaded", function () {
+  renderProductTable();
+});
   }
 });
 
@@ -287,3 +291,7 @@ const discountSection = document.getElementById("discountSection");
 // bottom Section
 discountSection.style.display = "none";
 productSection.style.display = "block";
+
+window.addEventListener("DOMContentLoaded", function () {
+  renderProductTable();
+});
