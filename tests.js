@@ -200,7 +200,7 @@ function makeRowEditable(row, product) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  renderProductTable();
+  renderTable();
   renderDiscountTable(); // ← This is what's missing
 });
 
@@ -292,5 +292,5 @@ discountSection.style.display = "none";
 productSection.style.display = "block";
 
 window.addEventListener("DOMContentLoaded", function () {
-  renderProductTable();
+  renderTable();
 });
