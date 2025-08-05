@@ -27,11 +27,15 @@ addForm.addEventListener("submit", (e) => {
   };
 
   // Initialize sizes counts to zero if product has sizes
+  // Initialize sizes
   if (product.hasSizes === "Yes") {
     product.sizes = sizeLabels.reduce((acc, size) => {
       acc[size] = 0;
       return acc;
     }, {});
+  } else {
+    // For products without sizes, default to M size with 0 qty
+    product.sizes = { M: 0 };
   }
 
   products.push(product);
