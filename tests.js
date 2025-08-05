@@ -166,9 +166,13 @@ function makeRowEditable(row, product) {
       const val = product.sizes[size];
       cell.innerHTML = `<input type="number" min="0" class="edit-size" data-size="${size}" value="${val}" />`;
     } else {
+    if (size === "M") {
+      cell.innerHTML = `<input type="number" min="0" class="edit-size" data-size="M" value="0" />`;
+    } else {
       cell.textContent = "-";
     }
-  });
+  }
+});
 
   nameCell.querySelector("input").focus();
 
