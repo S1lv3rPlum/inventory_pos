@@ -1,8 +1,12 @@
+
+
 // Size labels
 const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 
 // Load from localStorage if available
 let products = JSON.parse(localStorage.getItem("products")) || [];
+let productList = products;
+
 
 // Initialize discounts array
 let discounts = [];
