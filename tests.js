@@ -78,6 +78,7 @@ function renderTable() {
     tableBody.appendChild(headerRow);
 
 // EDIT CATEGORY button
+// EDIT CATEGORY button
 headerRow.querySelector(".edit-category").addEventListener("click", () => {
   const newCategory = prompt("Enter new category name:", category);
   if (!newCategory) return;
@@ -91,6 +92,7 @@ headerRow.querySelector(".edit-category").addEventListener("click", () => {
       product.category = trimmedCategory;
     }
   });
+
 
   saveToLocalStorage();
   renderTable();
