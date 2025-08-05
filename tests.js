@@ -246,7 +246,7 @@ renderDiscountTable();
   const showProductsBtn = document.getElementById("showProducts");
   const showDiscountsBtn = document.getElementById("showDiscounts");
 
-  const productSection = document.getElementById. = "block";
+  const productSection = document.getElementById("productSection");
 // Get form element
 const discountForm = document.getElementById("addDiscountForm");
 const discountTableBody = document.querySelector("#discountTable tbody");
@@ -282,6 +282,7 @@ renderDiscountTable();
   console.log("Discounts:", discounts);
 });
 
+const discountSection = document.getElementById("discountSection");
 // bottom Section
 discountSection.style.display = "none";
 productSection.style.display = "block";
