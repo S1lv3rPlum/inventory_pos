@@ -247,7 +247,6 @@ function makeRowEditable(row, product) {
 
 // Save edited row back to products array
 function saveRow(row, index) {
-  
   const newName = row.querySelector(".edit-name").value.trim();
   const newGender = row.querySelector(".edit-gender").value;
   let newHasSizes = "No";
@@ -264,7 +263,10 @@ function saveRow(row, index) {
     });
   }
 
+  // ✅ Preserve the original category
+  const oldProduct = products[index];
   products[index] = {
+    category: oldProduct.category,
     name: newName,
     gender: newGender,
     hasSizes: newHasSizes,
