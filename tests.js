@@ -171,9 +171,6 @@ function cancelAllEdits() {
 function makeRowEditable(row, product) {
   row.classList.add("editing");
 
-  const categoryCell = row.querySelector(".category");
-  const categoryText = categoryCell.querySelector("span").textContent;
-  categoryCell.innerHTML = `<input type="text" class="edit-category" value="${categoryText}" />`;
 
   const nameCell = row.querySelector(".name");
   const nameText = nameCell.querySelector("span").textContent;
@@ -215,7 +212,7 @@ function makeRowEditable(row, product) {
 
 // Save edited row back to products array
 function saveRow(row, index) {
-  const newCategory = row.querySelector(".edit-category").value.trim();
+  
   const newName = row.querySelector(".edit-name").value.trim();
   const newGender = row.querySelector(".edit-gender").value;
   let newHasSizes = "No";
@@ -233,7 +230,6 @@ function saveRow(row, index) {
   }
 
   products[index] = {
-    category: newCategory,
     name: newName,
     gender: newGender,
     hasSizes: newHasSizes,
