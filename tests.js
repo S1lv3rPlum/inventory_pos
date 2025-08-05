@@ -201,7 +201,7 @@ function makeRowEditable(row, product) {
 } else {
   cell.textContent = "-";
 }
-
+});
 
 
   nameCell.querySelector("input").focus();
@@ -270,7 +270,7 @@ discountForm.addEventListener("submit", (e) => {
     alert("Discount name must be unique.");
     return;
   }
-2
+
   // Add discount to array
   discounts.push({ name, type, value });
 renderDiscountTable();
