@@ -293,4 +293,5 @@ productSection.style.display = "block";
 
 window.addEventListener("DOMContentLoaded", function () {
   renderTable();
+  renderDiscountTable
 });
