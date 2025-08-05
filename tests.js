@@ -248,8 +248,8 @@ function makeRowEditable(row, product, hasSizes) {
   const editButton = actionsCell.querySelector("button");
   editButton.textContent = "Save";
   editButton.onclick = function () {
-    saveRowEdits(row, product, hasSizes);
-  };
+  saveRow(row, products.indexOf(product));
+};
 }
 
 
