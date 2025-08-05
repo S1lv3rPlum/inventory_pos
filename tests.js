@@ -230,3 +230,33 @@ renderTable();
       discountSection.innerHTML = "<p>Coming soon...</p>";
     }
   });
+
+// Initialize discounts array
+let discounts = [];
+
+// Get form element
+const discountForm = document.getElementById("addDiscountForm");
+
+discountForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  // Get form values
+  const name = discountForm.discountName.value.trim();
+  const type = discountForm.discountType.value;
+  const value = parseFloat(discountForm.discountValue.value);
+
+  // Check unique name
+  if (discounts.some(d => d.name.toLowerCase() === name.toLowerCase())) {
+    alert("Discount name must be unique.");
+    return;
+  }
+
+  // Add discount to array
+  discounts.push({ name, type, value });
+
+  // Clear form
+  discountForm.reset();
+
+  // Log discounts so far
+  console.log("Discounts:", discounts);
+});
