@@ -79,16 +79,22 @@ function renderTable() {
 
 // EDIT CATEGORY button
 headerRow.querySelector(".edit-category").addEventListener("click", () => {
-  // Prompt user for new category name (or implement inline editing as you prefer)
   const newCategory = prompt("Enter new category name:", category);
-  if (!newCategory || newCategory.trim() === "" || newCategory === category) return;
+  if (!newCategory) return;
 
-  // Update all products in this category to the new category name
+  const trimmedCategory = newCategory.trim();
+
+  if (trimmedCategory === "" || trimmedCategory === category) return;
+
   products.forEach(product => {
     if (product.category === category) {
-      product.category = newCategory.trim();
+      product.category = trimmedCategory;
     }
   });
+
+  saveToLocalStorage();
+  renderTable();
+});
 
   saveToLocalStorage();
   renderTable();
