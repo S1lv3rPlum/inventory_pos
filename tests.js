@@ -208,3 +208,13 @@ function saveRow(row, index) {
 
 // Initial render call
 renderTable();
+
+function showDiscounts() {
+  document.getElementById('discounts-section').style.display = 'block';
+  document.getElementById('inventory-section').style.display = 'none';
+}
+
+function showInventory() {
+  document.getElementById('discounts-section').style.display = 'none';
+  document.getElementById('inventory-section').style.display = 'block';
+}
