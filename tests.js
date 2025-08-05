@@ -193,10 +193,11 @@ function makeRowEditable(row, product) {
       cell.innerHTML = `<input type="number" min="0" class="edit-size" data-size="${size}" value="${val}" />`;
     } else {
     if (size === "M") {
-      cell.innerHTML = `<input type="number" min="0" class="edit-size" data-size="M" value="0" />`;
-    } else {
-      cell.textContent = "-";
-    }
+  const val = product.sizes["M"] ?? 0;
+  cell.innerHTML = `<input type="number" min="0" class="edit-size" data-size="M" value="${val}" />`;
+} else {
+  cell.textContent = "-";
+}
   }
 });
 
