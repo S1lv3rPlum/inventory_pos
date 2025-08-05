@@ -245,13 +245,35 @@ function saveRow(row, index) {
 }
 
 
-  const showProductsBtn = document.getElementById("showProducts");
-  const showDiscountsBtn = document.getElementById("showDiscounts");
+ const showProductsBtn = document.getElementById("showProducts");
+const showDiscountsBtn = document.getElementById("showDiscounts");
 
-  const productSection = document.getElementById("productSection");
-// Get form element
+const productSection = document.getElementById("productSection");
 const discountForm = document.getElementById("addDiscountForm");
-const discountTableBody = document.querySelector("#discountTable tbody");
+
+// Function to switch sections
+function showSection(section) {
+  if (section === "products") {
+    productSection.style.display = "block";
+    discountForm.style.display = "none";
+
+    showProductsBtn.classList.add("active");
+    showDiscountsBtn.classList.remove("active");
+  } else if (section === "discounts") {
+    productSection.style.display = "none";
+    discountForm.style.display = "block";
+
+    showProductsBtn.classList.remove("active");
+    showDiscountsBtn.classList.add("active");
+  }
+}
+
+// Event listeners
+showProductsBtn.addEventListener("click", () => showSection("products"));
+showDiscountsBtn.addEventListener("click", () => showSection("discounts"));
+
+// Optional: show only product section on load
+showSection("products");
   
 
 
