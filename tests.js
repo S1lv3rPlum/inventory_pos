@@ -230,7 +230,7 @@ function makeRowEditable(row, product, hasSizes) {
   genderCell.appendChild(genderInput);
 
   // Sizes - conditionally editable
-  const sizeLabels = ["S", "M", "L", "XL", "2X"];
+  const sizeLabels = ["S", "M", "L", "XL", "2XL", "3XL", "4XL"];
   for (let i = 0; i < sizeLabels.length; i++) {
     const sizeCell = cells[2 + i]; // size cells start at index 2
     if (hasSizes || sizeLabels[i] === "M") {
