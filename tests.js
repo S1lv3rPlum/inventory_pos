@@ -414,17 +414,3 @@ renderTable();
 renderDiscounts();
 switchTab("inventory");
 
-const showProductsBtn = document.getElementById('showProducts');
-const showDiscountsBtn = document.getElementById('showDiscounts');
-const productSection = document.getElementById('productSection');
-const discountSection = document.getElementById('discountSection');
-
-showProductsBtn.addEventListener('click', () => {
-  productSection.style.display = 'block';
-  discountSection.style.display = 'none';
-});
-
-showDiscountsBtn.addEventListener('click', () => {
-  productSection.style.display = 'none';
-  discountSection.style.display = 'block';
-});
