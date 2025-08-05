@@ -422,7 +422,7 @@ function loadDiscounts() {
     if (cursor) {
       const discount = cursor.value;
       const li = document.createElement("li");
-      li.textContent = `${discount.name} — ${discount.type === "percent" ? discount.value + "%" : "$" + discount.value.toFixed(2)}`;
+      li.textContent = `${discount.name} â€” ${discount.type === "percent" ? discount.value + "%" : "$" + discount.value.toFixed(2)}`;
       const delBtn = document.createElement("button");
       delBtn.textContent = "Delete";
       delBtn.onclick = () => {
@@ -486,7 +486,7 @@ function exportInventory() {
 
 // Import Inventory from Excel
 function handleInventoryImport(event) {
-const file = event.target.files[0];
+  const file = event.target.files[0];
   if (!file) {
     alert("No file selected.");
     return;
@@ -537,60 +537,6 @@ function exportDiscounts() {
   };
 }
 
-function addProduct() {
-  // Ensure the form submit adds to IndexedDB and updates the display
-addProductForm.addEventListener("submit", function (event) {
-  event.preventDefault();
-
-  const productName = document.getElementById("productName").value.trim();
-  const category = document.getElementById("productCategory").value.trim();
-  const quantity = parseInt(document.getElementById("productQuantity").value.trim()) || 0;
-  const price = parseFloat(document.getElementById("productPrice").value.trim()) || 0;
-  const imageInput = document.getElementById("productImage");
-  const imageFile = imageInput.files[0];
-
-  const variantsText = document.getElementById("productVariants").value.trim();
-  const variants = variantsText ? variantsText.split(",").map(v => v.trim()) : [];
-
-  const product = {
-    name: productName,
-    category: category || "(No Category)",
-    quantity,
-    price,
-    variants
-  };
-
-  if (imageFile) {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      product.image = e.target.result;
-
-      // Add to IndexedDB after reading image
-      saveProductToIndexedDB(product);
-    };
-    reader.readAsDataURL(imageFile);
-  } else {
-    product.image = null;
-    saveProductToIndexedDB(product);
-  }
-});
-
-function saveProductToIndexedDB(product) {
-  const tx = db.transaction("products", "readwrite");
-  const store = tx.objectStore("products");
-  store.add(product);
-
-  tx.oncomplete = function () {
-    displayInventory();  // Refresh product table
-    addProductForm.reset();  // Clear form fields
-    alert("Product added successfully!");
-  };
-
-  tx.onerror = function (event) {
-    console.error("Failed to add product:", event.target.error);
-    alert("Failed to add product. Please try again.");
-  };
-}
 // Import Discounts from Excel
 function handleDiscountImport(event) {
   const file = event.target.files[0];
@@ -624,14 +570,6 @@ function handleDiscountImport(event) {
   reader.readAsArrayBuffer(file);
   event.target.value = "";
 }
-document.addEventListener("DOMContentLoaded", function () {
-  const addBtn = document.getElementById("addProductBtn");
-  if (addBtn) {
-    addBtn.addEventListener("click", addProduct);
-  }
-});
-
-document.addEventListener('DOMContentLoaded', displayInventory);
 
 // --- Make sure these functions are global if needed ---
 window.exportInventory = exportInventory;
@@ -639,4 +577,3 @@ window.handleInventoryImport = handleInventoryImport;
 window.exportDiscounts = exportDiscounts;
 window.handleDiscountImport = handleDiscountImport;
 window.loadDiscounts = loadDiscounts;
-
