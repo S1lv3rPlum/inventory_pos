@@ -132,12 +132,6 @@
 
 <div id="productSection">
   <!-- Product form and product table go here -->
-</div>
-
-<div id="discountSection" style="display: none;">
-  <!-- Discount form and discount table go here -->
-</div>
-
   <h2 id="sectionTitle">Inventory Table</h2>
 
   <!-- Inventory Section -->
@@ -168,7 +162,6 @@
       <table id="inventoryTable">
         <thead>
           <tr>
-            <th>Category</th>
             <th>Product</th>
             <th>Gender</th>
             <th>XS</th>
@@ -187,7 +180,11 @@
     </div>
   </div>
 
-  <!-- Discount Section -->
+</div>
+
+<div id="discountSection" style="display: none;">
+  <!-- Discount form and discount table go here -->
+   <!-- Discount Section -->
   <div id="discountSection" class="hidden">
     <form id="addDiscountForm">
       <input name="discountName" required placeholder="Discount Name" />
@@ -213,6 +210,10 @@
       <tbody></tbody>
     </table>
   </div>
+</div>
+
+  
+ 
 
   <script src="tests.js"></script>
 </body>
