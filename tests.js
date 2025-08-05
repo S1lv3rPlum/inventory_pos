@@ -98,9 +98,7 @@ headerRow.querySelector(".edit-category").addEventListener("click", () => {
   renderTable();
 });
 
-  saveToLocalStorage();
-  renderTable();
-});
+ 
 
 // DELETE CATEGORY button
 headerRow.querySelector(".delete-category").addEventListener("click", () => {
