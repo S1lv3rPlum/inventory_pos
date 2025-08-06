@@ -1,13 +1,17 @@
+// inventory.js
 let db;
+// Open IndexedDB Database "BandPOSDB", version 2
 const request = indexedDB.open("BandPOSDB", 2);
-request.onupgradeneeded = function (event) {
+request.onupgradeneeded = function(event) {
   db = event.target.result;
+  // Create products store if missing
   if (!db.objectStoreNames.contains("products"))
     db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
+  // Create discounts store if missing
   if (!db.objectStoreNames.contains("discounts"))
     db.createObjectStore("discounts", { keyPath: "name" });
 };
-request.onsuccess = function (event) {
+request.onsuccess = function(event) {
   db = event.target.result;
   updateDebugStatus("Database initialized.");
   displayInventory();
@@ -17,35 +21,6 @@ request.onerror = function(event) {
   updateDebugStatus("Database error: " + event.target.error);
   console.error("IndexedDB open error:", event.target.error);
 };
-
-function displayDiscounts() {
-  const discountTable = document.getElementById("discountTable");
-  const discountList = JSON.parse(localStorage.getItem("discountList")) || [];
-
-  // Clear existing rows except the header
-  while (discountTable.rows.length > 1) {
-    discountTable.deleteRow(1);
-  }
-
-  discountList.forEach((discount, index) => {
-    const row = discountTable.insertRow();
-
-    const productCell = row.insertCell(0);
-    const amountCell = row.insertCell(1);
-    const startDateCell = row.insertCell(2);
-    const endDateCell = row.insertCell(3);
-
-    productCell.textContent = discount.product;
-    amountCell.textContent = discount.discountAmount;
-    startDateCell.textContent = discount.startDate;
-    endDateCell.textContent = discount.endDate;
-
-    // (Optional: Add Edit/Delete buttons here like in productTable)
-  });
-}
-
-
-
 // Debug status display helper
 function updateDebugStatus(message) {
   const debugElem = document.getElementById("debugStatus");
@@ -56,8 +31,8 @@ function updateDebugStatus(message) {
     console.log(message);
   }
 }
-// Add product form submit handler
-document.getElementById("addProductForm").addEventListener("submit", function (e) {
+// Add Product Form submit handler
+document.getElementById("addProductForm").addEventListener("submit", (e) => {
   e.preventDefault();
   if (!db) {
     alert("Database not initialized yet.");
@@ -77,7 +52,7 @@ document.getElementById("addProductForm").addEventListener("submit", function (e
   const imageInput = document.getElementById("productImage");
   const imageFile = imageInput.files[0];
   const reader = new FileReader();
-  reader.onload = function () {
+  reader.onload = function() {
     const imageData = reader.result || null;
     const defaultSizes = ["S", "M", "L", "XL", "2XL"];
     const variants = hasSizes
@@ -99,7 +74,7 @@ document.getElementById("addProductForm").addEventListener("submit", function (e
       document.getElementById("addProductForm").reset();
       displayInventory();
     };
-    tx.onerror = event => {
+    tx.onerror = (event) => {
       updateDebugStatus("Error adding product: " + event.target.error);
       console.error("Add product error:", event.target.error);
     };
@@ -107,11 +82,10 @@ document.getElementById("addProductForm").addEventListener("submit", function (e
   if (imageFile) {
     reader.readAsDataURL(imageFile);
   } else {
-    // Trigger onload with no image set
     reader.onload();
   }
 });
-// Display inventory table
+// Display Inventory Table
 function displayInventory() {
   const container = document.getElementById("inventoryList");
   container.innerHTML = "";
@@ -122,17 +96,17 @@ function displayInventory() {
   updateDebugStatus("Loading inventory...");
   const tx = db.transaction("products", "readonly");
   const store = tx.objectStore("products");
+  const products = [];
   tx.onerror = event => {
-    updateDebugStatus("Transaction error: " + event.target.error);
+    updateDebugStatus("Transaction error loading products: " + event.target.error);
     console.error("Transaction error:", event.target.error);
   };
   const cursorRequest = store.openCursor();
   cursorRequest.onerror = event => {
-    updateDebugStatus("Cursor error: " + event.target.error);
+    updateDebugStatus("Cursor error loading products: " + event.target.error);
     console.error("Cursor error:", event.target.error);
   };
-  const products = [];
-  cursorRequest.onsuccess = function(event) {
+  cursorRequest.onsuccess = event => {
     const cursor = event.target.result;
     if (cursor) {
       products.push(cursor.value);
@@ -167,12 +141,9 @@ function displayInventory() {
       let categoryRowCount = 0;
       products.forEach(product => {
         const row = document.createElement("tr");
-        // Category cell with rowspan
+        // Category row span logic
         if (product.category !== lastCategory) {
-          if (
-            categoryStartRowIndex !== null &&
-            tbody.rows[categoryStartRowIndex]
-          ) {
+          if (categoryStartRowIndex !== null && tbody.rows[categoryStartRowIndex]) {
             tbody.rows[categoryStartRowIndex].cells[0].rowSpan = categoryRowCount;
           }
           lastCategory = product.category;
@@ -185,7 +156,7 @@ function displayInventory() {
         } else {
           categoryRowCount++;
         }
-        // Product name cell with input disabled by default
+        // Product name
         const nameCell = document.createElement("td");
         const nameInput = document.createElement("input");
         nameInput.type = "text";
@@ -193,7 +164,7 @@ function displayInventory() {
         nameInput.disabled = true;
         nameCell.appendChild(nameInput);
         row.appendChild(nameCell);
-        // Price cell
+        // Price
         const priceCell = document.createElement("td");
         const priceInput = document.createElement("input");
         priceInput.type = "number";
@@ -202,7 +173,7 @@ function displayInventory() {
         priceInput.disabled = true;
         priceCell.appendChild(priceInput);
         row.appendChild(priceCell);
-        // Gender cell
+        // Gender
         const genderCell = document.createElement("td");
         const genderInput = document.createElement("input");
         genderInput.type = "text";
@@ -211,7 +182,7 @@ function displayInventory() {
         genderInput.style.width = "40px";
         genderCell.appendChild(genderInput);
         row.appendChild(genderCell);
-        // Image cell
+        // Image
         const imgCell = document.createElement("td");
         const imgPreview = document.createElement("img");
         imgPreview.style.maxWidth = "60px";
@@ -220,15 +191,16 @@ function displayInventory() {
         imgPreview.style.display = product.image ? "inline-block" : "none";
         if (product.image) imgPreview.src = product.image;
         imgCell.appendChild(imgPreview);
+        // File input hidden until edit
         const imgInput = document.createElement("input");
         imgInput.type = "file";
         imgInput.accept = "image/*";
-        imgInput.style.display = "none"; // hidden until edit
+        imgInput.style.display = "none"; 
         imgCell.appendChild(imgInput);
         row.appendChild(imgCell);
-        // Sizes & qty cell
+        // Sizes & quantity
         const sizeCell = document.createElement("td");
-        if (product.variants && Array.isArray(product.variants)) {
+        if (Array.isArray(product.variants)) {
           product.variants.forEach(variant => {
             const label = document.createElement("label");
             label.style.marginRight = "10px";
@@ -245,25 +217,29 @@ function displayInventory() {
           });
         }
         row.appendChild(sizeCell);
-        // Actions cell: Edit, Save, Delete buttons
+        // Actions: Edit, Save, Delete buttons
         const actionCell = document.createElement("td");
+        // Edit button
         const editBtn = document.createElement("button");
         editBtn.textContent = "Edit";
+        // Save button
         const saveBtn = document.createElement("button");
         saveBtn.textContent = "Save";
         saveBtn.style.display = "none";
+        // Delete button
         const deleteBtn = document.createElement("button");
         deleteBtn.textContent = "Delete";
+        // Edit click handler
         editBtn.onclick = () => {
-          // Enable editing inputs
           nameInput.disabled = false;
           priceInput.disabled = false;
           genderInput.disabled = false;
           imgInput.style.display = "inline-block";
-          sizeCell.querySelectorAll("input").forEach(i => (i.disabled = false));
+          sizeCell.querySelectorAll("input").forEach(i => i.disabled = false);
           editBtn.style.display = "none";
           saveBtn.style.display = "inline";
         };
+        // Image change handler
         imgInput.onchange = () => {
           const file = imgInput.files[0];
           if (file) {
@@ -275,15 +251,18 @@ function displayInventory() {
             reader.readAsDataURL(file);
           }
         };
+        // Save click handler
         saveBtn.onclick = () => {
           const updatedName = nameInput.value.trim();
           const updatedPrice = parseFloat(priceInput.value);
           const updatedGender = genderInput.value.trim();
           const updatedImage = imgPreview.src;
-          const updatedVariants = Array.from(sizeCell.querySelectorAll("label")).map(label => {
-            const size = label.querySelector("span").textContent.replace(":", "").trim();
+          const updatedVariants = [];
+          sizeCell.querySelectorAll("label").forEach(label => {
+            const sizeText = label.querySelector("span").textContent || "";
+            const size = sizeText.replace(":", "").trim();
             const qty = parseInt(label.querySelector("input").value);
-            return { size, stock: isNaN(qty) ? 0 : qty };
+            updatedVariants.push({ size, stock: isNaN(qty) ? 0 : qty });
           });
           const tx2 = db.transaction("products", "readwrite");
           const store2 = tx2.objectStore("products");
@@ -293,7 +272,7 @@ function displayInventory() {
             price: updatedPrice,
             gender: updatedGender,
             image: updatedImage,
-            variants: updatedVariants,
+            variants: updatedVariants
           });
           tx2.oncomplete = () => {
             updateDebugStatus("Product saved.");
@@ -304,6 +283,7 @@ function displayInventory() {
             console.error("Save product error:", event.target.error);
           };
         };
+        // Delete click handler
         deleteBtn.onclick = () => {
           if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
           const tx3 = db.transaction("products", "readwrite");
@@ -324,10 +304,7 @@ function displayInventory() {
         row.appendChild(actionCell);
         tbody.appendChild(row);
       });
-      if (
-        categoryStartRowIndex !== null &&
-        tbody.rows[categoryStartRowIndex]
-      ) {
+      if (categoryStartRowIndex !== null && tbody.rows[categoryStartRowIndex]) {
         tbody.rows[categoryStartRowIndex].cells[0].rowSpan = categoryRowCount;
       }
       table.appendChild(tbody);
@@ -335,7 +312,7 @@ function displayInventory() {
     }
   };
 }
-// Load discounts into discount table
+// Load Discounts and render discount table
 function loadDiscounts() {
   const discountTableBody = document.getElementById("discountTableBody");
   if (!discountTableBody) {
@@ -349,12 +326,8 @@ function loadDiscounts() {
   }
   const tx = db.transaction("discounts", "readonly");
   const store = tx.objectStore("discounts");
-  tx.onerror = event => {
-    updateDebugStatus("Transaction error loading discounts: " + event.target.error);
-    console.error("Transaction error loading discounts:", event.target.error);
-  };
-  let hasDiscounts = false;
   const cursorRequest = store.openCursor();
+  let hasDiscounts = false;
   cursorRequest.onerror = event => {
     updateDebugStatus("Cursor error loading discounts: " + event.target.error);
     console.error("Cursor error loading discounts:", event.target.error);
@@ -364,7 +337,6 @@ function loadDiscounts() {
     if (cursor) {
       hasDiscounts = true;
       const discount = cursor.value;
-      console.log("Loading discount:", discount); // Debug: log loaded discount
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${discount.name}</td>
@@ -376,33 +348,32 @@ function loadDiscounts() {
         if (confirm(`Delete discount "${discount.name}"?`)) {
           const txDel = db.transaction("discounts", "readwrite");
           const storeDel = txDel.objectStore("discounts");
-          txDel.onerror = e => {
-            updateDebugStatus("Error deleting discount transaction: " + e.target.error);
-            console.error("Delete transaction error:", e.target.error);
-          };
           const deleteRequest = storeDel.delete(discount.name);
-          deleteRequest.onerror = e => {
-            updateDebugStatus("Error deleting discount request: " + e.target.error);
-            console.error("Delete request error:", e.target.error);
-          };
           deleteRequest.onsuccess = () => {
             updateDebugStatus(`Discount "${discount.name}" deleted.`);
             loadDiscounts();
+          };
+          deleteRequest.onerror = e => {
+            updateDebugStatus("Error deleting discount: " + e.target.error);
+            console.error("Delete discount error:", e.target.error);
           };
         }
       };
       discountTableBody.appendChild(row);
       cursor.continue();
     } else if (!hasDiscounts) {
-      // No discounts found: show message
       const tr = document.createElement("tr");
       tr.innerHTML = `<td colspan="4" style="text-align:center; font-style: italic;">No discounts found.</td>`;
       discountTableBody.appendChild(tr);
     }
   };
+  tx.onerror = event => {
+    updateDebugStatus("Transaction error loading discounts: " + event.target.error);
+    console.error("Transaction error loading discounts:", event.target.error);
+  };
 }
-// Discount form submit handler with debug and error handling
-document.getElementById("discountForm")?.addEventListener("submit", function (e) {
+// Discount Form submit handler
+document.getElementById("discountForm").addEventListener("submit", function(e) {
   e.preventDefault();
   if (!db) {
     alert("Database not initialized.");
@@ -433,69 +404,11 @@ document.getElementById("discountForm")?.addEventListener("submit", function (e)
     document.getElementById("discountForm").reset();
   };
 });
-document.getElementById("discountForm")?.addEventListener("submit", function (e) {
-  e.preventDefault();
-  if (!db) {
-    alert("Database not initialized.");
-    return;
-  }
-  const name = document.getElementById("discountName").value.trim();
-  const type = document.getElementById("discountType").value;
-  const valueRaw = document.getElementById("discountValue").value;
-  const value = parseFloat(valueRaw);
-  if (!name || isNaN(value)) {
-    alert("Please enter valid discount name and value.");
-    return;
-  }
-  const tx = db.transaction("discounts", "readwrite");
-  const store = tx.objectStore("discounts");
-  tx.onerror = e => {
-    updateDebugStatus("Transaction error saving discount: " + e.target.error);
-    console.error("Transaction error saving discount:", e.target.error);
-  };
-  const putRequest = store.put({ name, type, value });
-  putRequest.onerror = e => {
-    updateDebugStatus("Error saving discount request: " + e.target.error);
-    console.error("Request error saving discount:", e.target.error);
-  };
-  putRequest.onsuccess = () => {
-    updateDebugStatus(`Discount "${name}" saved successfully.`);
-    loadDiscounts();
-    document.getElementById("discountForm").reset();
-  };
-});
-// Discount form submit handler
-document.getElementById("discountForm")?.addEventListener("submit", function (e) {
-  e.preventDefault();
-  if (!db) {
-    alert("Database not initialized.");
-    return;
-  }
-  const name = document.getElementById("discountName").value.trim();
-  const type = document.getElementById("discountType").value;
-  const valueRaw = document.getElementById("discountValue").value;
-  const value = parseFloat(valueRaw);
-  if (!name || isNaN(value)) {
-    alert("Please enter valid discount name and value.");
-    return;
-  }
-  const tx = db.transaction("discounts", "readwrite");
-  const store = tx.objectStore("discounts");
-  store.put({ name, type, value });
-  tx.oncomplete = () => {
-    updateDebugStatus("Discount added/updated.");
-    loadDiscounts();
-    document.getElementById("discountForm").reset();
-  };
-  tx.onerror = event => {
-    updateDebugStatus("Error saving discount: " + event.target.error);
-    console.error("Discount save error:", event.target.error);
-  };
-});
-// Export/import helpers
+// Export/Import Helper: Convert JSON to worksheet
 function jsonToWorksheet(dataArray) {
   return XLSX.utils.json_to_sheet(dataArray);
 }
+// Export Inventory to Excel
 function exportInventory() {
   if (!db) {
     alert("Database not initialized.");
@@ -517,6 +430,7 @@ function exportInventory() {
     }
   };
 }
+// Export Discounts to Excel
 function exportDiscounts() {
   if (!db) {
     alert("Database not initialized.");
@@ -538,6 +452,7 @@ function exportDiscounts() {
     }
   };
 }
+// Handle Inventory XLSX Import
 function handleInventoryImport(event) {
   if (!db) {
     alert("Database not initialized.");
@@ -573,6 +488,7 @@ function handleInventoryImport(event) {
   reader.readAsArrayBuffer(file);
   event.target.value = "";
 }
+// Handle Discount XLSX Import
 function handleDiscountImport(event) {
   if (!db) {
     alert("Database not initialized.");
@@ -608,418 +524,9 @@ function handleDiscountImport(event) {
   reader.readAsArrayBuffer(file);
   event.target.value = "";
 }
-
-function displayProducts() {
-  const productTableBody = document.querySelector('#productTable tbody');
-  productTableBody.innerHTML = '';
-
-
-// Size labels
-const sizeLabels = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
-
-// Load from localStorage if available
-let products = JSON.parse(localStorage.getItem("products")) || [];
-let productList = products;
-
-
-// Initialize discounts array
-let discounts = [];
-
-// Save to localStorage whenever products change
-function saveToLocalStorage() {
-  localStorage.setItem("products", JSON.stringify(products));
-}
-
-// DOM elements
-const addForm = document.getElementById("addProductForm");
-const tableBody = document.querySelector("#inventoryTable tbody");
-
-// Form submit handler for adding a product
-addForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  // Build product object with values from form inputs
-  const product = {
-    category: addForm.category.value.trim(),
-    name: addForm.name.value.trim(),
-    gender: addForm.gender.value,
-    hasSizes: addForm.hasSizes.value,
-    sizes: null,
-  };
-
-  // Initialize sizes counts to zero if product has sizes
-  // Initialize sizes
-  if (product.hasSizes === "Yes") {
-    product.sizes = sizeLabels.reduce((acc, size) => {
-      acc[size] = 0;
-      return acc;
-    }, {});
-  } else {
-    // For products without sizes, default to M size with 0 qty
-    product.sizes = { M: 0 };
-  }
-
-  products.push(product);
-  saveToLocalStorage();
-  addForm.reset();
-  renderTable();
-});
-
-// Render the inventory table with categories and products
-function renderTable() {
-  tableBody.innerHTML = "";
-
-  // Group products by category
-  const grouped = {};
-  products.forEach(product => {
-    if (!grouped[product.category]) {
-      grouped[product.category] = [];
-    }
-    grouped[product.category].push(product);
-  });
-
-  const sortedCategories = Object.keys(grouped).sort();
-
-  sortedCategories.forEach(category => {
-    // Add a category header row
-    const headerRow = document.createElement("tr");
-    headerRow.classList.add("category-header");
-    headerRow.innerHTML = `
-      <td colspan="${2 + sizeLabels.length}">
-        <strong>${category}</strong>
-      </td>
-      <td class="actions">
-        <button class="edit-category" data-category="${category}">✏️</button>
-        <button class="delete-category" data-category="${category}">🗑️</button>
-      </td>
-    `;
-    tableBody.appendChild(headerRow);
-
-// EDIT CATEGORY button
-// EDIT CATEGORY button
-headerRow.querySelector(".edit-category").addEventListener("click", () => {
-  const newCategory = prompt("Enter new category name:", category);
-  if (!newCategory) return;
-
-  const trimmedCategory = newCategory.trim();
-
-  if (trimmedCategory === "" || trimmedCategory === category) return;
-
-  products.forEach(product => {
-    if (product.category === category) {
-      product.category = trimmedCategory;
-    }
-  });
-
-
-  saveToLocalStorage();
-  renderTable();
-});
-
- 
-
-// DELETE CATEGORY button
-headerRow.querySelector(".delete-category").addEventListener("click", () => {
-  // Confirm deletion
-  if (!confirm(`Delete all products in category "${category}"? This cannot be undone.`)) return;
-
-  // Remove all products in this category
-  products = products.filter(product => product.category !== category);
-
-  saveToLocalStorage();
-  renderTable();
-});
-
-    // Sort products alphabetically by name
-    const sortedProducts = grouped[category].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-
-    sortedProducts.forEach((product) => {
-      const row = document.createElement("tr");
-
-      if (product.hasSizes === "Yes") {
-        row.innerHTML = `
-          <td class="name"><span>${product.name}</span></td>
-          <td class="gender"><span>${product.gender}</span></td>
-          ${sizeLabels.map(size => `<td class="size-${size}"><span>${product.sizes[size] ?? ''}</span></td>`).join('')}
-          <td class="actions">
-            <button class="edit">✏️</button>
-            <button class="delete">🗑️</button>
-          </td>
-        `;
-      } else {
-  row.innerHTML = `
-    <td class="name"><span>${product.name}</span></td>
-    <td class="gender"><span>${product.gender}</span></td>
-    ${sizeLabels.map(size => 
-      size === "M" ? 
-        `<td class="size-M"><span>${product.sizes.M}</span></td>` : 
-        `<td>-</td>`).join('')}
-    <td class="actions">
-      <button class="edit">✏️</button>
-      <button class="delete">🗑️</button>
-    </td>
-  `;
-}
-
-      // Add event listener for delete button
-      row.querySelector(".delete").addEventListener("click", () => {
-        const index = products.indexOf(product);
-        if (index > -1) {
-          products.splice(index, 1);
-          saveToLocalStorage();
-          renderTable();
-        }
-      });
-
-      // Add event listener for edit/save toggle button
-      const editBtn = row.querySelector(".edit");
-      editBtn.addEventListener("click", () => {
-        if (row.classList.contains("editing")) {
-          saveRow(row, products.indexOf(product));
-        } else {
-          cancelAllEdits();
-          makeRowEditable(row, product);
-        }
-      });
-
-      tableBody.appendChild(row);
-    });
-  });
-}
-
-function renderDiscountTable() {
-  const discountTableBody = document.querySelector("#discountTable tbody");
-  discountTableBody.innerHTML = ""; // Clear existing rows
-
-  discounts.forEach((discount, index) => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${discount.name}</td>
-      <td>${discount.type}</td>
-      <td>${discount.value}</td>
-      <td>
-        <button class="delete-discount" data-index="${index}">🗑️</button>
-      </td>
-    `;
-    discountTableBody.appendChild(row);
-
-    row.querySelector(".delete-discount").addEventListener("click", () => {
-      discounts.splice(index, 1);
-      renderDiscountTable();
-    });
-  });
-}
-
-// Cancel editing on all rows
-function cancelAllEdits() {
-  document.querySelectorAll("tr.editing").forEach(row => {
-    row.classList.remove("editing");
-    renderTable();
-  });
-}
-
-// Make a row editable with inputs/selects
-function makeRowEditable(row, product) {
-  row.classList.add("editing");
-
-
-  const nameCell = row.querySelector(".name");
-  const nameText = nameCell.querySelector("span").textContent;
-  nameCell.innerHTML = `<input type="text" class="edit-name" value="${nameText}" />`;
-
-  const genderCell = row.querySelector(".gender");
-  const genderText = genderCell.querySelector("span").textContent;
-  genderCell.innerHTML = `
-    <select class="edit-gender">
-      <option value="M" ${genderText === "M" ? "selected" : ""}>M</option>
-      <option value="F" ${genderText === "F" ? "selected" : ""}>F</option>
-      <option value="U" ${genderText === "U" ? "selected" : ""}>Unisex</option>
-    </select>
-  `;
-
-  sizeLabels.forEach(size => {
-    const cell = row.querySelector(`.size-${size}`);
-    if (product.hasSizes === "Yes") {
-      const val = product.sizes[size];
-      cell.innerHTML = `<input type="number" min="0" class="edit-size" data-size="${size}" value="${val}" />`;
-    } else {
-    if (size === "M") {
-  const val = product.sizes["M"] ?? 0;
-  cell.innerHTML = `<input type="number" min="0" class="edit-size" data-size="M" value="${val}" />`;
-} else {
-  cell.textContent = "-";
-}
-}
-});
-
-
-  nameCell.querySelector("input").focus();
-
-  const editBtn = row.querySelector(".edit");
-  editBtn.textContent = "✅ Save";
-  editBtn.classList.add("save");
-  editBtn.classList.remove("edit");
-}
-
-// Save edited row back to products array
-function saveRow(row, index) {
-  const newName = row.querySelector(".edit-name").value.trim();
-  const newGender = row.querySelector(".edit-gender").value;
-  let newHasSizes = "No";
-  let newSizes = null;
-
-  const sizeInputs = row.querySelectorAll(".edit-size");
-  if (sizeInputs.length) {
-    newHasSizes = "Yes";
-    newSizes = {};
-    sizeInputs.forEach(input => {
-      const sizeKey = input.dataset.size;
-      const val = parseInt(input.value);
-      newSizes[sizeKey] = isNaN(val) || val < 0 ? 0 : val;
-    });
-  }
-
-  // ✅ Preserve the original category
-  const oldProduct = products[index];
-  products[index] = {
-    category: oldProduct.category,
-    name: newName,
-    gender: newGender,
-    hasSizes: newHasSizes,
-    sizes: newSizes,
-  };
-
-  saveToLocalStorage();
-  renderTable();
-}
-
-
- const showProductsBtn = document.getElementById("showProducts");
-const showDiscountsBtn = document.getElementById("showDiscounts");
-
-const productSection = document.getElementById("productSection");
-const discountForm = document.getElementById("addDiscountForm");
-
-// Function to switch sections
-function showSection(section) {
-  if (section === "products") {
-    productSection.style.display = "block";
-    discountForm.style.display = "none";
-
-    showProductsBtn.classList.add("active");
-    showDiscountsBtn.classList.remove("active");
-  } else if (section === "discounts") {
-    productSection.style.display = "none";
-    discountForm.style.display = "block";
-
-    showProductsBtn.classList.remove("active");
-    showDiscountsBtn.classList.add("active");
-  }
-}
-
-// Event listeners
-showProductsBtn.addEventListener("click", () => showSection("products"));
-showDiscountsBtn.addEventListener("click", () => showSection("discounts"));
-
-// Optional: show only product section on load
-showSection("products");
-  
-
-
-
-
-
-discountForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  // Get form values
-  const name = discountForm.discountName.value.trim();
-  const type = discountForm.discountType.value;
-  const value = parseFloat(discountForm.discountValue.value);
-
-  // Check unique name
-  if (discounts.some(d => d.name.toLowerCase() === name.toLowerCase())) {
-    alert("Discount name must be unique.");
-    return;
-  }
-
-  // Add discount to array
-  discounts.push({ name, type, value });
-renderDiscountTable();
-
-  // Clear form
-  discountForm.reset();
-
-  // Log discounts so far
-  console.log("Discounts:", discounts);
-});
-
-const discountSection = document.getElementById("discountSection");
-// bottom Section
-discountSection.style.display = "none";
-productSection.style.display = "block";
-
-
-window.addEventListener("DOMContentLoaded", function () {
-  alert("DOM fully loaded!");
-  renderTable();
-  alert("Rendered main table");
-  renderDiscountTable();
-  alert("Rendered discount table");
-});
-  alert("Starting displayProducts");
-  console.log("Starting displayProducts");
-
-  let tableBody = document.getElementById("inventory-table-body");
-  if (!tableBody) {
-    alert("No table body found!");
-    console.log("No table body found!");
-    return;
-  }
-
-  let storedProducts = localStorage.getItem("products");
-  if (!storedProducts) {
-    alert("No products in localStorage");
-    console.log("No products in localStorage");
-    return;
-  }
-
-  console.log("Found products in localStorage:", storedProducts);
-}
-
-
-
-
-
-  const products = JSON.parse(localStorage.getItem('products')) || [];
-  products.forEach(product => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${product.name}</td>
-      <td>${product.category}</td>
-      <td>${product.price}</td>
-      <td>${product.quantity}</td>
-      <td>${product.description}</td>
-    `;
-    productTableBody.appendChild(row);
-  });
-}
-// Expose functions globally for buttons that call them inline
+// Expose functions globally for buttons & inputs with inline handlers
 window.exportInventory = exportInventory;
 window.handleInventoryImport = handleInventoryImport;
 window.exportDiscounts = exportDiscounts;
 window.handleDiscountImport = handleDiscountImport;
 window.loadDiscounts = loadDiscounts;
-
-
-document.getElementById("product-form").addEventListener("submit", function(e) {
-  e.preventDefault(); // Prevent page refresh
-  addProduct();
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  displayProducts();     // already added before
-  displayDiscounts();    // now added
-});
