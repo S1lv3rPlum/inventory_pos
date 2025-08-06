@@ -48,7 +48,19 @@ document.getElementById("addProductForm").addEventListener("submit", function (e
   else reader.onload(); // trigger with no image
 });
 
+
+function updateDebugStatus(message) {
+  const debugElem = document.getElementById("debugStatus");
+  if (debugElem) {
+    debugElem.textContent = message;
+  } else {
+    console.log("DebugStatus element not found.");
+    console.log(message);
+  }
+}
+
 function displayInventory() {
+     updateDebugStatus("Starting to load inventory...");
   const container = document.getElementById("inventoryList");
   container.innerHTML = "";
 
@@ -62,6 +74,7 @@ function displayInventory() {
       products.push(cursor.value);
       cursor.continue();
     } else {
+        updateDebugStatus(`Loaded ${products.length} products`);
       products.sort((a, b) => (a.category || "").localeCompare(b.category || "") || a.name.localeCompare(b.name));
 
       const table = document.createElement("table");
@@ -257,6 +270,9 @@ function displayInventory() {
       table.appendChild(tbody);
       container.appendChild(table);
     }
+  };
+  tx.onerror = () => {
+    updateDebugStatus("Error loading products from DB");
   };
 }
 
