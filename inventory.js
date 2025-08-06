@@ -591,3 +591,5 @@ document.getElementById("product-form").addEventListener("submit", function(e) {
   e.preventDefault(); // Prevent page refresh
   addProduct();
 });
+
+document.addEventListener('DOMContentLoaded', displayProducts);
