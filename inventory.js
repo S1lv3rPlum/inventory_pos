@@ -608,6 +608,24 @@ function handleDiscountImport(event) {
   reader.readAsArrayBuffer(file);
   event.target.value = "";
 }
+
+function displayProducts() {
+  const productTableBody = document.querySelector('#productTable tbody');
+  productTableBody.innerHTML = '';
+
+  const products = JSON.parse(localStorage.getItem('products')) || [];
+  products.forEach(product => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${product.name}</td>
+      <td>${product.category}</td>
+      <td>${product.price}</td>
+      <td>${product.quantity}</td>
+      <td>${product.description}</td>
+    `;
+    productTableBody.appendChild(row);
+  });
+}
 // Expose functions globally for buttons that call them inline
 window.exportInventory = exportInventory;
 window.handleInventoryImport = handleInventoryImport;
