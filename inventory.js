@@ -99,12 +99,18 @@ function displayInventory() {
     container.textContent = "No products found.";
     return;
   }
-  // Sort products by category and then name (same as before)
+  // Sort by category then product name
   products.sort((a, b) => {
     const catComp = (a.category || "").localeCompare(b.category || "");
-    if (catComp !== 0) return catComp;
-    return (a.name || "").localeCompare(b.name || "");
+    return catComp !== 0 ? catComp : (a.name || "").localeCompare(b.name || "");
   });
+  // Group products by category
+  const groupedProducts = products.reduce((groups, product) => {
+    const category = product.category || "(No Category)";
+    if (!groups[category]) groups[category] = [];
+    groups[category].push(product);
+    return groups;
+  }, {});
   const table = document.createElement("table");
   const thead = document.createElement("thead");
   thead.innerHTML = `
@@ -120,178 +126,152 @@ function displayInventory() {
   `;
   table.appendChild(thead);
   const tbody = document.createElement("tbody");
-  let lastCategory = null;
-  let categoryStartRowIndex = null;
-  let categoryRowCount = 0;
-  products.forEach(product => {
-    const row = document.createElement("tr");
-    // Category row span logic
-    if (product.category !== lastCategory) {
-      if (categoryStartRowIndex !== null && tbody.rows[categoryStartRowIndex]) {
-        tbody.rows[categoryStartRowIndex].cells[0].rowSpan = categoryRowCount;
+  for (const [category, categoryProducts] of Object.entries(groupedProducts)) {
+    categoryProducts.forEach((product, index) => {
+      const row = document.createElement("tr");
+      if (index === 0) {
+        const catCell = document.createElement("td");
+        catCell.textContent = category;
+        catCell.style.fontWeight = "bold";
+        catCell.rowSpan = categoryProducts.length;
+        row.appendChild(catCell);
       }
-      lastCategory = product.category;
-      categoryStartRowIndex = tbody.rows.length;
-      categoryRowCount = 1;
-      const catCell = document.createElement("td");
-      catCell.textContent = product.category || "(No Category)";
-      catCell.style.fontWeight = "bold";
-      row.appendChild(catCell);
-    } else {
-      categoryRowCount++;
-    }
-    if (!row.cells.length) {
-      // If category cell was added, already appended one td
-    } else {
-      // If no category cell, insert an empty td to keep table aligned
-      row.appendChild(document.createElement("td"));
-    }
-    // Product name
-    const nameCell = document.createElement("td");
-    const nameInput = document.createElement("input");
-    nameInput.type = "text";
-    nameInput.value = product.name;
-    nameInput.disabled = true;
-    nameCell.appendChild(nameInput);
-    row.appendChild(nameCell);
-    // Price
-    const priceCell = document.createElement("td");
-    const priceInput = document.createElement("input");
-    priceInput.type = "number";
-    priceInput.value = product.price.toFixed(2);
-    priceInput.step = "0.01";
-    priceInput.disabled = true;
-    priceCell.appendChild(priceInput);
-    row.appendChild(priceCell);
-    // Gender
-    const genderCell = document.createElement("td");
-    const genderInput = document.createElement("input");
-    genderInput.type = "text";
-    genderInput.value = product.gender || "";
-    genderInput.disabled = true;
-    genderInput.style.width = "40px";
-    genderCell.appendChild(genderInput);
-    row.appendChild(genderCell);
-    // Image
-    const imgCell = document.createElement("td");
-    const imgPreview = document.createElement("img");
-    imgPreview.style.maxWidth = "60px";
-    imgPreview.style.maxHeight = "60px";
-    imgPreview.style.borderRadius = "6px";
-    imgPreview.style.display = product.image ? "inline-block" : "none";
-    if (product.image) imgPreview.src = product.image;
-    imgCell.appendChild(imgPreview);
-    // File input hidden until edit
-    const imgInput = document.createElement("input");
-    imgInput.type = "file";
-    imgInput.accept = "image/*";
-    imgInput.style.display = "none"; 
-    imgCell.appendChild(imgInput);
-    row.appendChild(imgCell);
-    // Sizes & quantity
-    const sizeCell = document.createElement("td");
-    if (Array.isArray(product.variants)) {
-      product.variants.forEach(variant => {
-        const label = document.createElement("label");
-        label.style.marginRight = "10px";
-        const span = document.createElement("span");
-        span.textContent = variant.size + ": ";
-        const qtyInput = document.createElement("input");
-        qtyInput.type = "number";
-        qtyInput.value = variant.stock || 0;
-        qtyInput.disabled = true;
-        qtyInput.style.width = "50px";
-        label.appendChild(span);
-        label.appendChild(qtyInput);
-        sizeCell.appendChild(label);
-      });
-    }
-    row.appendChild(sizeCell);
-    // Actions cell
-    const actionCell = document.createElement("td");
-    // Edit button
-    const editBtn = document.createElement("button");
-    editBtn.textContent = "Edit";
-    // Save button (hidden initially)
-    const saveBtn = document.createElement("button");
-    saveBtn.textContent = "Save";
-    saveBtn.style.display = "none";
-    // Delete button
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "Delete";
-    // Edit click handler
-    editBtn.onclick = () => {
-      nameInput.disabled = false;
-      priceInput.disabled = false;
-      genderInput.disabled = false;
-      imgInput.style.display = "inline-block";
-      sizeCell.querySelectorAll("input").forEach(i => i.disabled = false);
-      editBtn.style.display = "none";
-      saveBtn.style.display = "inline";
-    };
-    // Image change handler
-    imgInput.onchange = () => {
-      const file = imgInput.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = e => {
-          imgPreview.src = e.target.result;
-          imgPreview.style.display = "inline-block";
-        };
-        reader.readAsDataURL(file);
+      // Product Name
+      const nameCell = document.createElement("td");
+      const nameInput = document.createElement("input");
+      nameInput.type = "text";
+      nameInput.value = product.name;
+      nameInput.disabled = true;
+      nameCell.appendChild(nameInput);
+      row.appendChild(nameCell);
+      // Price
+      const priceCell = document.createElement("td");
+      const priceInput = document.createElement("input");
+      priceInput.type = "number";
+      priceInput.value = product.price.toFixed(2);
+      priceInput.step = "0.01";
+      priceInput.disabled = true;
+      priceCell.appendChild(priceInput);
+      row.appendChild(priceCell);
+      // Gender
+      const genderCell = document.createElement("td");
+      const genderInput = document.createElement("input");
+      genderInput.type = "text";
+      genderInput.value = product.gender || "";
+      genderInput.disabled = true;
+      genderInput.style.width = "40px";
+      genderCell.appendChild(genderInput);
+      row.appendChild(genderCell);
+      // Image
+      const imgCell = document.createElement("td");
+      const imgPreview = document.createElement("img");
+      imgPreview.style.maxWidth = "60px";
+      imgPreview.style.maxHeight = "60px";
+      imgPreview.style.borderRadius = "6px";
+      imgPreview.style.display = product.image ? "inline-block" : "none";
+      if (product.image) imgPreview.src = product.image;
+      imgCell.appendChild(imgPreview);
+      const imgInput = document.createElement("input");
+      imgInput.type = "file";
+      imgInput.accept = "image/*";
+      imgInput.style.display = "none";
+      imgCell.appendChild(imgInput);
+      row.appendChild(imgCell);
+      // Sizes & Qty
+      const sizeCell = document.createElement("td");
+      if (Array.isArray(product.variants)) {
+        product.variants.forEach(variant => {
+          const label = document.createElement("label");
+          label.style.marginRight = "10px";
+          const span = document.createElement("span");
+          span.textContent = variant.size + ": ";
+          const qtyInput = document.createElement("input");
+          qtyInput.type = "number";
+          qtyInput.value = variant.stock || 0;
+          qtyInput.disabled = true;
+          qtyInput.style.width = "50px";
+          label.appendChild(span);
+          label.appendChild(qtyInput);
+          sizeCell.appendChild(label);
+        });
       }
-    };
-    // Save click handler
-    saveBtn.onclick = () => {
-      const updatedName = nameInput.value.trim();
-      const updatedPrice = parseFloat(priceInput.value);
-      const updatedGender = genderInput.value.trim();
-      const updatedImage = imgPreview.src;
-      const updatedVariants = [];
-      sizeCell.querySelectorAll("label").forEach(label => {
-        const sizeText = label.querySelector("span").textContent || "";
-        const size = sizeText.replace(":", "").trim();
-        const qty = parseInt(label.querySelector("input").value);
-        updatedVariants.push({ size, stock: isNaN(qty) ? 0 : qty });
-      });
-      // Load current products array
-      const products = loadArrayFromStorage(STORAGE_PRODUCTS_KEY);
-      // Find product index by id and update
-      const productIndex = products.findIndex(p => p.id === product.id);
-      if (productIndex === -1) {
-        alert("Error: Product not found.");
-        return;
-      }
-      products[productIndex] = {
-        ...products[productIndex],
-        name: updatedName,
-        price: updatedPrice,
-        gender: updatedGender,
-        image: updatedImage,
-        variants: updatedVariants,
+      row.appendChild(sizeCell);
+      // Actions
+      const actionCell = document.createElement("td");
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Edit";
+      const saveBtn = document.createElement("button");
+      saveBtn.textContent = "Save";
+      saveBtn.style.display = "none";
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Delete";
+      // Event handlers below:
+      editBtn.onclick = () => {
+        nameInput.disabled = false;
+        priceInput.disabled = false;
+        genderInput.disabled = false;
+        imgInput.style.display = "inline-block";
+        sizeCell.querySelectorAll("input").forEach(i => i.disabled = false);
+        editBtn.style.display = "none";
+        saveBtn.style.display = "inline";
       };
-      saveArrayToStorage(STORAGE_PRODUCTS_KEY, products);
-      updateDebugStatus("Product saved.");
-      displayInventory();
-    };
-    // Delete click handler
-    deleteBtn.onclick = () => {
-      if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
-      let products = loadArrayFromStorage(STORAGE_PRODUCTS_KEY);
-      products = products.filter(p => p.id !== product.id);
-      saveArrayToStorage(STORAGE_PRODUCTS_KEY, products);
-      updateDebugStatus("Product deleted.");
-      displayInventory();
-    };
-    actionCell.appendChild(editBtn);
-    actionCell.appendChild(saveBtn);
-    actionCell.appendChild(deleteBtn);
-    row.appendChild(actionCell);
-    tbody.appendChild(row);
-  });
-  // Final rowSpan adjustment for categories
-  if (categoryStartRowIndex !== null && tbody.rows[categoryStartRowIndex]) {
-    tbody.rows[categoryStartRowIndex].cells[0].rowSpan = categoryRowCount;
+      imgInput.onchange = () => {
+        const file = imgInput.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = e => {
+            imgPreview.src = e.target.result;
+            imgPreview.style.display = "inline-block";
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      saveBtn.onclick = () => {
+        const updatedName = nameInput.value.trim();
+        const updatedPrice = parseFloat(priceInput.value);
+        const updatedGender = genderInput.value.trim();
+        const updatedImage = imgPreview.src;
+        const updatedVariants = [];
+        sizeCell.querySelectorAll("label").forEach(label => {
+          const sizeText = label.querySelector("span").textContent || "";
+          const size = sizeText.replace(":", "").trim();
+          const qty = parseInt(label.querySelector("input").value);
+          updatedVariants.push({ size, stock: isNaN(qty) ? 0 : qty });
+        });
+        const products = loadArrayFromStorage(STORAGE_PRODUCTS_KEY);
+        const productIndex = products.findIndex(p => p.id === product.id);
+        if (productIndex === -1) {
+          alert("Error: Product not found.");
+          return;
+        }
+        products[productIndex] = {
+          ...products[productIndex],
+          name: updatedName,
+          price: updatedPrice,
+          gender: updatedGender,
+          image: updatedImage,
+          variants: updatedVariants
+        };
+        saveArrayToStorage(STORAGE_PRODUCTS_KEY, products);
+        updateDebugStatus("Product saved.");
+        displayInventory();
+      };
+      deleteBtn.onclick = () => {
+        if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) {
+          return;
+        }
+        let products = loadArrayFromStorage(STORAGE_PRODUCTS_KEY);
+        products = products.filter(p => p.id !== product.id);
+        saveArrayToStorage(STORAGE_PRODUCTS_KEY, products);
+        updateDebugStatus("Product deleted.");
+        displayInventory();
+      };
+      actionCell.appendChild(editBtn);
+      actionCell.appendChild(saveBtn);
+      actionCell.appendChild(deleteBtn);
+      row.appendChild(actionCell);
+      tbody.appendChild(row);
+    });
   }
   table.appendChild(tbody);
   container.appendChild(table);
