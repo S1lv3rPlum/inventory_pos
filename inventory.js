@@ -530,3 +530,55 @@ window.handleInventoryImport = handleInventoryImport;
 window.exportDiscounts = exportDiscounts;
 window.handleDiscountImport = handleDiscountImport;
 window.loadDiscounts = loadDiscounts;
+
+(function() {
+  const logDiv = document.createElement('div');
+  logDiv.style.position = 'fixed';
+  logDiv.style.bottom = '0';
+  logDiv.style.left = '0';
+  logDiv.style.width = '100%';
+  logDiv.style.maxHeight = '200px';
+  logDiv.style.overflowY = 'auto';
+  logDiv.style.backgroundColor = 'rgba(0,0,0,0.9)';
+  logDiv.style.color = 'white';
+  logDiv.style.fontSize = '12px';
+  logDiv.style.zIndex = '9999';
+  document.body.appendChild(logDiv);
+  const log = console.log;
+  console.log = function(...args){
+    log.apply(console, args);
+    const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
+    const p = document.createElement('div');
+    p.textContent = msg;
+    logDiv.appendChild(p);
+    logDiv.scrollTop = logDiv.scrollHeight;
+  };
+})();
+
+(function() {
+  const logDiv = document.createElement('div');
+  logDiv.style.position = 'fixed';
+  logDiv.style.bottom = '0';
+  logDiv.style.left = '0';
+  logDiv.style.width = '100%';
+  logDiv.style.maxHeight = '200px';
+  logDiv.style.overflowY = 'auto';
+  logDiv.style.backgroundColor = 'rgba(0,0,0,0.9)';
+  logDiv.style.color = 'white';
+  logDiv.style.fontSize = '12px';
+  logDiv.style.zIndex = '9999';
+  document.body.appendChild(logDiv);
+  const log = console.log;
+  console.log = function(...args) {
+    log.apply(console, args);
+    const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : a)).join(' ');
+    const p = document.createElement('div');
+    p.textContent = msg;
+    logDiv.appendChild(p);
+    logDiv.scrollTop = logDiv.scrollHeight;
+  };
+  window.onerror = function(message, source, lineno, colno, error) {
+    const errorMsg = `[Error] ${message} at ${source}:${lineno}:${colno}`;
+    console.log(errorMsg);
+  };
+})();
