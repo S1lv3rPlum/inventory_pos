@@ -585,3 +585,9 @@ window.handleInventoryImport = handleInventoryImport;
 window.exportDiscounts = exportDiscounts;
 window.handleDiscountImport = handleDiscountImport;
 window.loadDiscounts = loadDiscounts;
+
+
+document.getElementById("product-form").addEventListener("submit", function(e) {
+  e.preventDefault(); // Prevent page refresh
+  addProduct();
+});
