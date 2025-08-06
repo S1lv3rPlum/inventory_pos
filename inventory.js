@@ -582,3 +582,13 @@ window.loadDiscounts = loadDiscounts;
     console.log(errorMsg);
   };
 })();
+
+function deleteDatabase() {
+  const deleteRequest = indexedDB.deleteDatabase("BandPOSDB");
+  deleteRequest.onsuccess = () => {
+    alert("Database deleted! Please reload page.");
+  };
+  deleteRequest.onerror = (e) => {
+    alert("Error deleting database: " + e.target.error);
+  };
+}
