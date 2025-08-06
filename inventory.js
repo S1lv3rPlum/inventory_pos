@@ -17,6 +17,35 @@ request.onerror = function(event) {
   updateDebugStatus("Database error: " + event.target.error);
   console.error("IndexedDB open error:", event.target.error);
 };
+
+function displayDiscounts() {
+  const discountTable = document.getElementById("discountTable");
+  const discountList = JSON.parse(localStorage.getItem("discountList")) || [];
+
+  // Clear existing rows except the header
+  while (discountTable.rows.length > 1) {
+    discountTable.deleteRow(1);
+  }
+
+  discountList.forEach((discount, index) => {
+    const row = discountTable.insertRow();
+
+    const productCell = row.insertCell(0);
+    const amountCell = row.insertCell(1);
+    const startDateCell = row.insertCell(2);
+    const endDateCell = row.insertCell(3);
+
+    productCell.textContent = discount.product;
+    amountCell.textContent = discount.discountAmount;
+    startDateCell.textContent = discount.startDate;
+    endDateCell.textContent = discount.endDate;
+
+    // (Optional: Add Edit/Delete buttons here like in productTable)
+  });
+}
+
+
+
 // Debug status display helper
 function updateDebugStatus(message) {
   const debugElem = document.getElementById("debugStatus");
@@ -592,4 +621,7 @@ document.getElementById("product-form").addEventListener("submit", function(e) {
   addProduct();
 });
 
-document.addEventListener('DOMContentLoaded', displayProducts);
+document.addEventListener('DOMContentLoaded', () => {
+  displayProducts();     // already added before
+  displayDiscounts();    // now added
+});
