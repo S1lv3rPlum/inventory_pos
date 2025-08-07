@@ -2,14 +2,14 @@ function loadProducts() {
   const gallery = document.getElementById("productGallery");
   gallery.innerHTML = "";
 
-  const products = JSON.parse(localStorage.getItem("table") || "[]");
+  const products = JSON.parse(localStorage.getItem("BandPOSDB_products") || "[]");
 
   products.forEach(product => {
     const card = document.createElement("div");
     card.className = "product-card";
 
     const img = document.createElement("img");
-    img.src = product.image ? `product-images/${product.image}` : "product-images/default.jpg";
+    img.src = product.image || "product-images/default.jpg"; // use base64 or default
     img.alt = product.name;
     img.className = "product-image";
 
