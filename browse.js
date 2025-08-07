@@ -36,14 +36,13 @@ function clearLongPress() {
 
 
 let longPressTimer = null;
+
+
 function startLongPress(event, product) {
   event.preventDefault(); // <- this blocks the image popup menu
 
   longPressTimer = setTimeout(() => {
-    const qty = prompt(`Enter quantity to add for ${product.name}:`);
-    if (qty !== null && !isNaN(qty) && Number(qty) > 0) {
-      addToCart(product, Number(qty));
-    }
+    openAddToCartModal(product); // use your existing modal logic
   }, 500);
 }
 
