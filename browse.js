@@ -9,7 +9,7 @@ function loadProducts() {
     card.className = "product-card";
 
     const img = document.createElement("img");
-    img.src = product.image || "product-images/default.jpg"; // use base64 or default
+    img.src = product.image || "product-images/default.jpg";
     img.alt = product.name;
     img.className = "product-image";
 
@@ -20,12 +20,8 @@ function loadProducts() {
     card.appendChild(img);
     card.appendChild(label);
 
-  card.addEventListener("mousedown", e => startLongPress(e, product));
-
-  longPressTimer = setTimeout(() => {
-    openAddToCartModal(product); // use your existing modal logic
-  }, 500);
-}ngPress(e, product));
+    // 👇 These were broken in your version:
+    card.addEventListener("mousedown", e => startLongPress(e, product));
     card.addEventListener("touchstart", e => startLongPress(e, product));
     card.addEventListener("mouseup", clearLongPress);
     card.addEventListener("mouseleave", clearLongPress);
