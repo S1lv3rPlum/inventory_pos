@@ -1,4 +1,3 @@
-let db;
 let products = [];
 let discounts = [];
 let cart = [];
@@ -9,7 +8,7 @@ const discountSelect = document.getElementById("discountSelect");
 const cartContents = document.getElementById("cartContents");
 const cartTotal = document.getElementById("cartTotal");
 const completeSaleBtn = document.getElementById("completeSaleBtn");
-const eventNameDiv = document.getElementById("eventName"); // now a div, not input
+const eventNameDiv = document.getElementById("eventName");
 const contactForm = document.getElementById("customerContactForm");
 const contactMethodSelect = document.getElementById("contactMethod");
 const contactDetailsField = document.getElementById("contactDetailsField");
@@ -17,82 +16,61 @@ const contactDetailLabel = document.getElementById("contactDetailLabel");
 const contactDetailsInput = document.getElementById("contactDetails");
 const saveContactBtn = document.getElementById("saveContactBtn");
 
-// Get today's date in YYYY-MM-DD format for event
+const STORAGE_PRODUCTS_KEY = "BandPOSDB_products";
+const STORAGE_DISCOUNTS_KEY = "BandPOSDB_discounts";
+const STORAGE_SALES_KEY = "BandPOSDB_sales";
+
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// Display the event date (readonly)
 function displayEventDate() {
   const todayStr = getTodayDate();
   eventNameDiv.textContent = todayStr;
 }
 
-// Setup IndexedDB
-const request = indexedDB.open("BandPOSDB", 2);
-request.onupgradeneeded = event => {
-  db = event.target.result;
-  if (!db.objectStoreNames.contains("products"))
-    db.createObjectStore("products", { keyPath: "id", autoIncrement: true });
-  if (!db.objectStoreNames.contains("discounts"))
-    db.createObjectStore("discounts", { keyPath: "name" });
-  if (!db.objectStoreNames.contains("sales"))
-    db.createObjectStore("sales", { keyPath: "saleId", autoIncrement: true });
-};
-
-request.onsuccess = event => {
-  db = event.target.result;
-  loadProducts();
-  loadDiscounts();
-
-  // Load cart from shared "shoppingCart" localStorage (unified with Browse)
-  try {
-    cart = JSON.parse(localStorage.getItem("shoppingCart") || "[]");
-  } catch {
-    cart = [];
-  }
-  updateCartDisplay();
-};
-
-request.onerror = () => alert("Database error");
-
 function loadProducts() {
-  const tx = db.transaction("products", "readonly");
-  const store = tx.objectStore("products");
-  const temp = [];
+  const data = localStorage.getItem(STORAGE_PRODUCTS_KEY);
+  if (!data) {
+    products = [];
+    return;
+  }
+  try {
+    products = JSON.parse(data);
+  } catch {
+    products = [];
+  }
+}
 
-  store.openCursor().onsuccess = event => {
-    const cursor = event.target.result;
-    if (cursor) {
-      temp.push(cursor.value);
-      cursor.continue();
-    } else {
-      const grouped = {};
-      temp.forEach(p => {
-        const key = `${p.name}||${p.category || ""}`;
-        if (!grouped[key]) grouped[key] = { ...p };
-        else {
-          p.variants.forEach(v => {
-            const e = grouped[key].variants.find(x => x.size === v.size);
-            if (e) e.stock += v.stock;
-            else grouped[key].variants.push({ ...v });
-          });
-        }
-      });
-      products = Object.values(grouped);
+function loadDiscounts() {
+  const data = localStorage.getItem(STORAGE_DISCOUNTS_KEY);
+  if (!data) {
+    discounts = [];
+    return;
+  }
+  try {
+    discounts = JSON.parse(data);
+  } catch {
+    discounts = [];
+  }
+}
 
-      // Link prices to cart items missing price
-      cart.forEach(item => {
-        if (!item.price) {
-          const prod = products.find(p => p.name === item.name);
-          if (prod) item.price = prod.price;
-        }
-      });
+function saveProducts() {
+  localStorage.setItem(STORAGE_PRODUCTS_KEY, JSON.stringify(products));
+}
 
-      populateProductSelect();
-      updateCartDisplay();
+function saveSales(sale) {
+  let sales = [];
+  const data = localStorage.getItem(STORAGE_SALES_KEY);
+  if (data) {
+    try {
+      sales = JSON.parse(data);
+    } catch {
+      sales = [];
     }
-  };
+  }
+  sales.push(sale);
+  localStorage.setItem(STORAGE_SALES_KEY, JSON.stringify(sales));
 }
 
 function populateProductSelect() {
@@ -119,19 +97,6 @@ productSelect.addEventListener("change", () => {
     sizeSelect.innerHTML = `<option value="">-- Choose size --</option>`;
   }
 });
-
-function loadDiscounts() {
-  const tx = db.transaction("discounts", "readonly");
-  const store = tx.objectStore("discounts");
-  discounts = [];
-  store.openCursor().onsuccess = event => {
-    const cursor = event.target.result;
-    if (cursor) {
-      discounts.push(cursor.value);
-      cursor.continue();
-    } else populateDiscountSelect();
-  };
-}
 
 function populateDiscountSelect() {
   discountSelect.innerHTML = `<option value="none">None</option>`;
@@ -185,7 +150,6 @@ function updateCartDisplay() {
 
   cart.forEach((it, i) => {
     let dp = it.price;
-    // Calculate discounted price for display, but discount selection editable below
     if (it.discountName) {
       const d = discounts.find(x => x.name === it.discountName);
       if (d) {
@@ -200,7 +164,6 @@ function updateCartDisplay() {
     const line = dp * it.qty;
     total += line;
 
-    // Create discount options HTML for dropdown
     let discountOptions = `<option value="none"${!it.discountName ? " selected" : ""}>None</option>`;
     discounts.forEach(d => {
       const selected = it.discountName === d.name ? " selected" : "";
@@ -228,10 +191,9 @@ function updateCartDisplay() {
   cartTotal.textContent = total.toFixed(2);
   completeSaleBtn.disabled = false;
 
-  localStorage.setItem("posCart", JSON.stringify(cart));
+  localStorage.setItem("shoppingCart", JSON.stringify(cart));
 }
 
-// Add this function to update discount for a cart line and refresh display
 function changeLineDiscount(index, discountName) {
   if (!cart[index]) return;
   if (discountName === "none") {
@@ -242,68 +204,60 @@ function changeLineDiscount(index, discountName) {
   updateCartDisplay();
 }
 
-
 function removeFromCart(i) {
   cart.splice(i, 1);
   updateCartDisplay();
 }
 
 completeSaleBtn.addEventListener("click", () => {
-  if (!db || !cart.length) return alert("Nothing to sell.");
+  if (!cart.length) return alert("Nothing to sell.");
 
   const contactInfo = JSON.parse(localStorage.getItem("customerCheckoutInfo") || "null");
 
   const sale = {
-    date: new Date(),
-    event: getTodayDate(), // event is always today’s date
+    date: new Date().toISOString(),
+    event: getTodayDate(),
     items: JSON.parse(JSON.stringify(cart)),
     contact: contactInfo || null
   };
 
-  const tx = db.transaction(["sales", "products"], "readwrite");
-  const sStore = tx.objectStore("sales");
-  const pStore = tx.objectStore("products");
-
-  sStore.add(sale);
-
+  // Update stock for products
   cart.forEach(it => {
-    const prod = products.find(p => p.name === it.name);
-    if (!prod) return;
-    const variant = prod.variants.find(v => v.size === it.size);
-    if (!variant) return;
-    variant.stock -= it.qty;
+    const prodIndex = products.findIndex(p => p.name === it.name);
+    if (prodIndex === -1) return;
 
-    const tx2 = db.transaction("products", "readwrite");
-    const store2 = tx2.objectStore("products");
-    store2.openCursor().onsuccess = function (event) {
-      const cursor = event.target.result;
-      if (cursor) {
-        const item = cursor.value;
-        if (item.name === prod.name && (item.category || "") === (prod.category || "")) {
-          cursor.delete();
-        }
-        cursor.continue();
-      } else {
-        store2.add(prod);
-      }
-    };
+    const variantIndex = products[prodIndex].variants.findIndex(v => v.size === it.size);
+    if (variantIndex === -1) return;
+
+    products[prodIndex].variants[variantIndex].stock -= it.qty;
+    if (products[prodIndex].variants[variantIndex].stock < 0) {
+      products[prodIndex].variants[variantIndex].stock = 0; // safeguard
+    }
   });
 
-  tx.oncomplete = () => {
-    alert("Sale completed!");
-    cart = [];
-    updateCartDisplay();
-    loadProducts();
-    localStorage.removeItem("shoppingCart");
-    localStorage.removeItem("customerCheckoutInfo");
-  };
+  // Save updated products back to localStorage
+  saveProducts();
+
+  // Save sale record
+  saveSales(sale);
+
+  alert("Sale completed!");
+
+  // Clear cart and update display
+  cart = [];
+  updateCartDisplay();
+  populateProductSelect();
+
+  localStorage.removeItem("shoppingCart");
+  localStorage.removeItem("customerCheckoutInfo");
 });
 
+// Escape HTML helper
 function escapeHtml(t) {
   return (!t) ? "" : t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Contact Info handling
+// Contact info handling
 contactMethodSelect.addEventListener("change", () => {
   const method = contactMethodSelect.value;
   if (method === "email") {
@@ -339,9 +293,19 @@ saveContactBtn.addEventListener("click", () => {
   contactForm.style.display = "block";
 });
 
-// Show saved contact info if any on load
+// On DOM ready
 document.addEventListener("DOMContentLoaded", () => {
   displayEventDate();
+  loadProducts();
+  loadDiscounts();
+  populateProductSelect();
+
+  try {
+    cart = JSON.parse(localStorage.getItem("shoppingCart") || "[]");
+  } catch {
+    cart = [];
+  }
+  updateCartDisplay();
 
   const savedContact = JSON.parse(localStorage.getItem("customerCheckoutInfo") || "null");
   if (savedContact) {
