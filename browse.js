@@ -1,48 +1,33 @@
-let db;
-const request = indexedDB.open("BandPOSDB", 2);
-
-request.onsuccess = function (event) {
-  db = event.target.result;
-  loadProducts();
-  updateCartIcon();
-};
-
 function loadProducts() {
   const gallery = document.getElementById("productGallery");
   gallery.innerHTML = "";
 
-  const tx = db.transaction("products", "readonly");
-  const store = tx.objectStore("products");
+  const products = JSON.parse(localStorage.getItem("table") || "[]");
 
-  store.openCursor().onsuccess = function (event) {
-    const cursor = event.target.result;
-    if (cursor) {
-      const product = cursor.value;
-      const card = document.createElement("div");
-      card.className = "product-card";
+  products.forEach(product => {
+    const card = document.createElement("div");
+    card.className = "product-card";
 
-      const img = document.createElement("img");
-      img.src = product.image ? `product-images/${product.image}` : "product-images/default.jpg";
-      img.alt = product.name;
-      img.className = "product-image";
+    const img = document.createElement("img");
+    img.src = product.image ? `product-images/${product.image}` : "product-images/default.jpg";
+    img.alt = product.name;
+    img.className = "product-image";
 
-      const label = document.createElement("div");
-      label.textContent = product.name;
-      label.className = "product-label";
+    const label = document.createElement("div");
+    label.textContent = product.name;
+    label.className = "product-label";
 
-      card.appendChild(img);
-      card.appendChild(label);
+    card.appendChild(img);
+    card.appendChild(label);
 
-      card.addEventListener("mousedown", e => startLongPress(e, product));
-      card.addEventListener("touchstart", e => startLongPress(e, product));
-      card.addEventListener("mouseup", clearLongPress);
-      card.addEventListener("mouseleave", clearLongPress);
-      card.addEventListener("touchend", clearLongPress);
+    card.addEventListener("mousedown", e => startLongPress(e, product));
+    card.addEventListener("touchstart", e => startLongPress(e, product));
+    card.addEventListener("mouseup", clearLongPress);
+    card.addEventListener("mouseleave", clearLongPress);
+    card.addEventListener("touchend", clearLongPress);
 
-      gallery.appendChild(card);
-      cursor.continue();
-    }
-  };
+    gallery.appendChild(card);
+  });
 }
 
 let longPressTimer = null;
@@ -204,7 +189,6 @@ function closeCartModal() {
   document.getElementById("cartModal").style.display = "none";
 }
 
-// ✅ Restored missing function
 function saveShippingInfo() {
   const name = document.getElementById("shippingName").value.trim();
   const method = document.getElementById("shippingMethod").value;
@@ -225,5 +209,6 @@ function saveShippingInfo() {
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelector(".cart-icon")?.addEventListener("click", openCart);
   document.getElementById("saveShippingBtn")?.addEventListener("click", saveShippingInfo);
+  loadProducts();
   updateCartIcon();
 });
