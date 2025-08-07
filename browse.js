@@ -216,9 +216,14 @@ function saveShippingInfo() {
   localStorage.setItem("shoppingCart", localStorage.getItem("shoppingCart") || "[]");
 localStorage.setItem("customerCheckoutInfo", localStorage.getItem("shippingInfo"));
 
-document.addEventListener("DOMContentLoaded", () => {
+ddocument.addEventListener("DOMContentLoaded", () => {
   loadProducts();
   updateCartIcon(); // shows cart count if coming from POS
+
+  const cartIcon = document.getElementById("cartIcon");
+  if (cartIcon) {
+    cartIcon.addEventListener("click", openCart);
+  }
 });
 
   window.location.href = "POS.html";
