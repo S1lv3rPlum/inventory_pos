@@ -369,7 +369,12 @@
   </div>
 </div>
 
-
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    loadProducts();       // Renders products from localStorage
+    updateCartIcon();     // Updates the 🛒 icon count
+  });
+</script>
 </body>
 
 </html>
