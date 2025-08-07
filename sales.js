@@ -1,29 +1,11 @@
-let db, allSales = [];
-const request = indexedDB.open("BandPOSDB", 2);
-
-request.onsuccess = e => {
-  db = e.target.result;
-  loadSales();
-};
-request.onerror = () => {
-  document.getElementById("salesContainer").innerHTML = "<p>Error loading DB</p>";
-};
+let allSales = [];
 
 function loadSales() {
-  const tx = db.transaction("sales", "readonly");
-  const store = tx.objectStore("sales");
-  const data = [];
-  store.openCursor().onsuccess = e => {
-    const c = e.target.result;
-    if (c) {
-      data.push(c.value);
-      c.continue();
-    } else {
-      allSales = data.sort((a, b) => new Date(b.date) - new Date(a.date));
-      renderSales(allSales);
-      prepareAnalytics();
-    }
-  };
+  const stored = localStorage.getItem("salesRecords");
+  const data = stored ? JSON.parse(stored) : [];
+  allSales = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+  renderSales(allSales);
+  prepareAnalytics();
 }
 
 function renderSales(sales) {
@@ -124,6 +106,7 @@ function handleSalesImport(e) {
     const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
 
     const newSales = rows.map(r => ({
+      id: crypto.randomUUID(),
       date: new Date(r.Date).toISOString(),
       event: r.Event || "",
       items: [{
@@ -132,7 +115,10 @@ function handleSalesImport(e) {
         qty: parseInt(r.Qty) || 0,
         price: parseFloat(r.Price) || 0,
         discountName: r.Discount || ""
-      }]
+      }],
+      subtotal: 0, // optional - calculated in POS
+      discount: 0,
+      total: 0
     }));
 
     showImportChoice(newSales);
@@ -153,22 +139,21 @@ function showImportChoice(importedSales) {
   document.body.appendChild(popup);
 
   window.applySalesImport = (mode) => {
-    const tx = db.transaction("sales", "readwrite");
-    const store = tx.objectStore("sales");
-    if (mode === "replace") store.clear().onsuccess = () => insertAll(importedSales, store);
-    else insertAll(importedSales, store);
-    tx.oncomplete = () => {
-      alert("Sales imported.");
-      loadSales();
-      popup.remove();
-    };
+    if (mode === "replace") {
+      localStorage.setItem("salesRecords", JSON.stringify(importedSales));
+    } else {
+      const existing = JSON.parse(localStorage.getItem("salesRecords") || "[]");
+      localStorage.setItem("salesRecords", JSON.stringify(existing.concat(importedSales)));
+    }
+    alert("Sales imported.");
+    loadSales();
+    popup.remove();
   };
-}
-
-function insertAll(arr, store) {
-  arr.forEach(s => store.add(s));
 }
 
 function printSales() {
   window.print();
 }
+
+// Initial load
+loadSales();
