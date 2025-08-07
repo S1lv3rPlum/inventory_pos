@@ -30,6 +30,11 @@ function loadProducts() {
   });
 }
 
+function clearLongPress() {
+  clearTimeout(longPressTimer);
+}
+
+
 let longPressTimer = null;
 function startLongPress(event, product) {
   event.preventDefault(); // <- this blocks the image popup menu
