@@ -20,8 +20,7 @@ function loadProducts() {
     card.appendChild(img);
     card.appendChild(label);
 
-    card.addEventListener("mousedown", e => startfunction startLongPress(event, product) {
-  event.preventDefault(); // <- this blocks the image popup menu
+  card.addEventListener("mousedown", e => startLongPress(e, product));
 
   longPressTimer = setTimeout(() => {
     openAddToCartModal(product); // use your existing modal logic
