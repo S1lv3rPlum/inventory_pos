@@ -216,7 +216,7 @@ function saveShippingInfo() {
   localStorage.setItem("shoppingCart", localStorage.getItem("shoppingCart") || "[]");
 localStorage.setItem("customerCheckoutInfo", localStorage.getItem("shippingInfo"));
 
-ddocument.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   loadProducts();
   updateCartIcon(); // shows cart count if coming from POS
 
