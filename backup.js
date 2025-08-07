@@ -1,100 +1,85 @@
 (() => {
-  const dbName = "BandPOSDB";
-  const dbVersion = 2;
-  let db;
+  // Keys in localStorage to backup — add/remove as needed
+  const STORAGE_KEYS = [
+    "BandPOSDB_products",
+    "BandPOSDB_discounts",
+    "BandPOSDB_productIdCounter",
+    "BandPOSDB_sales"  // add your sales key here if you have one
+  ];
 
-  function openDB() {
-    return new Promise((resolve, reject) => {
-      if (db) return resolve(db);
-      const request = indexedDB.open(dbName, dbVersion);
-      request.onsuccess = e => {
-        db = e.target.result;
-        resolve(db);
-      };
-      request.onerror = e => reject(e.target.error);
-    });
-  }
-
-  function getAllFromStore(store) {
-    return new Promise((resolve, reject) => {
-      const req = store.getAll();
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  }
+  // Backup version or timestamp (for filename)
+  const backupVersion = new Date().toISOString().slice(0,19).replace(/:/g,"-");
 
   async function exportBackup() {
-    const db = await openDB();
-    const zip = new JSZip();
-    const tx = db.transaction(Array.from(db.objectStoreNames), "readonly");
+    try {
+      const zip = new JSZip();
 
-    for (const storeName of db.objectStoreNames) {
-      const store = tx.objectStore(storeName);
-      const items = await getAllFromStore(store);
+      for (const key of STORAGE_KEYS) {
+        const jsonStr = localStorage.getItem(key) || "[]"; // fallback to empty array
+        zip.file(`${key}.json`, jsonStr);
 
-      const jsonStr = JSON.stringify(items, null, 2);
-      zip.file(`${storeName}.json`, jsonStr);
+        // Create XLSX sheet if JSON is an array of objects
+        let items;
+        try {
+          items = JSON.parse(jsonStr);
+          if (!Array.isArray(items)) items = [];
+        } catch {
+          items = [];
+        }
 
-      const wsData = [];
-      if (items.length) {
-        const keys = Object.keys(items[0]);
-        wsData.push(keys);
-        for (const item of items) {
-          wsData.push(keys.map(k => item[k]));
+        if (items.length) {
+          const keys = Object.keys(items[0]);
+          const wsData = [keys];
+          for (const item of items) {
+            wsData.push(keys.map(k => item[k]));
+          }
+          const ws = XLSX.utils.aoa_to_sheet(wsData);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, key);
+          const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+          zip.file(`${key}.xlsx`, wbout);
         }
       }
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, storeName);
-      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-      zip.file(`${storeName}.xlsx`, wbout);
-    }
 
-    const content = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(content);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "bandpos_backup.zip";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const content = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bandpos_backup_${backupVersion}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      alert("✅ Backup exported successfully!");
+    } catch (err) {
+      console.error("Error exporting backup:", err);
+      alert("❌ Error exporting backup. See console.");
+    }
   }
 
   async function importBackup(file) {
     try {
       const zip = await JSZip.loadAsync(file);
-      const db = await openDB();
 
-      const storeNames = Array.from(db.objectStoreNames);
-
-      for (const storeName of storeNames) {
-        const jsonFile = zip.file(`${storeName}.json`);
+      for (const key of STORAGE_KEYS) {
+        const jsonFile = zip.file(`${key}.json`);
         if (!jsonFile) continue;
-
         const content = await jsonFile.async("string");
-        const items = JSON.parse(content);
 
-        await new Promise((resolve, reject) => {
-          const tx = db.transaction([storeName], "readwrite");
-          const store = tx.objectStore(storeName);
-          store.clear(); // Clear existing data
-
-          for (const item of items) {
-            store.add(item);
-          }
-
-          tx.oncomplete = () => resolve();
-          tx.onerror = e => reject(e.target.error);
-        });
+        try {
+          JSON.parse(content); // basic validation
+          localStorage.setItem(key, content);
+        } catch {
+          console.warn(`Invalid JSON in backup for key: ${key}, skipping`);
+        }
       }
 
-      alert("✅ Backup successfully imported. The app will now reload.");
+      alert("✅ Backup imported successfully! Reloading app...");
       location.reload();
-
-    } catch (error) {
-      console.error("Error during import:", error);
-      alert("❌ An error occurred while importing the backup. See console for details.");
+    } catch (err) {
+      console.error("Error importing backup:", err);
+      alert("❌ Error importing backup. See console.");
     }
   }
 
@@ -108,6 +93,6 @@
     });
   }
 
-  // Expose the setup function globally
+  // Expose globally
   window.setupBackupUI = setupBackupUI;
 })();
