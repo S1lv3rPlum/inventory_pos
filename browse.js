@@ -218,7 +218,8 @@ function saveShippingInfo() {
   const info = { name, method, details, address, city, state, zip };
 
   localStorage.setItem("shippingInfo", JSON.stringify(info));
-  localStorage.setItem("cart", localStorage.getItem("shoppingCart") || "[]");
+  localStorage.setItem("shoppingCart", localStorage.getItem("shoppingCart") || "[]");
+localStorage.setItem("customerCheckoutInfo", localStorage.getItem("shippingInfo"));
 
   window.location.href = "POS.html";
 }
