@@ -20,7 +20,13 @@ function loadProducts() {
     card.appendChild(img);
     card.appendChild(label);
 
-    card.addEventListener("mousedown", e => startLongPress(e, product));
+    card.addEventListener("mousedown", e => startfunction startLongPress(event, product) {
+  event.preventDefault(); // <- this blocks the image popup menu
+
+  longPressTimer = setTimeout(() => {
+    openAddToCartModal(product); // use your existing modal logic
+  }, 500);
+}ngPress(e, product));
     card.addEventListener("touchstart", e => startLongPress(e, product));
     card.addEventListener("mouseup", clearLongPress);
     card.addEventListener("mouseleave", clearLongPress);
@@ -197,25 +203,22 @@ function closeCartModal() {
 }
 
 function saveShippingInfo() {
-  const name = document.getElementById("shippingName").value.trim();
+  const name = document.getElementById("customerName").value.trim();
   const method = document.getElementById("shippingMethod").value;
-  const details = document.getElementById("shippingDetails").value.trim();
+  const details = document.getElementById("shippingDetail").value.trim();
+  const address = document.getElementById("shippingAddress").value.trim();
+  const city = document.getElementById("shippingCity").value.trim();
+  const state = document.getElementById("shippingState").value.trim();
+  const zip = document.getElementById("shippingZip").value.trim();
 
-  if (!method || !details) {
-    return alert("Please fill out the shipping information.");
+  if (!name || !method || !details || !address || !city || !state || !zip) {
+    return alert("Please fill out all shipping fields.");
   }
 
-  const info = { method, details };
-  if (name) info.name = name;
+  const info = { name, method, details, address, city, state, zip };
 
   localStorage.setItem("shippingInfo", JSON.stringify(info));
-  document.getElementById("shippingModal").style.display = "none";
-  alert("Shipping info saved!");
-}
+  localStorage.setItem("cart", localStorage.getItem("shoppingCart") || "[]");
 
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelector(".cart-icon")?.addEventListener("click", openCart);
-  document.getElementById("saveShippingBtn")?.addEventListener("click", saveShippingInfo);
-  loadProducts();
-  updateCartIcon();
-});
+  window.location.href = "POS.html";
+}
