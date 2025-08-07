@@ -31,12 +31,15 @@ function loadProducts() {
 }
 
 let longPressTimer = null;
-function startLongPress(e, product) {
-  clearTimeout(longPressTimer);
-  longPressTimer = setTimeout(() => openAddToCartModal(product), 600);
-}
-function clearLongPress() {
-  clearTimeout(longPressTimer);
+function startLongPress(event, product) {
+  event.preventDefault(); // <- this blocks the image popup menu
+
+  longPressTimer = setTimeout(() => {
+    const qty = prompt(`Enter quantity to add for ${product.name}:`);
+    if (qty !== null && !isNaN(qty) && Number(qty) > 0) {
+      addToCart(product, Number(qty));
+    }
+  }, 500);
 }
 
 function openAddToCartModal(product) {
