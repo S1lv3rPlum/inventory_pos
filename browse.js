@@ -216,5 +216,11 @@ function saveShippingInfo() {
   localStorage.setItem("shoppingCart", localStorage.getItem("shoppingCart") || "[]");
 localStorage.setItem("customerCheckoutInfo", localStorage.getItem("shippingInfo"));
 
+document.addEventListener("DOMContentLoaded", () => {
+  loadProducts();
+  updateCartIcon(); // shows cart count if coming from POS
+});
+
   window.location.href = "POS.html";
 }
+
