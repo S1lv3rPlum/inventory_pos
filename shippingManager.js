@@ -1,80 +1,105 @@
 // shippingManager.js
+// Minimal replacement: read sales from localStorage (BandPOSDB_sales) and render them.
+// No IndexedDB. No other changes beyond localStorage usage.
 
-document.addEventListener("DOMContentLoaded", () => {
-    const salesTableBody = document.getElementById("salesTableBody");
+let sales = [];
 
-    // Load sales from localStorage instead of IndexedDB
-    function loadSales() {
-        try {
-            const salesData = localStorage.getItem("BandPOSDB_sales");
-            if (!salesData) return;
+const toggleShipped = document.getElementById("toggleShipped");
+const tableContainer = document.getElementById("salesTableContainer");
+const STORAGE_SALES_KEY = "BandPOSDB_sales";
 
-            const sales = JSON.parse(salesData);
-            sales.forEach(sale => addSaleRow(sale));
-        } catch (err) {
-            console.error("Error loading sales from localStorage:", err);
-        }
-    }
-
-    // Add a row to the table
-    function addSaleRow(sale) {
-        const row = document.createElement("tr");
-
-        // Assuming sale has these properties — adjust if your object keys differ
-        const dateCell = document.createElement("td");
-        dateCell.textContent = sale.date || "";
-        row.appendChild(dateCell);
-
-        const customerCell = document.createElement("td");
-        customerCell.textContent = sale.customer || "";
-        row.appendChild(customerCell);
-
-        const itemsCell = document.createElement("td");
-        itemsCell.textContent = (sale.items || []).map(i => `${i.name} (x${i.quantity})`).join(", ");
-        row.appendChild(itemsCell);
-
-        const totalCell = document.createElement("td");
-        totalCell.textContent = sale.total ? `$${sale.total.toFixed(2)}` : "";
-        row.appendChild(totalCell);
-
-        const statusCell = document.createElement("td");
-        statusCell.textContent = sale.status || "";
-        row.appendChild(statusCell);
-
-        salesTableBody.appendChild(row);
-    }
-
-    loadSales();
-});    }
-    };
-  };
+function loadSales() {
+  try {
+    const raw = localStorage.getItem(STORAGE_SALES_KEY);
+    sales = raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.error("Error parsing sales from localStorage:", err);
+    sales = [];
+  }
+  renderSales();
 }
 
-// Main row
-const row = document.createElement("tr");
-row.classList.add("clickable-row");
-row.innerHTML = `
-  <td>${sale.date.toLocaleDateString()}</td>
-  <td>${sale.contact?.name || "N/A"}</td>
-  <td>${sale.contact?.detail || "N/A"}</td>
-  <td>${sale.items.length} items</td>
-`;
+function saveSalesToStorage() {
+  try {
+    localStorage.setItem(STORAGE_SALES_KEY, JSON.stringify(sales));
+  } catch (err) {
+    console.error("Error saving sales to localStorage:", err);
+  }
+}
 
-// Expandable detail row
-const detailRow = document.createElement("tr");
-detailRow.classList.add("details-row");
-detailRow.style.display = "none";
-detailRow.innerHTML = `
-  <td colspan="4">
-    <strong>Shipping Address:</strong><br>
-    ${sale.contact?.address || ""}<br>
-    ${sale.contact?.city || ""}, ${sale.contact?.state || ""} ${sale.contact?.zip || ""}
-  </td>
-`;
+function renderSales() {
+  const showShipped = toggleShipped && toggleShipped.checked;
+  if (!Array.isArray(sales) || sales.length === 0) {
+    tableContainer.innerHTML = `<p>No ${showShipped ? "sales" : "unshipped sales"} to show.</p>`;
+    return;
+  }
 
-row.addEventListener("click", () => {
-  detailRow.style.display = detailRow.style.display === "none" ? "table-row" : "none";
-});
+  // Build rows using original sales array indices so markAsShipped can update correctly
+  const rows = [];
+  rows.push(`<table><thead>
+    <tr><th>Sale #</th><th>Date</th><th>Contact</th><th>Items</th><th>Status</th><th>Action</th></tr>
+  </thead><tbody>`);
 
-tbody.appendChild(row);
-tbody.appendChild(detailRow);
+  let anyShown = false;
+
+  sales.forEach((s, idx) => {
+    const shipped = !!s.shipped;
+    if (!showShipped && shipped) return; // skip shipped when toggle off
+
+    anyShown = true;
+    const dateStr = s.date ? new Date(s.date).toLocaleString() : "";
+    const contactStr = s.contact
+      ? `${s.contact.method || ""}: ${s.contact.detail || ""}`.trim()
+      : "N/A";
+
+    const itemList = Array.isArray(s.items) && s.items.length
+      ? s.items.map(it => `${it.qty}x ${it.name} (${it.size || ""})`).join("<br>")
+      : "(no items)";
+
+    rows.push(`<tr class="${shipped ? "shipped" : ""}">
+      <td>${idx + 1}</td>
+      <td>${dateStr}</td>
+      <td>${escapeHtml(contactStr)}</td>
+      <td>${itemList}</td>
+      <td>${shipped ? "Shipped" : "Pending"}</td>
+      <td>
+        ${shipped ? "✓" : `<button onclick="markAsShipped(${idx})">Mark Shipped</button>`}
+      </td>
+    </tr>`);
+  });
+
+  rows.push("</tbody></table>");
+
+  if (!anyShown) {
+    tableContainer.innerHTML = `<p>No ${showShipped ? "sales" : "unshipped sales"} to show.</p>`;
+  } else {
+    tableContainer.innerHTML = rows.join("");
+  }
+}
+
+function markAsShipped(index) {
+  if (!sales[index]) return alert("Sale not found.");
+  sales[index].shipped = true;
+  saveSalesToStorage();
+  alert("Sale marked as shipped.");
+  renderSales();
+
+  // Optional: prompt to notify customer (simulated)
+  if (sales[index].contact && confirm("Send confirmation to customer?")) {
+    const { method, detail } = sales[index].contact;
+    alert(`(Simulated) Sending ${method} to ${detail}`);
+  }
+}
+
+function escapeHtml(t) {
+  return (!t) ? "" : String(t)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// Wire toggle (if present)
+if (toggleShipped) toggleShipped.addEventListener("change", renderSales);
+
+// Load on DOM ready
+document.addEventListener("DOMContentLoaded", loadSales);
