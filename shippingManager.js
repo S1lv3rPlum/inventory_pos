@@ -1,94 +1,51 @@
-let db;
-let sales = [];
+// shippingManager.js
 
-const toggleShipped = document.getElementById("toggleShipped");
-const tableContainer = document.getElementById("salesTableContainer");
+document.addEventListener("DOMContentLoaded", () => {
+    const salesTableBody = document.getElementById("salesTableBody");
 
-const request = indexedDB.open("BandPOSDB", 2);
-request.onerror = () => alert("Database error loading sales.");
-request.onsuccess = e => {
-  db = e.target.result;
-  loadSales();
-};
+    // Load sales from localStorage instead of IndexedDB
+    function loadSales() {
+        try {
+            const salesData = localStorage.getItem("BandPOSDB_sales");
+            if (!salesData) return;
 
-function loadSales() {
-  const tx = db.transaction("sales", "readonly");
-  const store = tx.objectStore("sales");
-  const all = [];
-
-  store.openCursor().onsuccess = event => {
-    const cursor = event.target.result;
-    if (cursor) {
-      const sale = cursor.value;
-      if (sale.contact) all.push({ ...sale, saleId: cursor.key });
-      cursor.continue();
-    } else {
-      sales = all;
-      renderSales();
+            const sales = JSON.parse(salesData);
+            sales.forEach(sale => addSaleRow(sale));
+        } catch (err) {
+            console.error("Error loading sales from localStorage:", err);
+        }
     }
-  };
-}
 
-function renderSales() {
-  const showShipped = toggleShipped.checked;
-  const html = [];
+    // Add a row to the table
+    function addSaleRow(sale) {
+        const row = document.createElement("tr");
 
-  const filtered = sales.filter(s => showShipped || !s.shipped);
+        // Assuming sale has these properties — adjust if your object keys differ
+        const dateCell = document.createElement("td");
+        dateCell.textContent = sale.date || "";
+        row.appendChild(dateCell);
 
-  if (!filtered.length) {
-    tableContainer.innerHTML = `<p>No ${showShipped ? "sales" : "unshipped sales"} to show.</p>`;
-    return;
-  }
+        const customerCell = document.createElement("td");
+        customerCell.textContent = sale.customer || "";
+        row.appendChild(customerCell);
 
-  html.push(`<table><thead>
-    <tr><th>Sale ID</th><th>Date</th><th>Contact</th><th>Items</th><th>Status</th><th>Action</th></tr>
-  </thead><tbody>`);
+        const itemsCell = document.createElement("td");
+        itemsCell.textContent = (sale.items || []).map(i => `${i.name} (x${i.quantity})`).join(", ");
+        row.appendChild(itemsCell);
 
-  for (const s of filtered) {
-    const itemList = s.items.map(it =>
-      `${it.qty}x ${it.name} (${it.size})`
-    ).join("<br>");
+        const totalCell = document.createElement("td");
+        totalCell.textContent = sale.total ? `$${sale.total.toFixed(2)}` : "";
+        row.appendChild(totalCell);
 
-    html.push(`<tr class="${s.shipped ? "shipped" : ""}">
-      <td>${s.saleId}</td>
-      <td>${new Date(s.date).toLocaleString()}</td>
-      <td>${s.contact.method}: ${s.contact.detail}</td>
-      <td>${itemList}</td>
-      <td>${s.shipped ? "Shipped" : "Pending"}</td>
-      <td>
-        ${s.shipped
-          ? "✓"
-          : `<button onclick="markAsShipped(${s.saleId})">Mark Shipped</button>`}
-      </td>
-    </tr>`);
-  }
+        const statusCell = document.createElement("td");
+        statusCell.textContent = sale.status || "";
+        row.appendChild(statusCell);
 
-  html.push("</tbody></table>");
-  tableContainer.innerHTML = html.join("");
-}
+        salesTableBody.appendChild(row);
+    }
 
-toggleShipped.addEventListener("change", renderSales);
-
-function markAsShipped(saleId) {
-  const tx = db.transaction("sales", "readwrite");
-  const store = tx.objectStore("sales");
-  const request = store.get(saleId);
-
-  request.onsuccess = () => {
-    const sale = request.result;
-    sale.shipped = true;
-
-    store.put(sale);
-    tx.oncomplete = () => {
-      alert("Sale marked as shipped.");
-      loadSales();
-
-      // Optional: Notify customer
-      if (confirm("Send confirmation to customer?")) {
-        const { method, detail } = sale.contact;
-        alert(`(Simulated) Sending ${method} to ${detail}`);
-        // For real app, this is where you'd queue a request to your backend
-      }
+    loadSales();
+});    }
     };
   };
 }
