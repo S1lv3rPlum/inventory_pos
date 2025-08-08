@@ -409,28 +409,15 @@ td img {
   box-sizing: border-box;
 }
 
-/* Make number spinner buttons visible and styled better (WebKit browsers) */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  opacity: 1;
-  -webkit-appearance: inner-spin-button;
-  appearance: auto;
-  height: 40px;
-  width: 16px;
+/* Remove all spinners from number inputs */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none;
   margin: 0;
 }
 
-
-input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  appearance: none;
-  display: block;
-  height: 24px;
-  width: 24px;
-  background-color: #ddd;
-  border-radius: 4px;
-  margin: 0 2px;
-  cursor: pointer;
+input[type=number] {
+  -moz-appearance: textfield;
 }
 
 input[type="number"] {
