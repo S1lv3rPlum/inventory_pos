@@ -556,3 +556,12 @@ input[type="number"] {
   font-weight: bold;
   border: none;
 }
+
+#salesContainer {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+}
+
+#salesContainer table {
+  min-width: 600px; /* adjust if needed based on your columns */
+}
