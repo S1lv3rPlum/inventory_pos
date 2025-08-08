@@ -4,7 +4,9 @@
     "BandPOSDB_products",
     "BandPOSDB_discounts",
     "BandPOSDB_productIdCounter",
-    "BandPOSDB_sales"  // add your sales key here if you have one
+    "BandPOSDB_sales",
+    "shoppingCart",
+    "customerCheckoutInfo"
   ];
 
   // Backup version or timestamp (for filename)
@@ -14,33 +16,52 @@
     try {
       const zip = new JSZip();
 
+      // Collect data for XLSX sheets
+      const sheetsData = {};
+
       for (const key of STORAGE_KEYS) {
-        const jsonStr = localStorage.getItem(key) || "[]"; // fallback to empty array
+        // Get JSON string from localStorage or fallback to empty array/object
+        const jsonStr = localStorage.getItem(key) || "[]";
+
+        // Add JSON file to zip (backup of raw data)
         zip.file(`${key}.json`, jsonStr);
 
-        // Create XLSX sheet if JSON is an array of objects
+        // Parse JSON for XLSX sheet creation
         let items;
         try {
           items = JSON.parse(jsonStr);
-          if (!Array.isArray(items)) items = [];
         } catch {
           items = [];
         }
 
-        if (items.length) {
+        // Prepare sheet data if JSON is array of objects or object with keys
+        if (Array.isArray(items) && items.length) {
           const keys = Object.keys(items[0]);
           const wsData = [keys];
           for (const item of items) {
             wsData.push(keys.map(k => item[k]));
           }
-          const ws = XLSX.utils.aoa_to_sheet(wsData);
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, key);
-          const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-          zip.file(`${key}.xlsx`, wbout);
+          sheetsData[key] = wsData;
+        } else if (typeof items === "object" && items !== null && !Array.isArray(items)) {
+          // If object (like customerCheckoutInfo), make one-row sheet
+          const keys = Object.keys(items);
+          const wsData = [keys, keys.map(k => items[k])];
+          sheetsData[key] = wsData;
         }
       }
 
+      // Create single XLSX workbook with multiple sheets
+      const wb = XLSX.utils.book_new();
+      for (const [key, data] of Object.entries(sheetsData)) {
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, key);
+      }
+
+      // Generate XLSX file as array buffer and add to zip
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      zip.file(`BandPOS_backup_${backupVersion}.xlsx`, wbout);
+
+      // Generate zip blob and trigger download
       const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
@@ -63,6 +84,7 @@
       const zip = await JSZip.loadAsync(file);
 
       for (const key of STORAGE_KEYS) {
+        // Look for JSON backup file for each key
         const jsonFile = zip.file(`${key}.json`);
         if (!jsonFile) continue;
         const content = await jsonFile.async("string");
@@ -83,6 +105,7 @@
     }
   }
 
+  // Sets up event listeners for export/import buttons and file input
   function setupBackupUI(exportBtnId, importBtnId, importInputId) {
     document.getElementById(exportBtnId).addEventListener("click", exportBackup);
     document.getElementById(importBtnId).addEventListener("click", () => {
@@ -93,6 +116,6 @@
     });
   }
 
-  // Expose globally
+  // Expose globally for settings.html to call
   window.setupBackupUI = setupBackupUI;
 })();
