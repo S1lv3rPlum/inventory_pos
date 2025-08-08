@@ -1,7 +1,7 @@
 let allSales = [];
 
 function loadSales() {
-  const stored = localStorage.getItem("salesRecords");
+  const stored = localStorage.getItem("BandPOSDB_sales");
   const data = stored ? JSON.parse(stored) : [];
   allSales = data.sort((a, b) => new Date(b.date) - new Date(a.date));
   renderSales(allSales);
