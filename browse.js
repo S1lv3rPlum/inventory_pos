@@ -229,3 +229,21 @@ document.addEventListener("DOMContentLoaded", () => {
   window.location.href = "POS.html";
 }
 
+// Make sure the DOM is fully loaded first
+document.addEventListener('DOMContentLoaded', function () {
+    const cartButton = document.getElementById('shoppingCartButton');
+    const cartModal = document.getElementById('cartModal');
+
+    if (cartButton && cartModal) {
+        cartButton.addEventListener('click', function () {
+            cartModal.style.display = 'block'; // show modal
+        });
+    }
+
+    // Optional: close modal when clicking outside it
+    window.addEventListener('click', function (event) {
+        if (event.target === cartModal) {
+            cartModal.style.display = 'none';
+        }
+    });
+});
