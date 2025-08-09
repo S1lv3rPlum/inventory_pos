@@ -149,4 +149,7 @@ function flattenProducts(products) {
 
 // Expose functions globally for buttons etc.
 window.exportInventory = exportInventory;
-window.importInventory = importInventory;
+window.importInventory = importInventory
+
+window.exportInventoryBtn = exportInventoryBtn;
+window.handleInventoryImport = handleInventoryImport;
