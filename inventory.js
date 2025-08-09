@@ -99,6 +99,11 @@ function importInventory(file) {
   reader.readAsArrayBuffer(file);
 }
 
+function exportInventory() {
+  console.log("Export inventory triggered");
+  // ... rest of your existing exportInventory function here
+}
+
 // Expose functions globally for buttons etc.
 window.exportInventory = exportInventory;
 window.importInventory = importInventory;
