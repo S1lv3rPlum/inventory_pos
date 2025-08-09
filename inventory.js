@@ -29,18 +29,19 @@ function flattenProducts(products) {
   return rows;
 }
 
-function exportInventory() {
-  const dataStr = localStorage.getItem("BandPOSDB_products");
+function exportInventoryBtn() {
+  const dataStr = localStorage.getItem(STORAGE_PRODUCTS_KEY);
   if (!dataStr) {
-    alert("No inventory to export.");
+    alert("No inventory data found.");
     return;
   }
-
   const products = JSON.parse(dataStr);
   const flatData = flattenProducts(products);
+
   const ws = XLSX.utils.json_to_sheet(flatData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+
   XLSX.writeFile(wb, "inventory.xlsx");
 }
 
@@ -103,6 +104,39 @@ function exportInventory() {
   console.log("Export inventory triggered");
   // ... rest of your existing exportInventory function here
 }
+
+function flattenProducts(products) {
+  const rows = [];
+  products.forEach(product => {
+    if (product.variants && product.variants.length) {
+      product.variants.forEach(variant => {
+        rows.push({
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          price: product.price,
+          gender: product.gender,
+          size: variant.size,
+          qty: variant.stock
+        });
+      });
+    } else {
+      rows.push({
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        price: product.price,
+        gender: product.gender,
+        size: "",
+        qty: ""
+      });
+    }
+  });
+  return rows;
+}
+
+
+
 
 // Expose functions globally for buttons etc.
 window.exportInventory = exportInventory;
