@@ -4,7 +4,7 @@ const STORAGE_KEYS = [
   "BandPOSDB_productIdCounter"
 ];
 
-// Helper: flatten products for export
+// Helper: flatten products for export (split variants into separate rows)
 function flattenProducts(products) {
   const rows = [];
   products.forEach(product => {
@@ -16,13 +16,13 @@ function flattenProducts(products) {
           category: product.category,
           price: product.price,
           gender: product.gender,
-          // Exclude image to reduce file size
+          // Exclude image to keep export size small
           size: variant.size,
           qty: variant.stock
         });
       });
     } else {
-      // No variants, just export product as is (without image)
+      // If no variants, export product with empty size/qty
       rows.push({
         id: product.id,
         name: product.name,
@@ -50,11 +50,11 @@ async function exportBackup() {
         const flatData = flattenProducts(products);
         const ws = XLSX.utils.json_to_sheet(flatData);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "BandPOSDB_products");
+        XLSX.utils.book_append_sheet(wb, ws, key);
         const xlsxData = XLSX.write(wb, { bookType: "xlsx", type: "array" });
         zip.file(`${key}.xlsx`, xlsxData);
       } else {
-        // For discounts and counter just save as JSON text files
+        // Discounts and productIdCounter saved as JSON text
         zip.file(`${key}.json`, dataStr);
       }
     }
@@ -64,7 +64,6 @@ async function exportBackup() {
     const filename = `BandPOSDB_backup_${now}.zip`;
 
     if (window.showSaveFilePicker) {
-      // Optional: If File System Access API available, ask folder and save
       const handle = await window.showSaveFilePicker({
         suggestedName: filename,
         types: [{
@@ -77,7 +76,6 @@ async function exportBackup() {
       await writable.close();
       alert(`Backup saved to: ${handle.name}`);
     } else {
-      // fallback download
       const a = document.createElement("a");
       a.href = URL.createObjectURL(content);
       a.download = filename;
@@ -98,7 +96,6 @@ async function importBackup(file) {
     const zip = await JSZip.loadAsync(file);
 
     for (const key of STORAGE_KEYS) {
-      // Try XLSX file first (only for products)
       if (key === "BandPOSDB_products") {
         const xlsxFile = zip.file(`${key}.xlsx`);
         if (xlsxFile) {
@@ -108,9 +105,8 @@ async function importBackup(file) {
           const sheet = workbook.Sheets[key];
           const importedData = XLSX.utils.sheet_to_json(sheet);
 
-          // Rebuild products with variants grouped by id
+          // Group rows by product id to rebuild variants
           const productMap = {};
-
           importedData.forEach(row => {
             const { size, qty, id, name, category, price, gender } = row;
             if (!productMap[id]) {
@@ -121,7 +117,6 @@ async function importBackup(file) {
                 price: typeof price === "number" ? price : 0,
                 gender: gender || "",
                 variants: []
-                // image is omitted because we excluded it on export
               };
             }
             if (size !== undefined || qty !== undefined) {
@@ -138,7 +133,7 @@ async function importBackup(file) {
         }
       }
 
-      // Try JSON file
+      // For discounts and productIdCounter, expect JSON files
       const jsonFile = zip.file(`${key}.json`);
       if (jsonFile) {
         const content = await jsonFile.async("string");
@@ -151,7 +146,7 @@ async function importBackup(file) {
         }
       }
 
-      // Try TXT file fallback
+      // Fallback: try TXT files if present
       const txtFile = zip.file(`${key}.txt`);
       if (txtFile) {
         const content = await txtFile.async("string");
@@ -167,6 +162,6 @@ async function importBackup(file) {
   }
 }
 
-// Expose the functions globally for buttons etc.
+// Expose globally for UI buttons etc.
 window.exportBackup = exportBackup;
 window.importBackup = importBackup;
