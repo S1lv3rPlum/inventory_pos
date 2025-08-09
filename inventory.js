@@ -1,9 +1,3 @@
-const STORAGE_KEYS = [
-  "BandPOSDB_products",
-  "BandPOSDB_discounts",
-  "BandPOSDB_productIdCounter"
-];
-
 // Helper: flatten products for export (split variants into separate rows)
 function flattenProducts(products) {
   const rows = [];
@@ -16,13 +10,11 @@ function flattenProducts(products) {
           category: product.category,
           price: product.price,
           gender: product.gender,
-          // Exclude image to keep export size small
           size: variant.size,
           qty: variant.stock
         });
       });
     } else {
-      // If no variants, export product with empty size/qty
       rows.push({
         id: product.id,
         name: product.name,
@@ -37,131 +29,76 @@ function flattenProducts(products) {
   return rows;
 }
 
-async function exportBackup() {
-  try {
-    const zip = new JSZip();
+function exportInventory() {
+  const dataStr = localStorage.getItem("BandPOSDB_products");
+  if (!dataStr) {
+    alert("No inventory to export.");
+    return;
+  }
 
-    for (const key of STORAGE_KEYS) {
-      const dataStr = localStorage.getItem(key);
-      if (!dataStr) continue;
+  const products = JSON.parse(dataStr);
+  const flatData = flattenProducts(products);
+  const ws = XLSX.utils.json_to_sheet(flatData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+  XLSX.writeFile(wb, "inventory.xlsx");
+}
 
-      if (key === "BandPOSDB_products") {
-        const products = JSON.parse(dataStr);
-        const flatData = flattenProducts(products);
-        const ws = XLSX.utils.json_to_sheet(flatData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, key);
-        const xlsxData = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        zip.file(`${key}.xlsx`, xlsxData);
-      } else {
-        // Discounts and productIdCounter saved as JSON text
-        zip.file(`${key}.json`, dataStr);
-      }
-    }
+function importInventory(file) {
+  const reader = new FileReader();
 
-    const content = await zip.generateAsync({ type: "blob" });
-    const now = new Date().toISOString().replace(/[:.]/g, "-");
-    const filename = `BandPOSDB_backup_${now}.zip`;
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
 
-    if (window.showSaveFilePicker) {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: filename,
-        types: [{
-          description: "ZIP Files",
-          accept: { "application/zip": [".zip"] }
-        }]
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const importedRows = XLSX.utils.sheet_to_json(sheet);
+
+      // Group rows by product id to rebuild variants
+      const productMap = {};
+      let maxId = 0;
+
+      importedRows.forEach(row => {
+        const { id, name, category, price, gender, size, qty } = row;
+        if (typeof id !== "number") {
+          throw new Error("Each row must have a numeric 'id' field.");
+        }
+        if (id > maxId) maxId = id;
+
+        if (!productMap[id]) {
+          productMap[id] = {
+            id,
+            name: name || "",
+            category: category || "",
+            price: typeof price === "number" ? price : 0,
+            gender: gender || "",
+            variants: []
+          };
+        }
+
+        productMap[id].variants.push({
+          size: size || "",
+          stock: typeof qty === "number" ? qty : 0
+        });
       });
-      const writable = await handle.createWritable();
-      await writable.write(content);
-      await writable.close();
-      alert(`Backup saved to: ${handle.name}`);
-    } else {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(content);
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(a.href);
-      alert("Backup ZIP file downloaded.");
+
+      const products = Object.values(productMap);
+      localStorage.setItem("BandPOSDB_products", JSON.stringify(products));
+      localStorage.setItem("BandPOSDB_productIdCounter", (maxId + 1).toString());
+
+      alert("✅ Inventory imported successfully!");
+      displayInventory();
+    } catch (err) {
+      console.error("Import error:", err);
+      alert("Failed to import inventory: " + err.message);
     }
-  } catch (err) {
-    console.error("Error exporting backup:", err);
-    alert("Failed to export backup. See console.");
-  }
+  };
+
+  reader.readAsArrayBuffer(file);
 }
 
-async function importBackup(file) {
-  try {
-    const zip = await JSZip.loadAsync(file);
-
-    for (const key of STORAGE_KEYS) {
-      if (key === "BandPOSDB_products") {
-        const xlsxFile = zip.file(`${key}.xlsx`);
-        if (xlsxFile) {
-          const data = new Uint8Array(await xlsxFile.async("arraybuffer"));
-          const workbook = XLSX.read(data, { type: "array" });
-          if (!workbook.SheetNames.includes(key)) continue;
-          const sheet = workbook.Sheets[key];
-          const importedData = XLSX.utils.sheet_to_json(sheet);
-
-          // Group rows by product id to rebuild variants
-          const productMap = {};
-          importedData.forEach(row => {
-            const { size, qty, id, name, category, price, gender } = row;
-            if (!productMap[id]) {
-              productMap[id] = {
-                id,
-                name: name || "",
-                category: category || "",
-                price: typeof price === "number" ? price : 0,
-                gender: gender || "",
-                variants: []
-              };
-            }
-            if (size !== undefined || qty !== undefined) {
-              productMap[id].variants.push({
-                size: size || "",
-                stock: typeof qty === "number" ? qty : 0
-              });
-            }
-          });
-
-          const products = Object.values(productMap);
-          localStorage.setItem(key, JSON.stringify(products));
-          continue;
-        }
-      }
-
-      // For discounts and productIdCounter, expect JSON files
-      const jsonFile = zip.file(`${key}.json`);
-      if (jsonFile) {
-        const content = await jsonFile.async("string");
-        try {
-          JSON.parse(content);
-          localStorage.setItem(key, content);
-          continue;
-        } catch {
-          console.warn(`Invalid JSON for key ${key}, skipping`);
-        }
-      }
-
-      // Fallback: try TXT files if present
-      const txtFile = zip.file(`${key}.txt`);
-      if (txtFile) {
-        const content = await txtFile.async("string");
-        localStorage.setItem(key, content);
-      }
-    }
-
-    alert("✅ Backup imported successfully! Reloading...");
-    location.reload();
-  } catch (err) {
-    console.error("Error importing backup:", err);
-    alert("❌ Error importing backup. See console.");
-  }
-}
-
-// Expose globally for UI buttons etc.
-window.exportBackup = exportBackup;
-window.importBackup = importBackup;
+// Expose functions globally for buttons etc.
+window.exportInventory = exportInventory;
+window.importInventory = importInventory;
