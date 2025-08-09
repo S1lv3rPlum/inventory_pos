@@ -45,59 +45,68 @@ function exportInventoryBtn() {
   XLSX.writeFile(wb, "inventory.xlsx");
 }
 
-function importInventory(file) {
+function handleInventoryImport(event) {
+  const file = event.target.files[0];
+  if (!file) {
+    alert("No file selected.");
+    return;
+  }
   const reader = new FileReader();
-
   reader.onload = function(e) {
     try {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: "array" });
-
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const importedRows = XLSX.utils.sheet_to_json(sheet);
 
-      // Group rows by product id to rebuild variants
+      // Group by product id and rebuild variants
       const productMap = {};
-      let maxId = 0;
-
       importedRows.forEach(row => {
-        const { id, name, category, price, gender, size, qty } = row;
-        if (typeof id !== "number") {
-          throw new Error("Each row must have a numeric 'id' field.");
-        }
-        if (id > maxId) maxId = id;
+        const {
+          id,
+          name = "",
+          category = "",
+          price = 0,
+          gender = "",
+          size = "",
+          qty = 0
+        } = row;
 
         if (!productMap[id]) {
           productMap[id] = {
-            id,
-            name: name || "",
-            category: category || "",
+            id: typeof id === "number" ? id : getNextProductId(),
+            name,
+            category,
             price: typeof price === "number" ? price : 0,
-            gender: gender || "",
+            gender,
             variants: []
           };
         }
-
-        productMap[id].variants.push({
-          size: size || "",
-          stock: typeof qty === "number" ? qty : 0
-        });
+        // Add variant if size is present
+        if (size !== "") {
+          productMap[id].variants.push({
+            size,
+            stock: typeof qty === "number" ? qty : 0
+          });
+        } else if (productMap[id].variants.length === 0) {
+          // If no size at all, add a default variant
+          productMap[id].variants.push({ size: "One Size", stock: 0 });
+        }
       });
 
       const products = Object.values(productMap);
-      localStorage.setItem("BandPOSDB_products", JSON.stringify(products));
-      localStorage.setItem("BandPOSDB_productIdCounter", (maxId + 1).toString());
-
-      alert("✅ Inventory imported successfully!");
+      localStorage.setItem(STORAGE_PRODUCTS_KEY, JSON.stringify(products));
+      updateDebugStatus("Imported inventory products.");
       displayInventory();
+      alert("Inventory imported successfully!");
     } catch (err) {
-      console.error("Import error:", err);
       alert("Failed to import inventory: " + err.message);
+      console.error(err);
     }
   };
-
   reader.readAsArrayBuffer(file);
+  event.target.value = "";
 }
 
 function exportInventory() {
