@@ -104,11 +104,13 @@ function displayInventory() {
     container.textContent = "No products found.";
     return;
   }
+
   // Sort by category then product name
   products.sort((a, b) => {
     const catComp = (a.category || "").localeCompare(b.category || "");
     return catComp !== 0 ? catComp : (a.name || "").localeCompare(b.name || "");
   });
+
   // Group products by category
   const groupedProducts = products.reduce((groups, product) => {
     const category = product.category || "(No Category)";
@@ -116,11 +118,12 @@ function displayInventory() {
     groups[category].push(product);
     return groups;
   }, {});
+
   const table = document.createElement("table");
   const thead = document.createElement("thead");
+  // Note: Removed Category header
   thead.innerHTML = `
     <tr>
-      <th>Category</th>
       <th>Product Name</th>
       <th>Price ($)</th>
       <th>Gender</th>
@@ -130,17 +133,26 @@ function displayInventory() {
     </tr>
   `;
   table.appendChild(thead);
+
   const tbody = document.createElement("tbody");
+  const colCount = 6; // Number of columns excluding category
+
   for (const [category, categoryProducts] of Object.entries(groupedProducts)) {
-    categoryProducts.forEach((product, index) => {
+    // Insert full-width category header row
+    const categoryRow = document.createElement("tr");
+    const categoryCell = document.createElement("td");
+    categoryCell.textContent = category;
+    categoryCell.colSpan = colCount;
+    categoryCell.style.fontWeight = "bold";
+    categoryCell.style.backgroundColor = "#ddd";
+    categoryCell.style.padding = "8px 12px";
+    categoryRow.appendChild(categoryCell);
+    tbody.appendChild(categoryRow);
+
+    // Now render products under this category without category cell
+    categoryProducts.forEach(product => {
       const row = document.createElement("tr");
-      if (index === 0) {
-        const catCell = document.createElement("td");
-        catCell.textContent = category;
-        catCell.style.fontWeight = "bold";
-        catCell.rowSpan = categoryProducts.length;
-        row.appendChild(catCell);
-      }
+
       // Product Name
       const nameCell = document.createElement("td");
       const nameInput = document.createElement("input");
@@ -149,6 +161,7 @@ function displayInventory() {
       nameInput.disabled = true;
       nameCell.appendChild(nameInput);
       row.appendChild(nameCell);
+
       // Price
       const priceCell = document.createElement("td");
       const priceInput = document.createElement("input");
@@ -158,6 +171,7 @@ function displayInventory() {
       priceInput.disabled = true;
       priceCell.appendChild(priceInput);
       row.appendChild(priceCell);
+
       // Gender
       const genderCell = document.createElement("td");
       const genderInput = document.createElement("input");
@@ -167,6 +181,7 @@ function displayInventory() {
       genderInput.style.width = "40px";
       genderCell.appendChild(genderInput);
       row.appendChild(genderCell);
+
       // Image
       const imgCell = document.createElement("td");
       const imgPreview = document.createElement("img");
@@ -182,6 +197,7 @@ function displayInventory() {
       imgInput.style.display = "none";
       imgCell.appendChild(imgInput);
       row.appendChild(imgCell);
+
       // Sizes & Qty
       const sizeCell = document.createElement("td");
       if (Array.isArray(product.variants)) {
@@ -201,6 +217,7 @@ function displayInventory() {
         });
       }
       row.appendChild(sizeCell);
+
       // Actions
       const actionCell = document.createElement("td");
       const editBtn = document.createElement("button");
@@ -210,7 +227,7 @@ function displayInventory() {
       saveBtn.style.display = "none";
       const deleteBtn = document.createElement("button");
       deleteBtn.textContent = "Delete";
-      // Event handlers below:
+
       editBtn.onclick = () => {
         nameInput.disabled = false;
         priceInput.disabled = false;
@@ -220,6 +237,7 @@ function displayInventory() {
         editBtn.style.display = "none";
         saveBtn.style.display = "inline";
       };
+
       imgInput.onchange = () => {
         const file = imgInput.files[0];
         if (file) {
@@ -231,6 +249,7 @@ function displayInventory() {
           reader.readAsDataURL(file);
         }
       };
+
       saveBtn.onclick = () => {
         const updatedName = nameInput.value.trim();
         const updatedPrice = parseFloat(priceInput.value);
@@ -243,12 +262,14 @@ function displayInventory() {
           const qty = parseInt(label.querySelector("input").value);
           updatedVariants.push({ size, stock: isNaN(qty) ? 0 : qty });
         });
+
         const products = loadArrayFromStorage(STORAGE_PRODUCTS_KEY);
         const productIndex = products.findIndex(p => p.id === product.id);
         if (productIndex === -1) {
           alert("Error: Product not found.");
           return;
         }
+
         products[productIndex] = {
           ...products[productIndex],
           name: updatedName,
@@ -257,10 +278,12 @@ function displayInventory() {
           image: updatedImage,
           variants: updatedVariants
         };
+
         saveArrayToStorage(STORAGE_PRODUCTS_KEY, products);
         updateDebugStatus("Product saved.");
         displayInventory();
       };
+
       deleteBtn.onclick = () => {
         if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) {
           return;
@@ -271,10 +294,12 @@ function displayInventory() {
         updateDebugStatus("Product deleted.");
         displayInventory();
       };
+
       actionCell.appendChild(editBtn);
       actionCell.appendChild(saveBtn);
       actionCell.appendChild(deleteBtn);
       row.appendChild(actionCell);
+
       tbody.appendChild(row);
     });
   }
