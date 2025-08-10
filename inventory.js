@@ -1,8 +1,8 @@
-// inventory.js
 // Storage keys
 const STORAGE_PRODUCTS_KEY = "BandPOSDB_products";
 const STORAGE_DISCOUNTS_KEY = "BandPOSDB_discounts";
 const STORAGE_PRODUCT_ID_COUNTER = "BandPOSDB_productIdCounter";
+
 // Debug status display helper (same as before)
 function updateDebugStatus(message) {
   const debugElem = document.getElementById("debugStatus");
@@ -13,6 +13,7 @@ function updateDebugStatus(message) {
     console.log(message);
   }
 }
+
 // Utility: Load array from localStorage or return empty array
 function loadArrayFromStorage(key) {
   const data = localStorage.getItem(key);
@@ -24,6 +25,7 @@ function loadArrayFromStorage(key) {
     return [];
   }
 }
+
 // Utility: Save array to localStorage
 function saveArrayToStorage(key, arr) {
   try {
@@ -32,6 +34,7 @@ function saveArrayToStorage(key, arr) {
     console.error(`Failed to save localStorage key ${key}:`, e);
   }
 }
+
 // Utility: Get next product ID (auto-increment)
 function getNextProductId() {
   let idCounter = parseInt(localStorage.getItem(STORAGE_PRODUCT_ID_COUNTER));
@@ -39,6 +42,7 @@ function getNextProductId() {
   localStorage.setItem(STORAGE_PRODUCT_ID_COUNTER, (idCounter + 1).toString());
   return idCounter;
 }
+
 // Add Product Form submit handler
 document.getElementById("addProductForm").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -88,6 +92,7 @@ document.getElementById("addProductForm").addEventListener("submit", (e) => {
     reader.onload();
   }
 });
+
 // Display Inventory Table (reads from localStorage)
 function displayInventory() {
   const container = document.getElementById("inventoryList");
@@ -99,11 +104,13 @@ function displayInventory() {
     container.textContent = "No products found.";
     return;
   }
+
   // Sort by category then product name
   products.sort((a, b) => {
     const catComp = (a.category || "").localeCompare(b.category || "");
     return catComp !== 0 ? catComp : (a.name || "").localeCompare(b.name || "");
   });
+
   // Group products by category
   const groupedProducts = products.reduce((groups, product) => {
     const category = product.category || "(No Category)";
@@ -111,11 +118,12 @@ function displayInventory() {
     groups[category].push(product);
     return groups;
   }, {});
+
   const table = document.createElement("table");
   const thead = document.createElement("thead");
+  // Note: Removed Category header
   thead.innerHTML = `
     <tr>
-      <th>Category</th>
       <th>Product Name</th>
       <th>Price ($)</th>
       <th>Gender</th>
@@ -125,17 +133,26 @@ function displayInventory() {
     </tr>
   `;
   table.appendChild(thead);
+
   const tbody = document.createElement("tbody");
+  const colCount = 6; // Number of columns excluding category
+
   for (const [category, categoryProducts] of Object.entries(groupedProducts)) {
-    categoryProducts.forEach((product, index) => {
+    // Insert full-width category header row
+    const categoryRow = document.createElement("tr");
+    const categoryCell = document.createElement("td");
+    categoryCell.textContent = category;
+    categoryCell.colSpan = colCount;
+    categoryCell.style.fontWeight = "bold";
+    categoryCell.style.backgroundColor = "#ddd";
+    categoryCell.style.padding = "8px 12px";
+    categoryRow.appendChild(categoryCell);
+    tbody.appendChild(categoryRow);
+
+    // Now render products under this category without category cell
+    categoryProducts.forEach(product => {
       const row = document.createElement("tr");
-      if (index === 0) {
-        const catCell = document.createElement("td");
-        catCell.textContent = category;
-        catCell.style.fontWeight = "bold";
-        catCell.rowSpan = categoryProducts.length;
-        row.appendChild(catCell);
-      }
+
       // Product Name
       const nameCell = document.createElement("td");
       const nameInput = document.createElement("input");
@@ -144,6 +161,7 @@ function displayInventory() {
       nameInput.disabled = true;
       nameCell.appendChild(nameInput);
       row.appendChild(nameCell);
+
       // Price
       const priceCell = document.createElement("td");
       const priceInput = document.createElement("input");
@@ -153,6 +171,7 @@ function displayInventory() {
       priceInput.disabled = true;
       priceCell.appendChild(priceInput);
       row.appendChild(priceCell);
+
       // Gender
       const genderCell = document.createElement("td");
       const genderInput = document.createElement("input");
@@ -162,6 +181,7 @@ function displayInventory() {
       genderInput.style.width = "40px";
       genderCell.appendChild(genderInput);
       row.appendChild(genderCell);
+
       // Image
       const imgCell = document.createElement("td");
       const imgPreview = document.createElement("img");
@@ -177,6 +197,7 @@ function displayInventory() {
       imgInput.style.display = "none";
       imgCell.appendChild(imgInput);
       row.appendChild(imgCell);
+
       // Sizes & Qty
       const sizeCell = document.createElement("td");
       if (Array.isArray(product.variants)) {
@@ -196,6 +217,7 @@ function displayInventory() {
         });
       }
       row.appendChild(sizeCell);
+
       // Actions
       const actionCell = document.createElement("td");
       const editBtn = document.createElement("button");
@@ -205,7 +227,7 @@ function displayInventory() {
       saveBtn.style.display = "none";
       const deleteBtn = document.createElement("button");
       deleteBtn.textContent = "Delete";
-      // Event handlers below:
+
       editBtn.onclick = () => {
         nameInput.disabled = false;
         priceInput.disabled = false;
@@ -215,6 +237,7 @@ function displayInventory() {
         editBtn.style.display = "none";
         saveBtn.style.display = "inline";
       };
+
       imgInput.onchange = () => {
         const file = imgInput.files[0];
         if (file) {
@@ -226,6 +249,7 @@ function displayInventory() {
           reader.readAsDataURL(file);
         }
       };
+
       saveBtn.onclick = () => {
         const updatedName = nameInput.value.trim();
         const updatedPrice = parseFloat(priceInput.value);
@@ -238,12 +262,14 @@ function displayInventory() {
           const qty = parseInt(label.querySelector("input").value);
           updatedVariants.push({ size, stock: isNaN(qty) ? 0 : qty });
         });
+
         const products = loadArrayFromStorage(STORAGE_PRODUCTS_KEY);
         const productIndex = products.findIndex(p => p.id === product.id);
         if (productIndex === -1) {
           alert("Error: Product not found.");
           return;
         }
+
         products[productIndex] = {
           ...products[productIndex],
           name: updatedName,
@@ -252,10 +278,12 @@ function displayInventory() {
           image: updatedImage,
           variants: updatedVariants
         };
+
         saveArrayToStorage(STORAGE_PRODUCTS_KEY, products);
         updateDebugStatus("Product saved.");
         displayInventory();
       };
+
       deleteBtn.onclick = () => {
         if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) {
           return;
@@ -266,16 +294,19 @@ function displayInventory() {
         updateDebugStatus("Product deleted.");
         displayInventory();
       };
+
       actionCell.appendChild(editBtn);
       actionCell.appendChild(saveBtn);
       actionCell.appendChild(deleteBtn);
       row.appendChild(actionCell);
+
       tbody.appendChild(row);
     });
   }
   table.appendChild(tbody);
   container.appendChild(table);
 }
+
 // Load Discounts and render discount table, from localStorage
 function loadDiscounts() {
   const discountTableBody = document.getElementById("discountTableBody");
@@ -311,6 +342,7 @@ function loadDiscounts() {
     discountTableBody.appendChild(row);
   });
 }
+
 // Discount Form submit handler
 document.getElementById("discountForm").addEventListener("submit", function(e) {
   e.preventDefault();
@@ -335,21 +367,54 @@ document.getElementById("discountForm").addEventListener("submit", function(e) {
   loadDiscounts();
   document.getElementById("discountForm").reset();
 });
+
 // Export Helpers using XLSX lib - unchanged except sourcing from localStorage
 function jsonToWorksheet(dataArray) {
   return XLSX.utils.json_to_sheet(dataArray);
 }
+
+// Updated exportInventory to flatten variants for export
 function exportInventory() {
   const products = loadArrayFromStorage(STORAGE_PRODUCTS_KEY);
   if (products.length === 0) {
     alert("No inventory to export.");
     return;
   }
+  // Flatten products by variants
+  const flattened = [];
+  products.forEach(product => {
+    if (Array.isArray(product.variants) && product.variants.length > 0) {
+      product.variants.forEach(variant => {
+        flattened.push({
+          Category: product.category || "",
+          "Product Name": product.name || "",
+          Price: product.price != null ? product.price.toFixed(2) : "",
+          Gender: product.gender || "",
+          Size: variant.size || "",
+          Stock: variant.stock != null ? variant.stock : 0,
+          Image: product.image || "",
+        });
+      });
+    } else {
+      // If no variants, export a single row with empty variant fields
+      flattened.push({
+        Category: product.category || "",
+        "Product Name": product.name || "",
+        Price: product.price != null ? product.price.toFixed(2) : "",
+        Gender: product.gender || "",
+        Size: "",
+        Stock: 0,
+        Image: product.image || "",
+      });
+    }
+  });
+
   const wb = XLSX.utils.book_new();
-  const ws = jsonToWorksheet(products);
+  const ws = XLSX.utils.json_to_sheet(flattened);
   XLSX.utils.book_append_sheet(wb, ws, "Products");
   XLSX.writeFile(wb, "inventory_export.xlsx");
 }
+
 function exportDiscounts() {
   const discounts = loadArrayFromStorage(STORAGE_DISCOUNTS_KEY);
   if (discounts.length === 0) {
@@ -361,6 +426,7 @@ function exportDiscounts() {
   XLSX.utils.book_append_sheet(wb, ws, "Discounts");
   XLSX.writeFile(wb, "discounts_export.xlsx");
 }
+
 // Import handlers
 function handleInventoryImport(event) {
   const file = event.target.files[0];
@@ -375,33 +441,40 @@ function handleInventoryImport(event) {
       const workbook = XLSX.read(data, { type: "array" });
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
-      const importedProducts = XLSX.utils.sheet_to_json(sheet);
-      // Map imported data to proper product structure
-      // For safety, validate and assign default variants if missing
-      const products = importedProducts.map(item => {
-        // Ensure variants array with sizes & stock or default
-        let variants = item.variants;
-        if (!Array.isArray(variants)) {
-          // fallback variants with One Size if missing
-          variants = [{ size: "One Size", stock: 0 }];
+      const importedRows = XLSX.utils.sheet_to_json(sheet);
+
+      const productsMap = new Map();
+
+      importedRows.forEach(row => {
+        const id = typeof row.id === "number" ? row.id : getNextProductId();
+        if (!productsMap.has(id)) {
+          productsMap.set(id, {
+            id,
+            name: row.name || "",
+            category: row.category || "",
+            price: typeof row.price === "number" ? row.price : 0,
+            gender: row.gender || "",
+            image: row.image || null,
+            variants: []
+          });
         }
-        // Enforce number for id or generate new id
-        const id = typeof item.id === "number" ? item.id : getNextProductId();
-        return {
-          id,
-          name: item.name || "",
-          category: item.category || "",
-          price: typeof item.price === "number" ? item.price : 0,
-          gender: item.gender || "",
-          variants,
-          image: item.image || null,
-        };
+        const product = productsMap.get(id);
+        const variantSize = row.size || "One Size";
+        const variantStock = Number.isInteger(row.stock) ? row.stock : 0;
+        const existingVariant = product.variants.find(v => v.size === variantSize);
+        if (!existingVariant) {
+          product.variants.push({ size: variantSize, stock: variantStock });
+        }
       });
+
+      const products = Array.from(productsMap.values());
+
       saveArrayToStorage(STORAGE_PRODUCTS_KEY, products);
-      updateDebugStatus("Imported inventory products.");
+      updateDebugStatus("Inventory imported successfully!");
       displayInventory();
       alert("Inventory imported successfully!");
     } catch (err) {
+      updateDebugStatus("Failed to import inventory.");
       alert("Failed to import inventory: " + err.message);
       console.error(err);
     }
@@ -409,6 +482,7 @@ function handleInventoryImport(event) {
   reader.readAsArrayBuffer(file);
   event.target.value = "";
 }
+
 function handleDiscountImport(event) {
   const file = event.target.files[0];
   if (!file) {
@@ -423,19 +497,19 @@ function handleDiscountImport(event) {
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const importedDiscounts = XLSX.utils.sheet_to_json(sheet);
-      // Validate and fix imported discount data if needed
-      const discounts = importedDiscounts.map(item => {
-        return {
-          name: item.name || "",
-          type: item.type || "flat",
-          value: typeof item.value === "number" ? item.value : 0
-        };
-      });
+
+      const discounts = importedDiscounts.map(item => ({
+        name: item.name || "",
+        type: item.type || "flat",
+        value: typeof item.value === "number" ? item.value : 0
+      }));
+
       saveArrayToStorage(STORAGE_DISCOUNTS_KEY, discounts);
-      updateDebugStatus("Imported discounts.");
+      updateDebugStatus("Discounts imported successfully!");
       loadDiscounts();
       alert("Discounts imported successfully!");
     } catch (err) {
+      updateDebugStatus("Failed to import discounts.");
       alert("Failed to import discounts: " + err.message);
       console.error(err);
     }
@@ -443,14 +517,5 @@ function handleDiscountImport(event) {
   reader.readAsArrayBuffer(file);
   event.target.value = "";
 }
-// Expose functions globally for inline button handlers & inputs
-window.exportInventory = exportInventory;
-window.handleInventoryImport = handleInventoryImport;
-window.exportDiscounts = exportDiscounts;
-window.handleDiscountImport = handleDiscountImport;
-window.loadDiscounts = loadDiscounts;
-// On DOM ready, render inventory and discounts
-window.addEventListener("DOMContentLoaded", () => {
-  displayInventory();
-  loadDiscounts();
-});
+
+// Expose functions

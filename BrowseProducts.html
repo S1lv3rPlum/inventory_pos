@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Browse Products</title>
   <link rel="stylesheet" href="styles.css" />
+  
 
   <style>
     body {
@@ -326,6 +327,7 @@
 </div>
 
 <!-- 📦 Load Scripts -->
+<script src="keyMigration.js"></script>
 <script src="browse.js"></script>
 <script src="menu-overlay.js"></script>
 <script src="payment.js"></script> <!-- ✅ Make sure this is here too -->
@@ -371,9 +373,10 @@
 
 <script>
   window.addEventListener("DOMContentLoaded", () => {
-    loadProducts();       // Renders products from localStorage
-    updateCartIcon();     // Updates the 🛒 icon count
-  });
+  runKeyMigration();    // Migrate old keys to new ones, if needed
+  loadProducts();
+  updateCartIcon();
+});
 </script>
 </body>
 
