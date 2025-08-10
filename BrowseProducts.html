@@ -373,9 +373,10 @@
 
 <script>
   window.addEventListener("DOMContentLoaded", () => {
-    loadProducts();       // Renders products from localStorage
-    updateCartIcon();     // Updates the 🛒 icon count
-  });
+  runKeyMigration();    // Migrate old keys to new ones, if needed
+  loadProducts();
+  updateCartIcon();
+});
 </script>
 </body>
 
