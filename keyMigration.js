@@ -27,7 +27,7 @@ function runKeyMigration() {
     },
     {
       oldKey: "shippingInfo",
-      newKey: "customerCheckoutInfo"  // Looks like you renamed shippingInfo to customerCheckoutInfo
+      newKey: "shippingInfo"  
     }
   ];
 
