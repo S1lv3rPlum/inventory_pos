@@ -416,32 +416,45 @@ function handleInventoryImport(event) {
       const workbook = XLSX.read(data, { type: "array" });
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
-      const importedProducts = XLSX.utils.sheet_to_json(sheet);
-      // Map imported data to proper product structure
-      // For safety, validate and assign default variants if missing
-      const products = importedProducts.map(item => {
-        // Ensure variants array with sizes & stock or default
-        let variants = item.variants;
-        if (!Array.isArray(variants)) {
-          // fallback variants with One Size if missing
-          variants = [{ size: "One Size", stock: 0 }];
+      const importedRows = XLSX.utils.sheet_to_json(sheet);
+
+      // Group rows by product ID
+      const productsMap = new Map();
+
+      importedRows.forEach(row => {
+        const id = typeof row.id === "number" ? row.id : getNextProductId();
+        if (!productsMap.has(id)) {
+          // Create new product entry
+          productsMap.set(id, {
+            id,
+            name: row.name || "",
+            category: row.category || "",
+            price: typeof row.price === "number" ? row.price : 0,
+            gender: row.gender || "",
+            image: row.image || null,
+            variants: []
+          });
         }
-        // Enforce number for id or generate new id
-        const id = typeof item.id === "number" ? item.id : getNextProductId();
-        return {
-          id,
-          name: item.name || "",
-          category: item.category || "",
-          price: typeof item.price === "number" ? item.price : 0,
-          gender: item.gender || "",
-          variants,
-          image: item.image || null,
-        };
+        // Add variant info for this row
+        const product = productsMap.get(id);
+        const variantSize = row.size || "One Size";
+        const variantStock = Number.isInteger(row.stock) ? row.stock : 0;
+
+        // Avoid duplicate variants with the same size
+        const existingVariant = product.variants.find(v => v.size === variantSize);
+        if (!existingVariant) {
+          product.variants.push({ size: variantSize, stock: variantStock });
+        }
       });
+
+      // Convert map back to array
+      const products = Array.from(productsMap.values());
+
       saveArrayToStorage(STORAGE_PRODUCTS_KEY, products);
       updateDebugStatus("Imported inventory products.");
       displayInventory();
       alert("Inventory imported successfully!");
+
     } catch (err) {
       alert("Failed to import inventory: " + err.message);
       console.error(err);
