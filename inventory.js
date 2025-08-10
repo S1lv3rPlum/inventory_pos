@@ -472,19 +472,19 @@ function handleDiscountImport(event) {
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const importedDiscounts = XLSX.utils.sheet_to_json(sheet);
-      // Validate and fix imported discount data if needed
-      const discounts = importedDiscounts.map(item => {
-        return {
-          name: item.name || "",
-          type: item.type || "flat",
-          value: typeof item.value === "number" ? item.value : 0
-        };
-      });
+
+      const discounts = importedDiscounts.map(item => ({
+        name: item.name || "",
+        type: item.type || "flat",
+        value: typeof item.value === "number" ? item.value : 0
+      }));
+
       saveArrayToStorage(STORAGE_DISCOUNTS_KEY, discounts);
-      updateDebugStatus("Imported discounts.");
+      updateDebugStatus("Discounts imported successfully!");
       loadDiscounts();
       alert("Discounts imported successfully!");
     } catch (err) {
+      updateDebugStatus("Failed to import discounts.");
       alert("Failed to import discounts: " + err.message);
       console.error(err);
     }
