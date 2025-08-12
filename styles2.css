@@ -552,3 +552,107 @@ input[type="number"] {
 #salesContainer table {
   min-width: 600px; /* adjust if needed based on your columns */
 }
+
+/* ===== Product Thumbnail ===== */
+.product-thumb {
+  max-width: 50px;
+  max-height: 50px;
+  border-radius: 6px;
+  object-fit: cover;
+  vertical-align: middle;
+  margin-right: 8px;
+  box-shadow: 0 0 4px rgba(0,0,0,0.1);
+}
+
+/* ===== Product Card Layout (mobile) ===== */
+@media (max-width: 767px) {
+  #productTable {
+    display: none; /* hide table on mobile */
+  }
+
+  #productTable tbody {
+    display: block;
+  }
+
+  #productSection {
+    padding: 0 1rem;
+  }
+
+  /* Card container for each product */
+  .product-card {
+    background-color: var(--bg-color, #fff);
+    color: var(--text-color, #000);
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  /* Image inside card */
+  .product-card img.product-thumb {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+  }
+
+  /* Text info stacked vertically */
+  .product-card > div:not(:first-child) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  /* Actions inside card */
+  .product-card .actions {
+    margin-left: auto;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .product-card button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    background-color: var(--accent-color);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .product-card button:hover {
+    background-color: var(--accent-color-dark);
+  }
+
+  .product-card button:active {
+    transform: translateY(1px);
+  }
+}
+
+/* ===== Touch-friendly buttons in tables ===== */
+.actions button {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  min-width: 64px;
+  /* Add a bit more vertical padding for touch */
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.actions button:hover {
+  background-color: var(--accent-color-dark);
+}
+
+.actions button:active {
+  transform: translateY(1px);
+}
