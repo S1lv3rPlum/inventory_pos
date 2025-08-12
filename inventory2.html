@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Band Inventory Manager</title>
 
-  <!-- Global styles including menu, themes, and buttons -->
+  <!-- Global Styles -->
   <link rel="stylesheet" href="styles.css" />
 
   <!-- Inventory-specific styles -->
@@ -38,10 +39,13 @@
     button {
       margin: 0 4px;
       cursor: pointer;
+      padding: 10px 14px;
+      font-size: 1rem;
     }
-    input[type="text"], input[type="number"] {
-      padding: 4px 6px;
+    input[type="text"], input[type="number"], select {
+      padding: 6px;
       box-sizing: border-box;
+      width: 100%;
     }
     .form-row {
       margin: 12px 0;
@@ -51,10 +55,12 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1rem;
+      flex-wrap: wrap;
     }
     #navButtons {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
     }
     #bandNameBanner {
       font-size: 1.2rem;
@@ -62,26 +68,39 @@
       margin-bottom: 0.5rem;
       text-align: center;
     }
-
-    /* NEW: Adjusted hamburger wrapper to stay inside layout */
     #menu-toggle-wrapper {
       position: sticky;
       top: 1rem;
       z-index: 1001;
       margin-bottom: 1rem;
     }
+    /* Responsive table wrapper */
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    /* Hide dev/debug elements by default */
+    .dev-only {
+      display: none;
+    }
+    /* Image preview */
+    #imagePreview {
+      margin-top: 10px;
+      max-width: 100px;
+      max-height: 100px;
+      display: none;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
   </style>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
 </head>
 
 <body class="light-theme accent-blue">
-
   <div class="container">
 
-    <!-- Hamburger Menu Button (now inside layout) -->
+    <!-- Hamburger Menu Button -->
     <div id="menu-toggle-wrapper">
       <button id="menu-toggle" class="menu-button" aria-label="Open menu">☰</button>
     </div>
@@ -90,50 +109,56 @@
 
     <div id="topBar">
       <h1>Inventory Manager</h1>
-  <button onclick="deleteDatabase()" style="background:red; color:white; margin:10px;">Delete DB (Dev Only)</button>
+      <button class="dev-only" id="deleteDBButton" style="background:red; color:white;">Delete DB</button>
     </div>
 
+    <!-- View Toggle -->
     <div style="margin-bottom: 1rem;">
-    <button type="button" onclick="toggleView('inventory')">Manage Inventory</button>
-    <button type="button" onclick="toggleView('discounts')">Manage Discounts</button>
+      <button type="button" onclick="toggleView('inventory')">Manage Inventory</button>
+      <button type="button" onclick="toggleView('discounts')">Manage Discounts</button>
     </div>
 
-<div style="margin-bottom: 1rem; display: flex; gap: 10px;">
-  <button type="button" style="flex: 1;" onclick="exportInventory()">⬆️ Export Inventory to Excel</button>
-  <button type="button" style="flex: 1;" onclick="document.getElementById('importFileInput').click()">⬇️ Import Inventory from Excel</button>
-  <input type="file" id="importFileInput" accept=".xlsx" style="display: none;" onchange="handleInventoryImport(event)" />
-</div>
+    <!-- Inventory Import/Export -->
+    <div style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 10px;">
+      <button type="button" style="flex: 1;" onclick="exportInventory()" aria-label="Export inventory to Excel">⬆️ Export Inventory</button>
+      <button type="button" style="flex: 1;" onclick="document.getElementById('importFileInput').click()" aria-label="Import inventory from Excel">⬇️ Import Inventory</button>
+      <input type="file" id="importFileInput" accept=".xlsx" style="display: none;" onchange="handleInventoryImport(event)" />
+    </div>
 
-<div style="margin-bottom: 1rem; display: flex; gap: 10px;">
-  <button type="button" style="flex: 1;" onclick="exportDiscounts()">⬆️ Export Discounts to Excel</button>
-  <button type="button" style="flex: 1;" onclick="document.getElementById('importDiscountFileInput').click()">⬇️ Import Discount from Excel</button>
-  <input type="file" id="importDiscountFileInput" accept=".xlsx" style="display: none;" onchange="handleDiscountImport(event)" />
-</div>
+    <!-- Discount Import/Export -->
+    <div style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 10px;">
+      <button type="button" style="flex: 1;" onclick="exportDiscounts()" aria-label="Export discounts to Excel">⬆️ Export Discounts</button>
+      <button type="button" style="flex: 1;" onclick="document.getElementById('importDiscountFileInput').click()" aria-label="Import discounts from Excel">⬇️ Import Discounts</button>
+      <input type="file" id="importDiscountFileInput" accept=".xlsx" style="display: none;" onchange="handleDiscountImport(event)" />
+    </div>
 
-
+    <!-- Inventory Section -->
     <div id="inventorySection">
       <form id="addProductForm">
         <div class="form-row">
-          <label>Product Name: <input type="text" id="productName" required /></label>
+          <label for="productName">Product Name:</label>
+          <input type="text" id="productName" required />
         </div>
         <div class="form-row">
-          <label>Category: <input type="text" id="productCategory" /></label>
+          <label for="productCategory">Category:</label>
+          <input type="text" id="productCategory" />
         </div>
         <div class="form-row">
-          <label>Price: $<input type="number" id="productPrice" step="0.01" required /></label>
+          <label for="productPrice">Price: $</label>
+          <input type="number" id="productPrice" step="0.01" required />
         </div>
         <div class="form-row">
-          <label>Has Sizes? <input type="checkbox" id="productHasSizes" /></label>
+          <label><input type="checkbox" id="productHasSizes" /> Has Sizes?</label>
         </div>
-<div class="form-row">
-  <label>Product Image: <input type="file" id="productImage" accept="image/*" /></label>
-</div>
-
-
+        <div class="form-row">
+          <label for="productImage">Product Image:</label>
+          <input type="file" id="productImage" accept="image/*" />
+          <img id="imagePreview" alt="Product Preview" />
+        </div>
         <div class="form-row">
           Gender:
-          <label><input type="checkbox" id="productGenderMale" onclick="toggleGender('M')" /> M</label>
-          <label><input type="checkbox" id="productGenderFemale" onclick="toggleGender('F')" /> F</label>
+          <label><input type="radio" name="productGender" value="M" /> M</label>
+          <label><input type="radio" name="productGender" value="F" /> F</label>
         </div>
         <div class="form-row">
           <button type="submit">Add Product</button>
@@ -142,49 +167,59 @@
 
       <hr />
       <h2>Current Inventory</h2>
-      <div id="debugStatus" style="background:#ffffcc; padding:8px; margin-bottom:1rem; border:1px solid #999; font-size:0.9rem;"></div>
+      <div id="debugStatus" class="dev-only" style="background:#ffffcc; padding:8px; margin-bottom:1rem; border:1px solid #999; font-size:0.9rem;"></div>
       <div id="inventoryList"></div>
     </div>
 
+    <!-- Discount Section -->
     <div id="discountSection" style="display:none;">
       <h2>Discount Settings</h2>
       <form id="discountForm">
-        <label>Reason: <input type="text" id="discountName" required /></label><br />
-        <label>Type:
+        <div class="form-row">
+          <label for="discountName">Reason:</label>
+          <input type="text" id="discountName" required />
+        </div>
+        <div class="form-row">
+          <label for="discountType">Type:</label>
           <select id="discountType">
             <option value="flat">Flat $ off</option>
             <option value="percent">% off</option>
           </select>
-        </label><br />
-        <label>Value: <input type="number" id="discountValue" step="0.01" required /></label><br />
+        </div>
+        <div class="form-row">
+          <label for="discountValue">Value:</label>
+          <input type="number" id="discountValue" step="0.01" required />
+        </div>
         <button type="submit">Add/Update Discount</button>
       </form>
-      <table id="discountTable" aria-label="Discount Table" style="width:100%; border-collapse: collapse;">
-  <thead>
-    <tr>
-      <th>Reason</th>
-      <th>Type</th>
-      <th>Value</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody id="discountTableBody"></tbody>
-</table>
+
+      <div class="table-wrapper">
+        <table id="discountTable" aria-label="Discount Table">
+          <thead>
+            <tr>
+              <th>Reason</th>
+              <th>Type</th>
+              <th>Value</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="discountTableBody"></tbody>
+        </table>
+      </div>
       <hr>
     </div>
   </div>
 
-  <!-- Slide-in Menu (stays outside container for full-screen coverage) -->
+  <!-- Slide-in Menu -->
   <div id="menu-overlay" class="hidden" aria-hidden="true">
     <div class="side-menu" role="menu">
-            <nav>
+      <nav>
         <button class="menu-navButton" data-target="inventory.html" role="menuitem">Inventory</button>
         <button class="menu-navButton" data-target="POS.html" role="menuitem">Make a Sale</button>
         <button class="menu-navButton" data-target="BrowseProducts.html" role="menuitem">Browse Products</button>
         <button class="menu-navButton" data-target="sales.html" role="menuitem">Sales Records</button>
         <button class="menu-navButton" data-target="shippingManager.html" role="menuitem">Shipping Manager</button>
         <button class="menu-navButton" data-target="settings.html" role="menuitem">Settings</button>
-        
       </nav>
     </div>
   </div>
@@ -194,20 +229,10 @@
     function toggleView(view) {
       document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
       document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
-      if (view === "discounts") loadDiscounts();
-    }
-
-    function toggleGender(selected) {
-      const male = document.getElementById("productGenderMale");
-      const female = document.getElementById("productGenderFemale");
-      if (selected === "M" && male.checked) {
-        female.checked = false;
-      } else if (selected === "F" && female.checked) {
-        male.checked = false;
-      }
+      if (view === "discounts" && typeof loadDiscounts === "function") loadDiscounts();
     }
   </script>
-  <script src="inventory.js"></script>
+  <script src="inventory2.js"></script>
   <script src="menu-overlay.js"></script>
 </body>
 </html>
