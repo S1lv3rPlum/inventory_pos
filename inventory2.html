@@ -2,180 +2,212 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Inventory Manager</title>
+  <title>Band Inventory Manager</title>
+
+  <!-- Global styles including menu, themes, and buttons -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Inventory-specific styles -->
   <style>
-    /* Basic styles - adjust as needed */
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #f9f9f9;
+    .container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1rem;
     }
-    h1, h2 {
-      text-align: center;
-      color: #333;
-    }
-    form {
-      max-width: 500px;
-      margin: 10px auto;
-      padding: 10px;
-      background: #fff;
+    #inventorySection, #discountSection {
+      border: 1px solid #888;
       border-radius: 8px;
-      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    input, select, button {
-      padding: 8px;
-      font-size: 1rem;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: #007bff;
-      border: none;
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    .toggle-buttons {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .toggle-buttons button {
-      margin: 0 5px;
-      padding: 8px 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .active-button {
-      background-color: #007bff;
-      color: white;
-      border-radius: 4px;
-    }
-    .table-scroll {
-      overflow-x: auto;
-      margin-top: 20px;
-      max-width: 100%;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: #fff;
     }
     table {
-      border-collapse: collapse;
       width: 100%;
-      min-width: 600px; /* let table scroll on narrow screens */
+      border-collapse: collapse;
+      margin-top: 1rem;
     }
     th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
+      border: 1px solid #ccc;
+      padding: 8px 12px;
       text-align: left;
-      font-size: 0.95rem;
+      vertical-align: top;
     }
     th {
-      background-color: #f0f0f0;
+      background-color: #eee;
     }
-    td.actions button {
-      width: auto;
-      margin-right: 5px;
-      padding: 4px 8px;
-      font-size: 0.9rem;
-      border-radius: 3px;
-      border: none;
+    button {
+      margin: 0 4px;
       cursor: pointer;
-      color: white;
     }
-    td.actions button.edit {
-      background-color: #28a745;
+    input[type="text"], input[type="number"] {
+      padding: 4px 6px;
+      box-sizing: border-box;
     }
-    td.actions button.save {
-      background-color: #007bff;
+    .form-row {
+      margin: 12px 0;
     }
-    td.actions button.delete {
-      background-color: #dc3545;
+    #topBar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
     }
-    @media (max-width: 600px) {
-      table {
-        min-width: 100%;
-      }
-      input, select, button {
-        font-size: 0.9rem;
-      }
+    #navButtons {
+      display: flex;
+      gap: 10px;
+    }
+    #bandNameBanner {
+      font-size: 1.2rem;
+      color: #999;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+
+    /* NEW: Adjusted hamburger wrapper to stay inside layout */
+    #menu-toggle-wrapper {
+      position: sticky;
+      top: 1rem;
+      z-index: 1001;
+      margin-bottom: 1rem;
     }
   </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
 </head>
-<body>
-  <h1>Inventory Manager</h1>
-  <div class="toggle-buttons">
-    <button id="showProducts" class="active-button">Products</button>
-    <button id="showDiscounts">Discounts</button>
+
+<body class="light-theme accent-blue">
+
+  <div class="container">
+
+    <!-- Hamburger Menu Button (now inside layout) -->
+    <div id="menu-toggle-wrapper">
+      <button id="menu-toggle" class="menu-button" aria-label="Open menu">☰</button>
+    </div>
+
+    <div id="bandNameBanner">&lt;Strange Standard&gt;</div>
+
+    <div id="topBar">
+      <h1>Inventory Manager</h1>
+  <button onclick="deleteDatabase()" style="background:red; color:white; margin:10px;">Delete DB (Dev Only)</button>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+    <button type="button" onclick="toggleView('inventory')">Manage Inventory</button>
+    <button type="button" onclick="toggleView('discounts')">Manage Discounts</button>
+    </div>
+
+<div style="margin-bottom: 1rem; display: flex; gap: 10px;">
+  <button type="button" style="flex: 1;" onclick="exportInventory()">⬆️ Export Inventory to Excel</button>
+  <button type="button" style="flex: 1;" onclick="document.getElementById('importFileInput').click()">⬇️ Import Inventory from Excel</button>
+  <input type="file" id="importFileInput" accept=".xlsx" style="display: none;" onchange="handleInventoryImport(event)" />
+</div>
+
+<div style="margin-bottom: 1rem; display: flex; gap: 10px;">
+  <button type="button" style="flex: 1;" onclick="exportDiscounts()">⬆️ Export Discounts to Excel</button>
+  <button type="button" style="flex: 1;" onclick="document.getElementById('importDiscountFileInput').click()">⬇️ Import Discount from Excel</button>
+  <input type="file" id="importDiscountFileInput" accept=".xlsx" style="display: none;" onchange="handleDiscountImport(event)" />
+</div>
+
+
+    <div id="inventorySection">
+      <form id="addProductForm">
+        <div class="form-row">
+          <label>Product Name: <input type="text" id="productName" required /></label>
+        </div>
+        <div class="form-row">
+          <label>Category: <input type="text" id="productCategory" /></label>
+        </div>
+        <div class="form-row">
+          <label>Price: $<input type="number" id="productPrice" step="0.01" required /></label>
+        </div>
+        <div class="form-row">
+          <label>Has Sizes? <input type="checkbox" id="productHasSizes" /></label>
+        </div>
+<div class="form-row">
+  <label>Product Image: <input type="file" id="productImage" accept="image/*" /></label>
+</div>
+
+
+        <div class="form-row">
+          Gender:
+          <label><input type="checkbox" id="productGenderMale" onclick="toggleGender('M')" /> M</label>
+          <label><input type="checkbox" id="productGenderFemale" onclick="toggleGender('F')" /> F</label>
+        </div>
+        <div class="form-row">
+          <button type="submit">Add Product</button>
+        </div>
+      </form>
+
+      <hr />
+      <h2>Current Inventory</h2>
+      <div id="debugStatus" style="background:#ffffcc; padding:8px; margin-bottom:1rem; border:1px solid #999; font-size:0.9rem;"></div>
+      <div id="inventoryList"></div>
+    </div>
+
+    <div id="discountSection" style="display:none;">
+      <h2>Discount Settings</h2>
+      <form id="discountForm">
+        <label>Reason: <input type="text" id="discountName" required /></label><br />
+        <label>Type:
+          <select id="discountType">
+            <option value="flat">Flat $ off</option>
+            <option value="percent">% off</option>
+          </select>
+        </label><br />
+        <label>Value: <input type="number" id="discountValue" step="0.01" required /></label><br />
+        <button type="submit">Add/Update Discount</button>
+      </form>
+      <table id="discountTable" aria-label="Discount Table" style="width:100%; border-collapse: collapse;">
+  <thead>
+    <tr>
+      <th>Reason</th>
+      <th>Type</th>
+      <th>Value</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="discountTableBody"></tbody>
+</table>
+      <hr>
+    </div>
   </div>
-  <section id="productSection">
-    <h2>Products</h2>
-    <form id="addProductForm">
-      <input type="text" id="productName" placeholder="Product Name" required />
-      <input type="text" id="productCategory" placeholder="Category" required />
-      <input type="number" id="productPrice" placeholder="Price" min="0" step="0.01" required />
-      <select id="productGender" required>
-        <option value="">Select Gender</option>
-        <option value="M">Male</option>
-        <option value="F">Female</option>
-        <option value="U">Unisex</option>
-      </select>
-      <select id="productHasSizes" required>
-        <option value="">Has Sizes?</option>
-        <option value="Yes">Yes</option>
-        <option value="No">No</option>
-      </select>
-      <button type="submit">Add Product</button>
-    </form>
-    <div class="table-scroll">
-      <table id="productTable">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Product Name</th>
-            <th>Price ($)</th>
-            <th>Gender</th>
-            <th>Sizes (Qty)</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+
+  <!-- Slide-in Menu (stays outside container for full-screen coverage) -->
+  <div id="menu-overlay" class="hidden" aria-hidden="true">
+    <div class="side-menu" role="menu">
+            <nav>
+        <button class="menu-navButton" data-target="inventory.html" role="menuitem">Inventory</button>
+        <button class="menu-navButton" data-target="POS.html" role="menuitem">Make a Sale</button>
+        <button class="menu-navButton" data-target="BrowseProducts.html" role="menuitem">Browse Products</button>
+        <button class="menu-navButton" data-target="sales.html" role="menuitem">Sales Records</button>
+        <button class="menu-navButton" data-target="shippingManager.html" role="menuitem">Shipping Manager</button>
+        <button class="menu-navButton" data-target="settings.html" role="menuitem">Settings</button>
+        
+      </nav>
     </div>
-  </section>
-  <section id="discountSection" style="display:none;">
-    <h2>Discounts</h2>
-    <form id="addDiscountForm">
-      <input type="text" id="discountName" placeholder="Discount Name" required />
-      <select id="discountType" required>
-        <option value="">Select Type</option>
-        <option value="percent">Percent off</option>
-        <option value="flat">Flat amount off</option>
-      </select>
-      <input type="number" id="discountValue" placeholder="Value" min="0" step="0.01" required />
-      <button type="submit">Add Discount</button>
-    </form>
-    <div class="table-scroll">
-      <table id="discountTable">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Value</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
-  <script src="inventory2.js"></script>
+  </div>
+
+  <!-- Page Scripts -->
+  <script>
+    function toggleView(view) {
+      document.getElementById("inventorySection").style.display = view === "inventory" ? "block" : "none";
+      document.getElementById("discountSection").style.display = view === "discounts" ? "block" : "none";
+      if (view === "discounts") loadDiscounts();
+    }
+
+    function toggleGender(selected) {
+      const male = document.getElementById("productGenderMale");
+      const female = document.getElementById("productGenderFemale");
+      if (selected === "M" && male.checked) {
+        female.checked = false;
+      } else if (selected === "F" && female.checked) {
+        male.checked = false;
+      }
+    }
+  </script>
+  <script src="inventory.js"></script>
+  <script src="menu-overlay.js"></script>
 </body>
 </html>
