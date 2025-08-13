@@ -127,6 +127,75 @@ function renderProducts() {
     });
   }
 
+
+function handleDeleteProduct(e) {
+  const index = e.target.getAttribute("data-index");
+  if (confirm("Are you sure you want to delete this product?")) {
+    products.splice(index, 1);
+    saveProducts();
+    renderProducts();
+  }
+}
+
+function handleEditProduct(e) {
+  const index = e.target.getAttribute("data-index");
+  const product = products[index];
+  const submitBtn = productForm.querySelector("button[type='submit']");
+
+  // Fill the form with the current product details
+  document.getElementById("productName").value = product.name;
+  document.getElementById("productPrice").value = product.price;
+  document.getElementById("productGender").value = product.gender;
+  document.getElementById("productCategory").value = product.category;
+  document.getElementById("hasSizes").value = product.hasSizes;
+
+  // Populate size fields if sizes exist
+  if (product.hasSizes === "Yes") {
+    DEFAULT_SIZES.forEach(size => {
+      document.getElementById(`size-${size}`).value = product.sizes[size] || 0;
+    });
+  } else {
+    document.getElementById("size-OneSize").value = product.sizes.OneSize || 0;
+  }
+
+  // Change the submit button to edit mode
+  submitBtn.textContent = "Save Changes";
+  submitBtn.style.backgroundColor = "#ff9800";
+
+  // Replace submit behavior for edit mode
+  productForm.onsubmit = function(ev) {
+    ev.preventDefault();
+
+    const updatedProduct = {
+      name: document.getElementById("productName").value.trim(),
+      price: parseFloat(document.getElementById("productPrice").value),
+      gender: document.getElementById("productGender").value,
+      category: document.getElementById("productCategory").value.trim(),
+      hasSizes: document.getElementById("hasSizes").value,
+      sizes: {},
+      image: product.image // keep existing image unless replaced
+    };
+
+    if (updatedProduct.hasSizes === "Yes") {
+      DEFAULT_SIZES.forEach(size => {
+        updatedProduct.sizes[size] = parseInt(document.getElementById(`size-${size}`).value) || 0;
+      });
+    } else {
+      updatedProduct.sizes.OneSize = parseInt(document.getElementById("size-OneSize").value) || 0;
+    }
+
+    products[index] = updatedProduct;
+    saveProducts();
+    renderProducts();
+    productForm.reset();
+
+    // Restore add mode
+    submitBtn.textContent = "Add Product";
+    submitBtn.style.backgroundColor = "";
+    productForm.onsubmit = defaultProductSubmit;
+  };
+}
+
   // Attach button listeners after rendering
   document.querySelectorAll(".edit-btn").forEach(btn =>
     btn.addEventListener("click", handleEditProduct)
