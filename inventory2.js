@@ -1,452 +1,298 @@
-/***********************
- * Band Inventory (localStorage only)
- * - Category grouping
- * - Inline size qty inputs in table rows
- * - Top Add Product form retained
- * - Image compression + preview
- * - Discounts: add/edit/delete (no regressions)
- ***********************/
-
-// Storage keys
+// -------------------- STORAGE KEYS --------------------
 const PRODUCTS_KEY = "inventory_products";
 const DISCOUNTS_KEY = "inventory_discounts";
+const DEFAULT_SIZES = ["XS","S","M","L","XL","2XL","3XL","4XL"];
 
-// Sizes when "Has Sizes" is checked
-const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
-
-// Elements (match your HTML)
+// -------------------- ELEMENTS --------------------
+const productSection = document.getElementById("inventorySection");
+const discountSection = document.getElementById("discountSection");
 const addProductForm = document.getElementById("addProductForm");
 const productTableBody = document.getElementById("productTableBody");
 const productImageInput = document.getElementById("productImage");
 const imagePreview = document.getElementById("imagePreview");
 
-const discountForm = document.getElementById("discountForm");
-const discountTableBody = document.getElementById("discountTableBody");
-
-// State
+// -------------------- DATA --------------------
 let products = JSON.parse(localStorage.getItem(PRODUCTS_KEY)) || [];
 let discounts = JSON.parse(localStorage.getItem(DISCOUNTS_KEY)) || [];
 let currentCompressedImage = "";
-let editIndex = -1; // -1 => add mode; otherwise editing that product
 
+// -------------------- SAVE HELPERS --------------------
 function saveProducts() {
-  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
 }
 function saveDiscounts() {
-  localStorage.setItem(DISCOUNTS_KEY, JSON.stringify(discounts));
+    localStorage.setItem(DISCOUNTS_KEY, JSON.stringify(discounts));
 }
 
-/* ---------- Image compression + preview ---------- */
-productImageInput?.addEventListener("change", function () {
-  const file = this.files?.[0];
-  if (!file) {
-    currentCompressedImage = "";
-    imagePreview.src = "";
-    imagePreview.style.display = "none";
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const maxWidth = 600;
-      const scale = Math.min(maxWidth / img.width, 1);
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      currentCompressedImage = canvas.toDataURL("image/jpeg", 0.75);
-      imagePreview.src = currentCompressedImage;
-      imagePreview.style.display = "block";
+// -------------------- IMAGE PREVIEW & COMPRESSION --------------------
+productImageInput?.addEventListener("change", function() {
+    const file = this.files[0];
+    if (!file) { currentCompressedImage = ""; imagePreview.src=""; imagePreview.style.display="none"; return; }
+    const reader = new FileReader();
+    reader.onload = function(e){
+        const img = new Image();
+        img.onload = function(){
+            const canvas = document.createElement("canvas");
+            const maxWidth = 500;
+            const scale = Math.min(maxWidth / img.width, 1);
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img,0,0,canvas.width,canvas.height);
+            currentCompressedImage = canvas.toDataURL("image/jpeg",0.7);
+            imagePreview.src = currentCompressedImage;
+            imagePreview.style.display = "block";
+        };
+        img.src = e.target.result;
     };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
 });
 
-/* ---------- Helpers ---------- */
+// -------------------- ADD PRODUCT --------------------
+addProductForm.addEventListener("submit", e=>{
+    e.preventDefault();
 
-// ensure a product has the right size structure
-function normalizeSizes(product) {
-  if (product.hasSizes === "Yes") {
-    product.sizes = product.sizes || {};
-    DEFAULT_SIZES.forEach((sz) => {
-      if (typeof product.sizes[sz] !== "number") product.sizes[sz] = 0;
-    });
-    // Remove OneSize if it exists
-    if ("OneSize" in product.sizes) delete product.sizes.OneSize;
-  } else {
-    const existing =
-      product.sizes && typeof product.sizes.OneSize === "number"
-        ? product.sizes.OneSize
-        : 0;
-    product.sizes = { OneSize: existing };
-    // Remove size map keys if any leaked in
-    Object.keys(product.sizes).forEach((k) => {
-      if (k !== "OneSize") delete product.sizes[k];
-    });
-  }
-  return product;
-}
+    const name = document.getElementById("productName").value.trim();
+    const category = document.getElementById("productCategory").value.trim();
+    const price = parseFloat(document.getElementById("productPrice").value);
+    const genderInput = document.querySelector('input[name="productGender"]:checked');
+    const gender = genderInput ? genderInput.value : "";
+    const hasSizes = document.getElementById("productHasSizes").checked;
 
-function qtyInput(name, idx, sizeKey, value) {
-  // data attrs used to update localStorage on change
-  return `<label style="display:inline-flex;align-items:center;gap:.35rem;margin:.15rem .35rem;">
-    <span style="min-width:2.5rem;display:inline-block">${name}</span>
-    <input class="size-qty" type="number" min="0" step="1"
-      data-index="${idx}" data-size="${sizeKey}" value="${Number(value) || 0}" style="max-width:90px" />
-  </label>`;
-}
-
-/* ---------- Render Products (with category grouping + inline qty inputs) ---------- */
-function renderProducts() {
-  productTableBody.innerHTML = "";
-
-  // If no products, show friendly row
-  if (!products.length) {
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 6;
-    td.style.textAlign = "center";
-    td.textContent = "No products found.";
-    tr.appendChild(td);
-    productTableBody.appendChild(tr);
-    return;
-  }
-
-  // Group by category
-  const grouped = {};
-  products.forEach((p, index) => {
-    const cat = p.category || "Uncategorized";
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push({ ...p, _index: index });
-  });
-
-  // For every category render a header row then each product
-  Object.keys(grouped).forEach((category) => {
-    // category header
-    const hdr = document.createElement("tr");
-    hdr.innerHTML = `<td colspan="6" class="category-header"><strong>${category}</strong></td>`;
-    productTableBody.appendChild(hdr);
-
-    grouped[category].forEach((product) => {
-      // make sure its size structure is sane
-      normalizeSizes(product);
-
-      // Build sizes cell HTML
-      let sizesHTML = "";
-      if (product.hasSizes === "Yes") {
-        sizesHTML = DEFAULT_SIZES.map((sz) =>
-          qtyInput(sz, product._index, sz, product.sizes?.[sz] ?? 0)
-        ).join("");
-      } else {
-        sizesHTML = qtyInput("Qty", product._index, "OneSize", product.sizes?.OneSize ?? 0);
-      }
-
-      const priceText = isNaN(product.price) ? "" : `$${Number(product.price).toFixed(2)}`;
-      const imgHTML = product.image
-        ? `<img src="${product.image}" class="product-thumb" style="max-width:60px;max-height:60px;border-radius:4px;"/>`
-        : "";
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${imgHTML}</td>
-        <td>${product.name || ""}</td>
-        <td>${priceText}</td>
-        <td>${product.gender || ""}</td>
-        <td>${sizesHTML}</td>
-        <td class="actions">
-          <button class="edit-btn" data-index="${product._index}">Edit</button>
-          <button class="delete-btn" data-index="${product._index}">Delete</button>
-        </td>
-      `;
-      productTableBody.appendChild(tr);
-    });
-  });
-
-  // Wire up qty changes (inline)
-  document.querySelectorAll("input.size-qty").forEach((inp) => {
-    inp.addEventListener("input", onQtyChange);
-  });
-
-  // Wire up edit/delete
-  document.querySelectorAll(".edit-btn").forEach((btn) =>
-    btn.addEventListener("click", handleEditProduct)
-  );
-  document.querySelectorAll(".delete-btn").forEach((btn) =>
-    btn.addEventListener("click", handleDeleteProduct)
-  );
-}
-
-function onQtyChange(e) {
-  const idx = Number(e.target.dataset.index);
-  const sizeKey = e.target.dataset.size;
-  const val = Math.max(0, parseInt(e.target.value, 10) || 0);
-  if (!products[idx]) return;
-  products[idx].sizes = products[idx].sizes || {};
-  products[idx].sizes[sizeKey] = val;
-  saveProducts();
-}
-
-/* ---------- Add / Edit Products using top form ---------- */
-addProductForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  const name = document.getElementById("productName").value.trim();
-  const category = document.getElementById("productCategory").value.trim();
-  const price = parseFloat(document.getElementById("productPrice").value);
-  const hasSizes = document.getElementById("productHasSizes").checked ? "Yes" : "No";
-  const genderRadio = document.querySelector('input[name="productGender"]:checked');
-  const gender = genderRadio ? genderRadio.value : "";
-
-  if (!name || !category || !gender || isNaN(price)) {
-    alert("Please fill in all product fields correctly.");
-    return;
-  }
-
-  if (editIndex === -1) {
-    // ADD
-    const newProd = {
-      name,
-      category,
-      price,
-      gender,
-      hasSizes,
-      sizes: {},
-      image: currentCompressedImage || ""
-    };
-    if (hasSizes === "Yes") {
-      DEFAULT_SIZES.forEach((sz) => (newProd.sizes[sz] = 0));
-    } else {
-      newProd.sizes.OneSize = 0;
-    }
-    products.push(newProd);
-  } else {
-    // SAVE EDIT
-    const existing = products[editIndex] || {};
-    const updated = {
-      ...existing,
-      name,
-      category,
-      price,
-      gender,
-      hasSizes,
-      image: currentCompressedImage || existing.image || ""
-    };
-
-    // If hasSizes changed, reshape sizes
-    if (hasSizes === "Yes") {
-      const prev = existing.sizes || {};
-      const reshaped = {};
-      DEFAULT_SIZES.forEach((sz) => {
-        reshaped[sz] = typeof prev[sz] === "number" ? prev[sz] : 0;
-      });
-      updated.sizes = reshaped;
-    } else {
-      // merge all sizes into OneSize (sum) or keep existing OneSize
-      const prev = existing.sizes || {};
-      let sum = 0;
-      Object.keys(prev).forEach((k) => (sum += Number(prev[k]) || 0));
-      updated.sizes = { OneSize: sum };
+    if(!name || !category || isNaN(price) || !gender) {
+        alert("Please fill in all product fields correctly.");
+        return;
     }
 
-    products[editIndex] = updated;
-  }
+    let sizes = {};
+    if(hasSizes){
+        DEFAULT_SIZES.forEach(size=>sizes[size]=0);
+    } else {
+        sizes.OneSize = 0;
+    }
 
-  saveProducts();
-  renderProducts();
-  resetProductForm();
-});
+    products.push({
+        name, category, price, gender, hasSizes, sizes,
+        image: currentCompressedImage || ""
+    });
 
-function resetProductForm() {
-  editIndex = -1;
-  addProductForm.reset();
-  // Clear image preview state
-  currentCompressedImage = "";
-  imagePreview.src = "";
-  imagePreview.style.display = "none";
-
-  const submitBtn = addProductForm.querySelector('button[type="submit"]');
-  if (submitBtn) {
-    submitBtn.textContent = "Add Product";
-    submitBtn.style.backgroundColor = "";
-  }
-}
-
-function handleDeleteProduct(e) {
-  const idx = Number(e.currentTarget.dataset.index);
-  if (!products[idx]) return;
-  if (confirm("Are you sure you want to delete this product?")) {
-    products.splice(idx, 1);
     saveProducts();
     renderProducts();
-    // If you were editing this one, reset form
-    if (editIndex === idx) resetProductForm();
-  }
-}
-
-function handleEditProduct(e) {
-  const idx = Number(e.currentTarget.dataset.index);
-  const p = products[idx];
-  if (!p) return;
-  editIndex = idx;
-
-  document.getElementById("productName").value = p.name || "";
-  document.getElementById("productCategory").value = p.category || "";
-  document.getElementById("productPrice").value = typeof p.price === "number" ? p.price : "";
-  document.getElementById("productHasSizes").checked = p.hasSizes === "Yes";
-
-  // gender radios
-  const male = document.querySelector('input[name="productGender"][value="M"]');
-  const female = document.querySelector('input[name="productGender"][value="F"]');
-  if (male) male.checked = p.gender === "M";
-  if (female) female.checked = p.gender === "F";
-
-  // image preview
-  if (p.image) {
-    imagePreview.src = p.image;
-    imagePreview.style.display = "block";
-    currentCompressedImage = p.image;
-  } else {
-    imagePreview.src = "";
-    imagePreview.style.display = "none";
+    addProductForm.reset();
     currentCompressedImage = "";
-  }
+    imagePreview.src="";
+    imagePreview.style.display="none";
+});
 
-  const submitBtn = addProductForm.querySelector('button[type="submit"]');
-  if (submitBtn) {
-    submitBtn.textContent = "Save Changes";
-    submitBtn.style.backgroundColor = "#ff9800";
-  }
-
-  // Scroll to top so the form is visible
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-/* ---------- Discounts (unchanged behaviors) ---------- */
-
-function renderDiscounts() {
-  discountTableBody.innerHTML = "";
-
-  if (!discounts.length) {
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 4;
-    td.style.textAlign = "center";
-    td.textContent = "No discounts found.";
-    tr.appendChild(td);
-    discountTableBody.appendChild(tr);
-    return;
-  }
-
-  discounts.forEach((discount, index) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${discount.reason}</td>
-      <td>${discount.type}</td>
-      <td>${discount.value}</td>
-      <td>
-        <button class="edit-discount" data-index="${index}">Edit</button>
-        <button class="delete-discount" data-index="${index}">Delete</button>
-      </td>
-    `;
-    discountTableBody.appendChild(tr);
-  });
-
-  // wire up buttons
-  discountTableBody.querySelectorAll(".delete-discount").forEach((btn) =>
-    btn.addEventListener("click", handleDeleteDiscount)
-  );
-  discountTableBody.querySelectorAll(".edit-discount").forEach((btn) =>
-    btn.addEventListener("click", handleEditDiscount)
-  );
-}
-
-function defaultDiscountSubmit(e) {
-  e.preventDefault();
-  const reason = document.getElementById("discountName").value.trim();
-  const type = document.getElementById("discountType").value;
-  const value = parseFloat(document.getElementById("discountValue").value);
-
-  if (!reason || isNaN(value)) {
-    alert("Please fill in discount reason and a valid value.");
-    return;
-  }
-
-  discounts.push({ reason, type, value });
-  saveDiscounts();
-  renderDiscounts();
-  discountForm.reset();
-
-  const submitBtn = discountForm.querySelector('button[type="submit"]');
-  if (submitBtn) {
-    submitBtn.textContent = "Add/Update Discount";
-    submitBtn.style.backgroundColor = "";
-  }
-}
-
-function handleDeleteDiscount(e) {
-  const idx = Number(e.currentTarget.dataset.index);
-  if (!discounts[idx]) return;
-  if (confirm("Are you sure you want to delete this discount?")) {
-    discounts.splice(idx, 1);
-    saveDiscounts();
-    renderDiscounts();
-  }
-}
-
-function handleEditDiscount(e) {
-  const idx = Number(e.currentTarget.dataset.index);
-  const d = discounts[idx];
-  if (!d) return;
-
-  document.getElementById("discountName").value = d.reason;
-  document.getElementById("discountType").value = d.type;
-  document.getElementById("discountValue").value = d.value;
-
-  const submitBtn = discountForm.querySelector('button[type="submit"]');
-  if (submitBtn) {
-    submitBtn.textContent = "Save Changes";
-    submitBtn.style.backgroundColor = "#ff9800";
-  }
-
-  discountForm.onsubmit = function (ev) {
-    ev.preventDefault();
-
-    const updatedReason = document.getElementById("discountName").value.trim();
-    const updatedType = document.getElementById("discountType").value;
-    const updatedValue = parseFloat(document.getElementById("discountValue").value);
-
-    if (!updatedReason || isNaN(updatedValue)) {
-      alert("Please fill in discount reason and a valid value.");
-      return;
+// -------------------- RENDER PRODUCTS --------------------
+function renderProducts(){
+    productTableBody.innerHTML = "";
+    if(products.length===0){
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 6;
+        td.style.textAlign="center";
+        td.textContent="No products found.";
+        tr.appendChild(td);
+        productTableBody.appendChild(tr);
+        return;
     }
 
-    discounts[idx] = { reason: updatedReason, type: updatedType, value: updatedValue };
+    // group by category
+    const grouped = {};
+    products.forEach((p,index)=>{
+        if(!grouped[p.category]) grouped[p.category] = [];
+        grouped[p.category].push({...p,index});
+    });
+
+    Object.keys(grouped).forEach(category=>{
+        // category header
+        const trHeader = document.createElement("tr");
+        const tdHeader = document.createElement("td");
+        tdHeader.colSpan=6;
+        tdHeader.style.fontWeight="bold";
+        tdHeader.textContent=category;
+        trHeader.appendChild(tdHeader);
+        productTableBody.appendChild(trHeader);
+
+        grouped[category].forEach(product=>{
+            const tr = document.createElement("tr");
+
+            // create size inputs
+            let sizeInputs = "";
+            if(product.hasSizes){
+                sizeInputs = DEFAULT_SIZES.map(size=>`<label>${size}: <input type="number" min="0" value="${product.sizes[size]}" data-size="${size}" class="size-input"></label>`).join(" ");
+            } else {
+                sizeInputs = `<label>One Size: <input type="number" min="0" value="${product.sizes.OneSize}" data-size="OneSize" class="size-input"></label>`;
+            }
+
+            tr.innerHTML = `
+                <td>${product.image ? `<img src="${product.image}" class="product-thumb" style="max-width:50px; max-height:50px;">` : ""}</td>
+                <td><input type="text" value="${product.name}" class="edit-field name-field"></td>
+                <td><input type="number" min="0" step="0.01" value="${product.price}" class="edit-field price-field"></td>
+                <td>
+                  <select class="edit-field gender-field">
+                    <option value="M" ${product.gender==="M"?"selected":""}>M</option>
+                    <option value="F" ${product.gender==="F"?"selected":""}>F</option>
+                  </select>
+                </td>
+                <td>${sizeInputs}</td>
+                <td>
+                  <input type="file" accept="image/*" class="row-image-input"><br>
+                  <button class="save-btn" data-index="${product.index}">Save</button>
+                  <button class="delete-btn" data-index="${product.index}">Delete</button>
+                </td>
+            `;
+            productTableBody.appendChild(tr);
+
+            // attach image change for row
+            const rowImageInput = tr.querySelector(".row-image-input");
+            rowImageInput.addEventListener("change", function(ev){
+                const file = this.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e){
+                    const img = new Image();
+                    img.onload = function(){
+                        const canvas = document.createElement("canvas");
+                        const maxWidth = 500;
+                        const scale = Math.min(maxWidth/img.width,1);
+                        canvas.width = img.width*scale;
+                        canvas.height = img.height*scale;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+                        const dataUrl = canvas.toDataURL("image/jpeg",0.7);
+                        product.image = dataUrl;
+                        saveProducts();
+                        renderProducts();
+                    };
+                    img.src=e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    });
+
+    // attach save/delete
+    document.querySelectorAll(".save-btn").forEach(btn=>{
+        btn.addEventListener("click", e=>{
+            const idx = parseInt(btn.dataset.index);
+            const tr = btn.closest("tr");
+            const product = products[idx];
+
+            product.name = tr.querySelector(".name-field").value.trim();
+            product.price = parseFloat(tr.querySelector(".price-field").value);
+            product.gender = tr.querySelector(".gender-field").value;
+
+            // sizes
+            if(product.hasSizes){
+                DEFAULT_SIZES.forEach(size=>{
+                    const input = tr.querySelector(`.size-input[data-size="${size}"]`);
+                    product.sizes[size] = parseInt(input.value)||0;
+                });
+            } else {
+                const input = tr.querySelector(`.size-input[data-size="OneSize"]`);
+                product.sizes.OneSize = parseInt(input.value)||0;
+            }
+
+            saveProducts();
+            renderProducts();
+        });
+    });
+
+    document.querySelectorAll(".delete-btn").forEach(btn=>{
+        btn.addEventListener("click", e=>{
+            const idx = parseInt(btn.dataset.index);
+            if(confirm("Are you sure you want to delete this product?")){
+                products.splice(idx,1);
+                saveProducts();
+                renderProducts();
+            }
+        });
+    });
+}
+
+// -------------------- DISCOUNT LOGIC --------------------
+const discountForm = document.getElementById("discountForm");
+const discountTableBody = document.getElementById("discountTableBody");
+
+function renderDiscounts(){
+    discountTableBody.innerHTML="";
+    if(discounts.length===0){
+        const tr=document.createElement("tr");
+        const td=document.createElement("td");
+        td.colSpan=4;
+        td.style.textAlign="center";
+        td.textContent="No discounts found.";
+        tr.appendChild(td);
+        discountTableBody.appendChild(tr);
+        return;
+    }
+
+    discounts.forEach((d,index)=>{
+        const tr=document.createElement("tr");
+        tr.innerHTML=`
+          <td><input type="text" value="${d.reason}" class="edit-discount reason-field"></td>
+          <td>
+            <select class="edit-discount type-field">
+              <option value="flat" ${d.type==="flat"?"selected":""}>Flat $ off</option>
+              <option value="percent" ${d.type==="percent"?"selected":""}>% off</option>
+            </select>
+          </td>
+          <td><input type="number" min="0" step="0.01" value="${d.value}" class="edit-discount value-field"></td>
+          <td>
+            <button class="save-discount-btn" data-index="${index}">Save</button>
+            <button class="delete-discount-btn" data-index="${index}">Delete</button>
+          </td>
+        `;
+        discountTableBody.appendChild(tr);
+    });
+
+    // attach save/delete
+    document.querySelectorAll(".save-discount-btn").forEach(btn=>{
+        btn.addEventListener("click", e=>{
+            const idx=parseInt(btn.dataset.index);
+            const tr=btn.closest("tr");
+            discounts[idx].reason = tr.querySelector(".reason-field").value.trim();
+            discounts[idx].type = tr.querySelector(".type-field").value;
+            discounts[idx].value = parseFloat(tr.querySelector(".value-field").value)||0;
+            saveDiscounts();
+            renderDiscounts();
+        });
+    });
+
+    document.querySelectorAll(".delete-discount-btn").forEach(btn=>{
+        btn.addEventListener("click", e=>{
+            const idx=parseInt(btn.dataset.index);
+            if(confirm("Are you sure you want to delete this discount?")){
+                discounts.splice(idx,1);
+                saveDiscounts();
+                renderDiscounts();
+            }
+        });
+    });
+}
+
+discountForm.addEventListener("submit", e=>{
+    e.preventDefault();
+    const reason=document.getElementById("discountName").value.trim();
+    const type=document.getElementById("discountType").value;
+    const value=parseFloat(document.getElementById("discountValue").value);
+
+    if(!reason || isNaN(value)){
+        alert("Please fill in discount reason and a valid value.");
+        return;
+    }
+
+    discounts.push({reason,type,value});
     saveDiscounts();
     renderDiscounts();
     discountForm.reset();
-
-    // restore add mode
-    if (submitBtn) {
-      submitBtn.textContent = "Add/Update Discount";
-      submitBtn.style.backgroundColor = "";
-    }
-    discountForm.onsubmit = defaultDiscountSubmit;
-  };
-}
-
-// attach default submit for discounts
-discountForm.addEventListener("submit", defaultDiscountSubmit);
-
-/* ---------- Init ---------- */
-window.addEventListener("resize", renderProducts);
-window.addEventListener("DOMContentLoaded", () => {
-  // Normalize any previously-saved products to the new size schema
-  products = products.map(normalizeSizes);
-  saveProducts();
-
-  renderProducts();
-  renderDiscounts();
 });
+
+// -------------------- INIT --------------------
+window.addEventListener("DOMContentLoaded",()=>{
+    renderProducts();
+    renderDiscounts();
+});
+window.addEventListener("resize", renderProducts);
