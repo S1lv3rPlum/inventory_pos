@@ -85,93 +85,134 @@ addProductForm.addEventListener("submit", e=>{
 });
 
 // -------------------- RENDER PRODUCTS --------------------
-function renderProducts(){
+function renderProducts() {
     productTableBody.innerHTML = "";
-    if(products.length===0){
+    if (products.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
         td.colSpan = 6;
-        td.style.textAlign="center";
-        td.textContent="No products found.";
+        td.style.textAlign = "center";
+        td.textContent = "No products found.";
         tr.appendChild(td);
         productTableBody.appendChild(tr);
         return;
     }
 
-    // group by category
+    // Group by category
     const grouped = {};
-    products.forEach((p,index)=>{
-        if(!grouped[p.category]) grouped[p.category] = [];
-        grouped[p.category].push({...p,index});
+    products.forEach((p, index) => {
+        if (!grouped[p.category]) grouped[p.category] = [];
+        grouped[p.category].push({ ...p, index });
     });
 
-    Object.keys(grouped).forEach(category=>{
-        // category header
+    Object.keys(grouped).forEach(category => {
+        // Category header row
         const trHeader = document.createElement("tr");
         const tdHeader = document.createElement("td");
-        tdHeader.colSpan=6;
-        tdHeader.style.fontWeight="bold";
-        tdHeader.textContent=category;
+        tdHeader.colSpan = 6;
+        tdHeader.style.fontWeight = "bold";
+        tdHeader.textContent = category;
         trHeader.appendChild(tdHeader);
         productTableBody.appendChild(trHeader);
 
-        grouped[category].forEach(product=>{
+        grouped[category].forEach(product => {
             const tr = document.createElement("tr");
 
-            // create size inputs
+            // Create size inputs inline
             let sizeInputs = "";
-            if(product.hasSizes){
-                sizeInputs = DEFAULT_SIZES.map(size=>`<label>${size}: <input type="number" min="0" value="${product.sizes[size]}" data-size="${size}" class="size-input"></label>`).join(" ");
+            if (product.hasSizes) {
+                sizeInputs = DEFAULT_SIZES.map(size =>
+                    `<label>${size}: <input type="number" min="0" value="${product.sizes[size] || 0}" data-size="${size}" class="size-input"></label>`
+                ).join(" ");
             } else {
-                sizeInputs = `<label>One Size: <input type="number" min="0" value="${product.sizes.OneSize}" data-size="OneSize" class="size-input"></label>`;
+                sizeInputs = `<label>One Size: <input type="number" min="0" value="${product.sizes.OneSize || 0}" data-size="OneSize" class="size-input"></label>`;
             }
 
             tr.innerHTML = `
-                <td>${product.image ? `<img src="${product.image}" class="product-thumb" style="max-width:50px; max-height:50px;">` : ""}</td>
+                <td>${product.image ? `<img src="${product.image}" style="max-width:50px; max-height:50px;">` : ""}</td>
                 <td><input type="text" value="${product.name}" class="edit-field name-field"></td>
                 <td><input type="number" min="0" step="0.01" value="${product.price}" class="edit-field price-field"></td>
                 <td>
-                  <select class="edit-field gender-field">
-                    <option value="M" ${product.gender==="M"?"selected":""}>M</option>
-                    <option value="F" ${product.gender==="F"?"selected":""}>F</option>
-                  </select>
+                    <select class="edit-field gender-field">
+                        <option value="M" ${product.gender === "M" ? "selected" : ""}>M</option>
+                        <option value="F" ${product.gender === "F" ? "selected" : ""}>F</option>
+                    </select>
                 </td>
                 <td>${sizeInputs}</td>
                 <td>
-                  <input type="file" accept="image/*" class="row-image-input"><br>
-                  <button class="save-btn" data-index="${product.index}">Save</button>
-<button class="delete-btn" data-index="${product.index}">Delete</button>
+                    <input type="file" accept="image/*" class="row-image-input"><br>
+                    <button class="save-btn" data-index="${product.index}">Save</button>
+                    <button class="delete-btn" data-index="${product.index}">Delete</button>
                 </td>
             `;
+
             productTableBody.appendChild(tr);
 
-            // attach image change for row
+            // Handle row image change
             const rowImageInput = tr.querySelector(".row-image-input");
-            rowImageInput.addEventListener("change", function(ev){
+            rowImageInput.addEventListener("change", function () {
                 const file = this.files[0];
-                if(!file) return;
+                if (!file) return;
                 const reader = new FileReader();
-                reader.onload = function(e){
+                reader.onload = function (e) {
                     const img = new Image();
-                    img.onload = function(){
+                    img.onload = function () {
                         const canvas = document.createElement("canvas");
                         const maxWidth = 500;
-                        const scale = Math.min(maxWidth/img.width,1);
-                        canvas.width = img.width*scale;
-                        canvas.height = img.height*scale;
+                        const scale = Math.min(maxWidth / img.width, 1);
+                        canvas.width = img.width * scale;
+                        canvas.height = img.height * scale;
                         const ctx = canvas.getContext("2d");
-                        ctx.drawImage(img,0,0,canvas.width,canvas.height);
-                        const dataUrl = canvas.toDataURL("image/jpeg",0.7);
-                        product.image = dataUrl;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        product.image = canvas.toDataURL("image/jpeg", 0.7);
                         saveProducts();
                         renderProducts();
                     };
-                    img.src=e.target.result;
+                    img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             });
         });
     });
+
+    // Save button logic
+    document.querySelectorAll(".save-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const idx = parseInt(btn.dataset.index);
+            const tr = btn.closest("tr");
+            const product = products[idx];
+
+            product.name = tr.querySelector(".name-field").value.trim();
+            product.price = parseFloat(tr.querySelector(".price-field").value);
+            product.gender = tr.querySelector(".gender-field").value;
+
+            if (product.hasSizes) {
+                DEFAULT_SIZES.forEach(size => {
+                    const input = tr.querySelector(`.size-input[data-size="${size}"]`);
+                    product.sizes[size] = parseInt(input.value) || 0;
+                });
+            } else {
+                const input = tr.querySelector(`.size-input[data-size="OneSize"]`);
+                product.sizes.OneSize = parseInt(input.value) || 0;
+            }
+
+            saveProducts();
+            renderProducts();
+        });
+    });
+
+    // Delete button logic
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const idx = parseInt(btn.dataset.index);
+            if (confirm("Are you sure you want to delete this product?")) {
+                products.splice(idx, 1);
+                saveProducts();
+                renderProducts();
+            }
+        });
+    });
+}
 
     // attach save/delete
     document.querySelectorAll(".save-btn").forEach(btn=>{
