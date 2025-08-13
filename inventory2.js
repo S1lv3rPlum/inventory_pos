@@ -54,7 +54,7 @@ function renderProducts() {
   if (products.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 7;
+    td.colSpan = 6; // reduced because no category column now
     td.style.textAlign = "center";
     td.textContent = "No products found.";
     tr.appendChild(td);
@@ -62,52 +62,72 @@ function renderProducts() {
     return;
   }
 
-  // Switch between table and card layout
+  // Group products by category
+  const grouped = {};
+  products.forEach((p, index) => {
+    if (!grouped[p.category]) grouped[p.category] = [];
+    grouped[p.category].push({ ...p, index });
+  });
+
+  // Render based on screen size
   if (window.innerWidth < 768) {
-    // Mobile card layout
+    // Mobile: cards grouped by category
     productTableBody.parentElement.style.display = "block";
-    products.forEach((product, index) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td colspan="7">
-          <div class="product-card">
-            ${product.image ? `<img src="${product.image}" class="product-thumb">` : ""}
-            <div><strong>${product.name}</strong> (${product.category})</div>
-            <div>$${parseFloat(product.price).toFixed(2)} - ${product.gender}</div>
-            <div>${product.hasSizes === "Yes" ? DEFAULT_SIZES.map(size => `${size}: ${product.sizes[size] || 0}`).join(", ") : `One Size: ${product.sizes.OneSize || 0}`}</div>
-            <div class="actions">
-              <button class="edit-btn" data-index="${index}">Edit</button>
-              <button class="delete-btn" data-index="${index}">Delete</button>
+    Object.keys(grouped).forEach(category => {
+      // Category header row
+      let trHeader = document.createElement("tr");
+      trHeader.innerHTML = `<td colspan="6" class="category-header"><strong>${category}</strong></td>`;
+      productTableBody.appendChild(trHeader);
+
+      grouped[category].forEach(product => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td colspan="6">
+            <div class="product-card">
+              ${product.image ? `<img src="${product.image}" class="product-thumb">` : ""}
+              <div><strong>${product.name}</strong></div>
+              <div>$${parseFloat(product.price).toFixed(2)} - ${product.gender}</div>
+              <div>${product.hasSizes === "Yes" ? DEFAULT_SIZES.map(size => `${size}: ${product.sizes[size] || 0}`).join(", ") : `One Size: ${product.sizes.OneSize || 0}`}</div>
+              <div class="actions">
+                <button class="edit-btn" data-index="${product.index}">Edit</button>
+                <button class="delete-btn" data-index="${product.index}">Delete</button>
+              </div>
             </div>
-          </div>
-        </td>
-      `;
-      productTableBody.appendChild(tr);
+          </td>
+        `;
+        productTableBody.appendChild(tr);
+      });
     });
   } else {
-    // Desktop table layout
-    products.forEach((product, index) => {
-      const tr = document.createElement("tr");
-      let sizesText = product.hasSizes === "Yes"
-        ? DEFAULT_SIZES.map(size => `${size}: ${product.sizes?.[size] ?? 0}`).join(", ")
-        : `One Size: ${product.sizes?.OneSize || 0}`;
-      tr.innerHTML = `
-        <td>${product.image ? `<img src="${product.image}" class="product-thumb">` : ""}</td>
-        <td>${product.category}</td>
-        <td>${product.name}</td>
-        <td>$${parseFloat(product.price).toFixed(2)}</td>
-        <td>${product.gender}</td>
-        <td>${sizesText}</td>
-        <td class="actions">
-          <button class="edit-btn" data-index="${index}">Edit</button>
-          <button class="delete-btn" data-index="${index}">Delete</button>
-        </td>
-      `;
-      productTableBody.appendChild(tr);
+    // Desktop: table layout grouped by category
+    Object.keys(grouped).forEach(category => {
+      // Category header row
+      let trHeader = document.createElement("tr");
+      trHeader.innerHTML = `<td colspan="6" class="category-header"><strong>${category}</strong></td>`;
+      productTableBody.appendChild(trHeader);
+
+      grouped[category].forEach(product => {
+        let sizesText = product.hasSizes === "Yes"
+          ? DEFAULT_SIZES.map(size => `${size}: ${product.sizes?.[size] ?? 0}`).join(", ")
+          : `One Size: ${product.sizes?.OneSize || 0}`;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${product.image ? `<img src="${product.image}" class="product-thumb">` : ""}</td>
+          <td>${product.name}</td>
+          <td>$${parseFloat(product.price).toFixed(2)}</td>
+          <td>${product.gender}</td>
+          <td>${sizesText}</td>
+          <td class="actions">
+            <button class="edit-btn" data-index="${product.index}">Edit</button>
+            <button class="delete-btn" data-index="${product.index}">Delete</button>
+          </td>
+        `;
+        productTableBody.appendChild(tr);
+      });
     });
   }
 
-  // Event listeners
+  // Reattach event listeners
   document.querySelectorAll(".edit-btn").forEach(btn => btn.addEventListener("click", handleEditProduct));
   document.querySelectorAll(".delete-btn").forEach(btn => btn.addEventListener("click", handleDeleteProduct));
 }
