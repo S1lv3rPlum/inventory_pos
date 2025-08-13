@@ -291,7 +291,7 @@ function handleEditDiscount(e) {
   };
 }
 
-defaultDiscountSubmit(e) {
+function defaultDiscountSubmit(e) {
   e.preventDefault();
 
   const reason = document.getElementById("discountName").value.trim();
@@ -307,6 +307,11 @@ defaultDiscountSubmit(e) {
   saveDiscounts();
   renderDiscounts();
   discountForm.reset();
+
+  // Ensure button is normal
+  const submitBtn = discountForm.querySelector("button[type='submit']");
+  submitBtn.textContent = "Add Discount";
+  submitBtn.style.backgroundColor = "";
 }
 
 discountForm.addEventListener("submit", defaultDiscountSubmit);
