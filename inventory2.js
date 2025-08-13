@@ -239,7 +239,51 @@ function renderDiscounts() {
 
   // Add edit/delete handlers if you want, or leave blank for now
 }
-// discount saveDiscountsfunction defaultDiscountSubmit(e) {
+// discount saveDiscountsfunction
+
+function handleDeleteDiscount(e) {
+  const index = e.target.getAttribute("data-index");
+  if (confirm("Are you sure you want to delete this discount?")) {
+    discounts.splice(index, 1);
+    saveDiscounts();
+    renderDiscounts();
+  }
+}
+
+function handleEditDiscount(e) {
+  const index = e.target.getAttribute("data-index");
+  const discount = discounts[index];
+
+  // Fill form with existing values
+  document.getElementById("discountName").value = discount.reason;
+  document.getElementById("discountType").value = discount.type;
+  document.getElementById("discountValue").value = discount.value;
+
+  // Change submit behavior to save changes instead of adding new
+  const discountForm = document.getElementById("discountForm");
+  discountForm.onsubmit = function(ev) {
+    ev.preventDefault();
+
+    const updatedReason = document.getElementById("discountName").value.trim();
+    const updatedType = document.getElementById("discountType").value;
+    const updatedValue = parseFloat(document.getElementById("discountValue").value);
+
+    if (!updatedReason || isNaN(updatedValue)) {
+      alert("Please fill in discount reason and a valid value.");
+      return;
+    }
+
+    discounts[index] = { reason: updatedReason, type: updatedType, value: updatedValue };
+    saveDiscounts();
+    renderDiscounts();
+    discountForm.reset();
+
+    // Restore normal add mode
+    discountForm.onsubmit = defaultDiscountSubmit;
+  };
+}
+
+defaultDiscountSubmit(e) {
   e.preventDefault();
 
   const reason = document.getElementById("discountName").value.trim();
