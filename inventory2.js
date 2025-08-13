@@ -135,19 +135,29 @@ function renderProducts() {
 // Add product
 addProductForm.addEventListener("submit", e => {
   e.preventDefault();
+
   const name = document.getElementById("productName").value.trim();
   const category = document.getElementById("productCategory").value.trim();
   const price = parseFloat(document.getElementById("productPrice").value);
-  const gender = document.getElementById("productGender").value;
-  const hasSizes = document.getElementById("productHasSizes").value;
-  if (!name || !category || isNaN(price) || !gender || !hasSizes) {
+
+  // Get checked gender radio value
+  const genderInput = document.querySelector('input[name="productGender"]:checked');
+  const gender = genderInput ? genderInput.value : "";
+
+  // Checkbox checked returns true/false
+  const hasSizes = document.getElementById("productHasSizes").checked ? "Yes" : "No";
+
+  if (!name || !category || isNaN(price) || !gender) {
     alert("Please fill in all product fields correctly.");
     return;
   }
 
   let sizes = {};
-  if (hasSizes === "Yes") DEFAULT_SIZES.forEach(size => sizes[size] = 0);
-  else sizes.OneSize = 0;
+  if (hasSizes === "Yes") {
+    DEFAULT_SIZES.forEach(size => sizes[size] = 0);
+  } else {
+    sizes.OneSize = 0;
+  }
 
   products.push({
     name, category, price, gender, hasSizes, sizes,
@@ -162,7 +172,6 @@ addProductForm.addEventListener("submit", e => {
   document.getElementById("productName").focus();
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
-
 // Rest of your edit/save/delete discount logic remains unchanged...
 // (Keep your handleEditProduct, handleSaveProduct, handleDeleteProduct, renderDiscounts, etc.)
 
