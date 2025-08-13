@@ -1,38 +1,48 @@
 // Storage keys
 const PRODUCTS_KEY = "inventory_products";
 const DISCOUNTS_KEY = "inventory_discounts";
-// Default sizes if hasSizes = Yes
-const DEFAULT_SIZES = ["S", "M", "L", "XL", "2XL"];
+// Sizes for products with sizes
+const SIZES_LIST = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 
 // Elements
-const productSection = document.getElementById("productSection");
-const discountSection = document.getElementById("discountSection");
-const showProductsBtn = document.getElementById("showProducts");
-const showDiscountsBtn = document.getElementById("showDiscounts");
 const addProductForm = document.getElementById("addProductForm");
-const productTableBody = document.querySelector("#productTable tbody");
-const addDiscountForm = document.getElementById("addDiscountForm");
-const discountTableBody = document.querySelector("#discountTable tbody");
+const productTableBody = document.getElementById("productTableBody");
+const discountForm = document.getElementById("discountForm");
+const discountTableBody = document.getElementById("discountTableBody");
 const productImageInput = document.getElementById("productImage");
 const imagePreview = document.getElementById("imagePreview");
+const sizesContainer = document.createElement("div"); // We'll insert this into form dynamically
 
-// Load data from localStorage or start empty
+// Insert sizesContainer just below the Has Sizes checkbox in form
+const hasSizesCheckbox = document.getElementById("productHasSizes");
+hasSizesCheckbox.parentNode.insertBefore(sizesContainer, hasSizesCheckbox.nextSibling);
+
+// Load data from localStorage or empty
 let products = JSON.parse(localStorage.getItem(PRODUCTS_KEY)) || [];
 let discounts = JSON.parse(localStorage.getItem(DISCOUNTS_KEY)) || [];
 
-// Save helpers
-function saveProducts() { localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products)); }
-function saveDiscounts() { localStorage.setItem(DISCOUNTS_KEY, JSON.stringify(discounts)); }
+function saveProducts() {
+  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+}
 
-// --- NEW: Handle image preview + compression ---
+function saveDiscounts() {
+  localStorage.setItem(DISCOUNTS_KEY, JSON.stringify(discounts));
+}
+
+// Image compression and preview
 let currentCompressedImage = "";
-productImageInput?.addEventListener("change", function() {
+productImageInput?.addEventListener("change", function () {
   const file = this.files[0];
-  if (!file) { currentCompressedImage = ""; imagePreview.src = ""; return; }
+  if (!file) {
+    currentCompressedImage = "";
+    imagePreview.src = "";
+    imagePreview.style.display = "none";
+    return;
+  }
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     const img = new Image();
-    img.onload = function() {
+    img.onload = function () {
       const canvas = document.createElement("canvas");
       const maxWidth = 500;
       const scale = Math.min(maxWidth / img.width, 1);
@@ -42,19 +52,51 @@ productImageInput?.addEventListener("change", function() {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       currentCompressedImage = canvas.toDataURL("image/jpeg", 0.7);
       imagePreview.src = currentCompressedImage;
+      imagePreview.style.display = "inline-block";
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 });
 
-// Render products
+// Generate size inputs dynamically when editing
+function generateSizeInputs(hasSizes, sizesData = {}) {
+  sizesContainer.innerHTML = ""; // Clear previous inputs
+
+  if (hasSizes === "Yes") {
+    SIZES_LIST.forEach((size) => {
+      const div = document.createElement("div");
+      div.className = "form-row";
+      div.innerHTML = `
+        <label for="size-${size}">${size} Quantity:</label>
+        <input type="number" id="size-${size}" name="size-${size}" min="0" value="${sizesData[size] || 0}" />
+      `;
+      sizesContainer.appendChild(div);
+    });
+  } else {
+    const div = document.createElement("div");
+    div.className = "form-row";
+    div.innerHTML = `
+      <label for="size-OneSize">Quantity:</label>
+      <input type="number" id="size-OneSize" name="size-OneSize" min="0" value="${sizesData.OneSize || 0}" />
+    `;
+    sizesContainer.appendChild(div);
+  }
+}
+
+// Clear size inputs container when resetting the form (add mode)
+function clearSizeInputs() {
+  sizesContainer.innerHTML = "";
+}
+
+// Render products grouped by category
 function renderProducts() {
   productTableBody.innerHTML = "";
+
   if (products.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 6; // reduced because no category column now
+    td.colSpan = 6;
     td.style.textAlign = "center";
     td.textContent = "No products found.";
     tr.appendChild(td);
@@ -62,167 +104,61 @@ function renderProducts() {
     return;
   }
 
-  // Group products by category
+  // Group by category
   const grouped = {};
   products.forEach((p, index) => {
     if (!grouped[p.category]) grouped[p.category] = [];
     grouped[p.category].push({ ...p, index });
   });
 
-  // Render based on screen size
-  if (window.innerWidth < 768) {
-    // Mobile: cards grouped by category
-    productTableBody.parentElement.style.display = "block";
-    Object.keys(grouped).forEach(category => {
-      // Category header row
-      let trHeader = document.createElement("tr");
-      trHeader.innerHTML = `<td colspan="6" class="category-header"><strong>${category}</strong></td>`;
-      productTableBody.appendChild(trHeader);
+  Object.keys(grouped).forEach((category) => {
+    // Category header row
+    const trHeader = document.createElement("tr");
+    trHeader.innerHTML = `<td colspan="6" class="category-header"><strong>${category}</strong></td>`;
+    productTableBody.appendChild(trHeader);
 
-      grouped[category].forEach(product => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td colspan="6">
-            <div class="product-card">
-              ${product.image ? `<img src="${product.image}" class="product-thumb">` : ""}
-              <div><strong>${product.name}</strong></div>
-              <div>$${parseFloat(product.price).toFixed(2)} - ${product.gender}</div>
-              <div>${product.hasSizes === "Yes" ? DEFAULT_SIZES.map(size => `${size}: ${product.sizes[size] || 0}`).join(", ") : `One Size: ${product.sizes.OneSize || 0}`}</div>
-              <div class="actions">
-                <button class="edit-btn" data-index="${product.index}">Edit</button>
-                <button class="delete-btn" data-index="${product.index}">Delete</button>
-              </div>
-            </div>
-          </td>
-        `;
-        productTableBody.appendChild(tr);
-      });
+    grouped[category].forEach((product) => {
+      let sizesText = "";
+      if (product.hasSizes === "Yes") {
+        sizesText = SIZES_LIST.map((size) => `${size}: ${product.sizes?.[size] || 0}`).join(", ");
+      } else {
+        sizesText = `Qty: ${product.sizes?.OneSize || 0}`;
+      }
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${product.image ? `<img src="${product.image}" class="product-thumb" style="max-width:50px; max-height:50px;">` : ""}</td>
+        <td>${product.name}</td>
+        <td>$${parseFloat(product.price).toFixed(2)}</td>
+        <td>${product.gender}</td>
+        <td>${sizesText}</td>
+        <td class="actions">
+          <button class="edit-btn" data-index="${product.index}">Edit</button>
+          <button class="delete-btn" data-index="${product.index}">Delete</button>
+        </td>
+      `;
+      productTableBody.appendChild(tr);
     });
-  } else {
-    // Desktop: table layout grouped by category
-    Object.keys(grouped).forEach(category => {
-      // Category header row
-      let trHeader = document.createElement("tr");
-      trHeader.innerHTML = `<td colspan="6" class="category-header"><strong>${category}</strong></td>`;
-      productTableBody.appendChild(trHeader);
+  });
 
-      grouped[category].forEach(product => {
-        let sizesText = product.hasSizes === "Yes"
-          ? DEFAULT_SIZES.map(size => `${size}: ${product.sizes?.[size] ?? 0}`).join(", ")
-          : `One Size: ${product.sizes?.OneSize || 0}`;
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${product.image ? `<img src="${product.image}" class="product-thumb">` : ""}</td>
-          <td>${product.name}</td>
-          <td>$${parseFloat(product.price).toFixed(2)}</td>
-          <td>${product.gender}</td>
-          <td>${sizesText}</td>
-          <td class="actions">
-            <button class="edit-btn" data-index="${product.index}">Edit</button>
-            <button class="delete-btn" data-index="${product.index}">Delete</button>
-          </td>
-        `;
-        productTableBody.appendChild(tr);
-      });
-    });
-  }
-
-
-function handleDeleteProduct(e) {
-  const index = e.target.getAttribute("data-index");
-  if (confirm("Are you sure you want to delete this product?")) {
-    products.splice(index, 1);
-    saveProducts();
-    renderProducts();
-  }
+  // Attach event listeners for edit/delete buttons
+  document.querySelectorAll(".edit-btn").forEach((btn) => {
+    btn.addEventListener("click", handleEditProduct);
+  });
+  document.querySelectorAll(".delete-btn").forEach((btn) => {
+    btn.addEventListener("click", handleDeleteProduct);
+  });
 }
 
-function handleEditProduct(e) {
-  const index = e.target.getAttribute("data-index");
-  const product = products[index];
-  const submitBtn = productForm.querySelector("button[type='submit']");
-
-  // Fill the form with the current product details
-  document.getElementById("productName").value = product.name;
-  document.getElementById("productPrice").value = product.price;
-  document.getElementById("productGender").value = product.gender;
-  document.getElementById("productCategory").value = product.category;
-  document.getElementById("hasSizes").value = product.hasSizes;
-
-  // Populate size fields if sizes exist
-  if (product.hasSizes === "Yes") {
-    DEFAULT_SIZES.forEach(size => {
-      document.getElementById(`size-${size}`).value = product.sizes[size] || 0;
-    });
-  } else {
-    document.getElementById("size-OneSize").value = product.sizes.OneSize || 0;
-  }
-
-  // Change the submit button to edit mode
-  submitBtn.textContent = "Save Changes";
-  submitBtn.style.backgroundColor = "#ff9800";
-
-  // Replace submit behavior for edit mode
-  productForm.onsubmit = function(ev) {
-    ev.preventDefault();
-
-    const updatedProduct = {
-      name: document.getElementById("productName").value.trim(),
-      price: parseFloat(document.getElementById("productPrice").value),
-      gender: document.getElementById("productGender").value,
-      category: document.getElementById("productCategory").value.trim(),
-      hasSizes: document.getElementById("hasSizes").value,
-      sizes: {},
-      image: product.image // keep existing image unless replaced
-    };
-
-    if (updatedProduct.hasSizes === "Yes") {
-      DEFAULT_SIZES.forEach(size => {
-        updatedProduct.sizes[size] = parseInt(document.getElementById(`size-${size}`).value) || 0;
-      });
-    } else {
-      updatedProduct.sizes.OneSize = parseInt(document.getElementById("size-OneSize").value) || 0;
-    }
-
-    products[index] = updatedProduct;
-    saveProducts();
-    renderProducts();
-    productForm.reset();
-
-    // Restore add mode
-    submitBtn.textContent = "Add Product";
-    submitBtn.style.backgroundColor = "";
-    productForm.onsubmit = defaultProductSubmit;
-  };
-}
-
-  // Attach button listeners after rendering
-  document.querySelectorAll(".edit-btn").forEach(btn =>
-    btn.addEventListener("click", handleEditProduct)
-  );
-  document.querySelectorAll(".delete-btn").forEach(btn =>
-    btn.addEventListener("click", handleDeleteProduct)
-  );
-}
-
-  // Reattach event listeners
-  document.querySelectorAll(".edit-btn").forEach(btn => btn.addEventListener("click", handleEditProduct));
-  document.querySelectorAll(".delete-btn").forEach(btn => btn.addEventListener("click", handleDeleteProduct));
-}
-
-// Add product
-addProductForm.addEventListener("submit", e => {
+// Default submit handler for adding a new product
+function defaultAddProductSubmit(e) {
   e.preventDefault();
 
   const name = document.getElementById("productName").value.trim();
   const category = document.getElementById("productCategory").value.trim();
   const price = parseFloat(document.getElementById("productPrice").value);
-
-  // Get checked gender radio value
   const genderInput = document.querySelector('input[name="productGender"]:checked');
   const gender = genderInput ? genderInput.value : "";
-
-  // Checkbox checked returns true/false
   const hasSizes = document.getElementById("productHasSizes").checked ? "Yes" : "No";
 
   if (!name || !category || isNaN(price) || !gender) {
@@ -232,149 +168,137 @@ addProductForm.addEventListener("submit", e => {
 
   let sizes = {};
   if (hasSizes === "Yes") {
-    DEFAULT_SIZES.forEach(size => sizes[size] = 0);
+    SIZES_LIST.forEach((size) => (sizes[size] = 0));
   } else {
     sizes.OneSize = 0;
   }
 
   products.push({
-    name, category, price, gender, hasSizes, sizes,
-    image: currentCompressedImage || ""
+    name,
+    category,
+    price,
+    gender,
+    hasSizes,
+    sizes,
+    image: currentCompressedImage || "",
   });
 
   saveProducts();
   renderProducts();
   addProductForm.reset();
+  clearSizeInputs();
   imagePreview.src = "";
+  imagePreview.style.display = "none";
   currentCompressedImage = "";
   document.getElementById("productName").focus();
   window.scrollTo({ top: 0, behavior: "smooth" });
-});
-// Rest of your edit/save/delete discount logic remains unchanged...
-// (Keep your handleEditProduct, handleSaveProduct, handleDeleteProduct, renderDiscounts, etc.)
-// Get discount form element
-const discountForm = document.getElementById("discountForm");
-
-// Handle discount form submit
-discountForm.addEventListener("submit", e => {
-  e.preventDefault();
-
-  const reason = document.getElementById("discountName").value.trim();
-  const type = document.getElementById("discountType").value;
-  const value = parseFloat(document.getElementById("discountValue").value);
-
-  if (!reason || isNaN(value)) {
-    alert("Please fill in discount reason and a valid value.");
-    return;
-  }
-
-  discounts.push({ reason, type, value });
-  saveDiscounts();
-  renderDiscounts();
-
-  discountForm.reset();
-});
-
-// Render discounts table
-function renderDiscounts() {
-  const discountTableBody = document.getElementById("discountTableBody");
-  discountTableBody.innerHTML = "";
-
-  if (discounts.length === 0) {
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 4;
-    td.style.textAlign = "center";
-    td.textContent = "No discounts found.";
-    tr.appendChild(td);
-    discountTableBody.appendChild(tr);
-    return;
-  }
-
-  discounts.forEach((discount, index) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${discount.reason}</td>
-      <td>${discount.type}</td>
-      <td>${discount.value}</td>
-      <td>
-        <button class="edit-discount" data-index="${index}">Edit</button>
-        <button class="delete-discount" data-index="${index}">Delete</button>
-      </td>
-    `;
-    discountTableBody.appendChild(tr);
-  });
-
-  // Attach handlers after rendering
-  document.querySelectorAll(".delete-discount").forEach(btn => {
-    btn.addEventListener("click", handleDeleteDiscount);
-  });
-
-  document.querySelectorAll(".edit-discount").forEach(btn => {
-    btn.addEventListener("click", handleEditDiscount);
-  });
 }
 
-  // Add edit/delete handlers if you want, or leave blank for now
-}
-// discount saveDiscountsfunction
-
-function handleDeleteDiscount(e) {
+// Edit product handler
+function handleEditProduct(e) {
   const index = e.target.getAttribute("data-index");
-  if (confirm("Are you sure you want to delete this discount?")) {
-    discounts.splice(index, 1);
-    saveDiscounts();
-    renderDiscounts();
+  const product = products[index];
+
+  // Fill form fields
+  document.getElementById("productName").value = product.name;
+  document.getElementById("productCategory").value = product.category;
+  document.getElementById("productPrice").value = product.price;
+
+  document.querySelectorAll('input[name="productGender"]').forEach((radio) => {
+    radio.checked = radio.value === product.gender;
+  });
+
+  document.getElementById("productHasSizes").checked = product.hasSizes === "Yes";
+
+  // Show image preview
+  if (product.image) {
+    imagePreview.src = product.image;
+    imagePreview.style.display = "inline-block";
+    currentCompressedImage = product.image;
+  } else {
+    imagePreview.src = "";
+    imagePreview.style.display = "none";
+    currentCompressedImage = "";
   }
-}
 
-function handleEditDiscount(e) {
-  const index = e.target.getAttribute("data-index");
-  const discount = discounts[index];
-  const discountForm = document.getElementById("discountForm");
-  const submitBtn = discountForm.querySelector("button[type='submit']");
+  // Generate size inputs dynamically
+  generateSizeInputs(product.hasSizes, product.sizes);
 
-  // Fill form with existing values
-  document.getElementById("discountName").value = discount.reason;
-  document.getElementById("discountType").value = discount.type;
-  document.getElementById("discountValue").value = discount.value;
-
-  // Change button text to indicate edit mode
+  // Change submit button to "Save Changes"
+  const submitBtn = addProductForm.querySelector("button[type='submit']");
   submitBtn.textContent = "Save Changes";
-  submitBtn.style.backgroundColor = "#ff9800"; // orange to stand out
+  submitBtn.style.backgroundColor = "#ff9800";
 
-  // Change submit behavior to save changes
-  discountForm.onsubmit = function(ev) {
+  // Temporarily replace form submit for edit
+  addProductForm.onsubmit = function (ev) {
     ev.preventDefault();
 
-    const updatedReason = document.getElementById("discountName").value.trim();
-    const updatedType = document.getElementById("discountType").value;
-    const updatedValue = parseFloat(document.getElementById("discountValue").value);
+    const updatedName = document.getElementById("productName").value.trim();
+    const updatedCategory = document.getElementById("productCategory").value.trim();
+    const updatedPrice = parseFloat(document.getElementById("productPrice").value);
+    const updatedGenderInput = document.querySelector('input[name="productGender"]:checked');
+    const updatedGender = updatedGenderInput ? updatedGenderInput.value : "";
+    const updatedHasSizes = document.getElementById("productHasSizes").checked ? "Yes" : "No";
 
-    if (!updatedReason || isNaN(updatedValue)) {
-      alert("Please fill in discount reason and a valid value.");
+    if (!updatedName || !updatedCategory || isNaN(updatedPrice) || !updatedGender) {
+      alert("Please fill in all product fields correctly.");
       return;
     }
 
-    // Save updated discount
-    discounts[index] = { reason: updatedReason, type: updatedType, value: updatedValue };
-    saveDiscounts();
-    renderDiscounts();
-    discountForm.reset();
+    // Collect size quantities from inputs
+    let updatedSizes = {};
+    if (updatedHasSizes === "Yes") {
+      SIZES_LIST.forEach((size) => {
+        const val = parseInt(document.getElementById(`size-${size}`).value);
+        updatedSizes[size] = isNaN(val) ? 0 : val;
+      });
+    } else {
+      const val = parseInt(document.getElementById("size-OneSize").value);
+      updatedSizes.OneSize = isNaN(val) ? 0 : val;
+    }
 
-    // Restore normal add mode
-    submitBtn.textContent = "Add Discount";
+    // Use existing image (or updatedCompressedImage if you want to implement image change on edit)
+    const updatedImage = currentCompressedImage || product.image || "";
+
+    // Update product
+    products[index] = {
+      name: updatedName,
+      category: updatedCategory,
+      price: updatedPrice,
+      gender: updatedGender,
+      hasSizes: updatedHasSizes,
+      sizes: updatedSizes,
+      image: updatedImage,
+    };
+
+    saveProducts();
+    renderProducts();
+    addProductForm.reset();
+    clearSizeInputs();
+    imagePreview.src = "";
+    imagePreview.style.display = "none";
+    currentCompressedImage = "";
+
+    // Restore form submit to default add behavior
+    submitBtn.textContent = "Add Product";
     submitBtn.style.backgroundColor = "";
-    discountForm.onsubmit = defaultDiscountSubmit;
+    addProductForm.onsubmit = defaultAddProductSubmit;
   };
 }
 
-// -------------------- DISCOUNT LOGIC --------------------
+// Delete product handler
+function handleDeleteProduct(e) {
+  const index = e.target.getAttribute("data-index");
+  if (confirm("Are you sure you want to delete this product?")) {
+    products.splice(index, 1);
+    saveProducts();
+    renderProducts();
+  }
+}
 
-// Use the same table body reference from the top of your script
-// (already declared as: const discountTableBody = document.querySelector("#discountTable tbody");)
+// DISCOUNT LOGIC
 
-// Default submit behavior (add mode)
+// Default submit handler for discount add
 function defaultDiscountSubmit(e) {
   e.preventDefault();
 
@@ -392,7 +316,7 @@ function defaultDiscountSubmit(e) {
   renderDiscounts();
   discountForm.reset();
 
-  // Reset button appearance
+  // Reset submit button appearance
   const submitBtn = discountForm.querySelector("button[type='submit']");
   submitBtn.textContent = "Add Discount";
   submitBtn.style.backgroundColor = "";
@@ -428,15 +352,15 @@ function renderDiscounts() {
   });
 
   // Attach edit/delete handlers
-  document.querySelectorAll(".delete-discount").forEach(btn =>
-    btn.addEventListener("click", handleDeleteDiscount)
-  );
-  document.querySelectorAll(".edit-discount").forEach(btn =>
-    btn.addEventListener("click", handleEditDiscount)
-  );
+  document.querySelectorAll(".delete-discount").forEach((btn) => {
+    btn.addEventListener("click", handleDeleteDiscount);
+  });
+  document.querySelectorAll(".edit-discount").forEach((btn) => {
+    btn.addEventListener("click", handleEditDiscount);
+  });
 }
 
-// Delete discount
+// Delete discount handler
 function handleDeleteDiscount(e) {
   const index = e.target.getAttribute("data-index");
   if (confirm("Are you sure you want to delete this discount?")) {
@@ -446,23 +370,20 @@ function handleDeleteDiscount(e) {
   }
 }
 
-// Edit discount
+// Edit discount handler
 function handleEditDiscount(e) {
   const index = e.target.getAttribute("data-index");
   const discount = discounts[index];
   const submitBtn = discountForm.querySelector("button[type='submit']");
 
-  // Fill form with existing values
   document.getElementById("discountName").value = discount.reason;
   document.getElementById("discountType").value = discount.type;
   document.getElementById("discountValue").value = discount.value;
 
-  // Change button to indicate edit mode
   submitBtn.textContent = "Save Changes";
-  submitBtn.style.backgroundColor = "#ff9800"; // orange highlight
+  submitBtn.style.backgroundColor = "#ff9800";
 
-  // Replace submit behavior temporarily
-  discountForm.onsubmit = function(ev) {
+  discountForm.onsubmit = function (ev) {
     ev.preventDefault();
 
     const updatedReason = document.getElementById("discountName").value.trim();
@@ -479,21 +400,21 @@ function handleEditDiscount(e) {
     renderDiscounts();
     discountForm.reset();
 
-    // Restore add mode
     submitBtn.textContent = "Add Discount";
     submitBtn.style.backgroundColor = "";
     discountForm.onsubmit = defaultDiscountSubmit;
   };
 }
 
-// Attach default listener
+// Attach default discount form submit listener
 discountForm.addEventListener("submit", defaultDiscountSubmit);
 
 // Responsive re-render on resize
 window.addEventListener("resize", renderProducts);
 
-// Init
+// Initialize on DOM ready
 window.addEventListener("DOMContentLoaded", () => {
   renderProducts();
   renderDiscounts();
+  addProductForm.onsubmit = defaultAddProductSubmit;
 });
