@@ -214,32 +214,7 @@ function renderProducts() {
     });
 }
 
-    // attach save/delete
-    document.querySelectorAll(".save-btn").forEach(btn=>{
-        btn.addEventListener("click", e=>{
-            const idx = parseInt(btn.dataset.index);
-            const tr = btn.closest("tr");
-            const product = products[idx];
-
-            product.name = tr.querySelector(".name-field").value.trim();
-            product.price = parseFloat(tr.querySelector(".price-field").value);
-            product.gender = tr.querySelector(".gender-field").value;
-
-            // sizes
-            if(product.hasSizes){
-                DEFAULT_SIZES.forEach(size=>{
-                    const input = tr.querySelector(`.size-input[data-size="${size}"]`);
-                    product.sizes[size] = parseInt(input.value)||0;
-                });
-            } else {
-                const input = tr.querySelector(`.size-input[data-size="OneSize"]`);
-                product.sizes.OneSize = parseInt(input.value)||0;
-            }
-
-            saveProducts();
-            renderProducts();
-        });
-    });
+  
 
     document.querySelectorAll(".delete-btn").forEach(btn=>{
         btn.addEventListener("click", e=>{
