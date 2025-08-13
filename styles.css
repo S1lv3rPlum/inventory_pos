@@ -552,3 +552,12 @@ input[type="number"] {
 #salesContainer table {
   min-width: 600px; /* adjust if needed based on your columns */
 }
+
+.category-header {
+  background-color: #f0f0f0;  /* Light gray background */
+  font-weight: bold;
+  font-size: 1.1em;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 2px solid #ccc;
+}
