@@ -567,7 +567,7 @@ input[type="number"] {
 /* ===== Product Card Layout (mobile) ===== */
 @media (max-width: 767px) {
   #productTable {
-    display: none; /* hide table on mobile */
+ /*   display: none; /* hide table on mobile */
   }
 
   #productTable tbody {
