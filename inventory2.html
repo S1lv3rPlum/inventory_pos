@@ -133,43 +133,61 @@
     </div>
 
     <!-- Inventory Section -->
-    <div id="inventorySection">
-      <form id="addProductForm">
-        <div class="form-row">
-          <label for="productName">Product Name:</label>
-          <input type="text" id="productName" required />
-        </div>
-        <div class="form-row">
-          <label for="productCategory">Category:</label>
-          <input type="text" id="productCategory" />
-        </div>
-        <div class="form-row">
-          <label for="productPrice">Price: $</label>
-          <input type="number" id="productPrice" step="0.01" required />
-        </div>
-        <div class="form-row">
-          <label><input type="checkbox" id="productHasSizes" /> Has Sizes?</label>
-        </div>
-        <div class="form-row">
-          <label for="productImage">Product Image:</label>
-          <input type="file" id="productImage" accept="image/*" />
-          <img id="imagePreview" alt="Product Preview" />
-        </div>
-        <div class="form-row">
-          Gender:
-          <label><input type="radio" name="productGender" value="M" /> M</label>
-          <label><input type="radio" name="productGender" value="F" /> F</label>
-        </div>
-        <div class="form-row">
-          <button type="submit">Add Product</button>
-        </div>
-      </form>
-
-      <hr />
-      <h2>Current Inventory</h2>
-      <div id="debugStatus" class="dev-only" style="background:#ffffcc; padding:8px; margin-bottom:1rem; border:1px solid #999; font-size:0.9rem;"></div>
-      <div id="inventoryList"></div>
+  <!-- Inventory Section -->
+<div id="inventorySection">
+  <form id="addProductForm">
+    <div class="form-row">
+      <label for="productName">Product Name:</label>
+      <input type="text" id="productName" required />
     </div>
+    <div class="form-row">
+      <label for="productCategory">Category:</label>
+      <input type="text" id="productCategory" />
+    </div>
+    <div class="form-row">
+      <label for="productPrice">Price: $</label>
+      <input type="number" id="productPrice" step="0.01" required />
+    </div>
+    <div class="form-row">
+      <label><input type="checkbox" id="productHasSizes" /> Has Sizes?</label>
+    </div>
+    <div class="form-row">
+      <label for="productImage">Product Image:</label>
+      <input type="file" id="productImage" accept="image/*" />
+      <img id="imagePreview" alt="Product Preview" />
+    </div>
+    <div class="form-row">
+      Gender:
+      <label><input type="radio" name="productGender" value="M" /> M</label>
+      <label><input type="radio" name="productGender" value="F" /> F</label>
+    </div>
+    <div class="form-row">
+      <button type="submit">Add Product</button>
+    </div>
+  </form>
+
+  <hr />
+  <h2>Current Inventory</h2>
+
+  <!-- Replaced inventoryList div with the product table -->
+  <div class="table-wrapper">
+    <table id="productTable" aria-label="Product Inventory Table">
+      <thead>
+        <tr>
+          <th>Image</th>
+          <th>Product Name</th>
+          <th>Price</th>
+          <th>Gender</th>
+          <th>Sizes</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="productTableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="debugStatus" class="dev-only" style="background:#ffffcc; padding:8px; margin-top:1rem; border:1px solid #999; font-size:0.9rem;"></div>
+</div>
 
     <!-- Discount Section -->
     <div id="discountSection" style="display:none;">
