@@ -174,6 +174,62 @@ addProductForm.addEventListener("submit", e => {
 });
 // Rest of your edit/save/delete discount logic remains unchanged...
 // (Keep your handleEditProduct, handleSaveProduct, handleDeleteProduct, renderDiscounts, etc.)
+// Get discount form element
+const discountForm = document.getElementById("discountForm");
+
+// Handle discount form submit
+discountForm.addEventListener("submit", e => {
+  e.preventDefault();
+
+  const reason = document.getElementById("discountName").value.trim();
+  const type = document.getElementById("discountType").value;
+  const value = parseFloat(document.getElementById("discountValue").value);
+
+  if (!reason || isNaN(value)) {
+    alert("Please fill in discount reason and a valid value.");
+    return;
+  }
+
+  discounts.push({ reason, type, value });
+  saveDiscounts();
+  renderDiscounts();
+
+  discountForm.reset();
+});
+
+// Render discounts table
+function renderDiscounts() {
+  const discountTableBody = document.getElementById("discountTableBody");
+  discountTableBody.innerHTML = "";
+
+  if (discounts.length === 0) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 4;
+    td.style.textAlign = "center";
+    td.textContent = "No discounts found.";
+    tr.appendChild(td);
+    discountTableBody.appendChild(tr);
+    return;
+  }
+
+  discounts.forEach((discount, index) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${discount.reason}</td>
+      <td>${discount.type}</td>
+      <td>${discount.value}</td>
+      <td>
+        <button class="edit-discount" data-index="${index}">Edit</button>
+        <button class="delete-discount" data-index="${index}">Delete</button>
+      </td>
+    `;
+    discountTableBody.appendChild(tr);
+  });
+
+  // Add edit/delete handlers if you want, or leave blank for now
+}
+
 
 // Responsive re-render on resize
 window.addEventListener("resize", renderProducts);
