@@ -253,14 +253,19 @@ function handleDeleteDiscount(e) {
 function handleEditDiscount(e) {
   const index = e.target.getAttribute("data-index");
   const discount = discounts[index];
+  const discountForm = document.getElementById("discountForm");
+  const submitBtn = discountForm.querySelector("button[type='submit']");
 
   // Fill form with existing values
   document.getElementById("discountName").value = discount.reason;
   document.getElementById("discountType").value = discount.type;
   document.getElementById("discountValue").value = discount.value;
 
-  // Change submit behavior to save changes instead of adding new
-  const discountForm = document.getElementById("discountForm");
+  // Change button text to indicate edit mode
+  submitBtn.textContent = "Save Changes";
+  submitBtn.style.backgroundColor = "#ff9800"; // orange to stand out
+
+  // Change submit behavior to save changes
   discountForm.onsubmit = function(ev) {
     ev.preventDefault();
 
@@ -273,12 +278,15 @@ function handleEditDiscount(e) {
       return;
     }
 
+    // Save updated discount
     discounts[index] = { reason: updatedReason, type: updatedType, value: updatedValue };
     saveDiscounts();
     renderDiscounts();
     discountForm.reset();
 
     // Restore normal add mode
+    submitBtn.textContent = "Add Discount";
+    submitBtn.style.backgroundColor = "";
     discountForm.onsubmit = defaultDiscountSubmit;
   };
 }
