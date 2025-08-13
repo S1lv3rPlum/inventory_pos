@@ -296,3 +296,43 @@ window.addEventListener("DOMContentLoaded",()=>{
     renderDiscounts();
 });
 window.addEventListener("resize", renderProducts);
+
+// -------------------- VISUAL DEBUG --------------------
+function showDebugInfo() {
+    const debugDiv = document.createElement("div");
+    debugDiv.id = "mobileDebug";
+    debugDiv.style.cssText = "position:fixed; top:0; right:0; background:red; color:white; padding:10px; font-size:12px; z-index:9999; max-width:200px;";
+    
+    let debugText = "DEBUG INFO:\n";
+    debugText += "Script loaded: YES\n";
+    debugText += "Products: " + products.length + "\n";
+    debugText += "Discounts: " + discounts.length + "\n";
+    
+    const productTable = document.getElementById("productTableBody");
+    const discountTable = document.getElementById("discountTableBody");
+    
+    debugText += "Product table found: " + (productTable ? "YES" : "NO") + "\n";
+    debugText += "Discount table found: " + (discountTable ? "YES" : "NO") + "\n";
+    
+    debugDiv.innerText = debugText;
+    document.body.appendChild(debugDiv);
+    
+    // Try to render
+    if (productTable && discountTable) {
+        try {
+            renderProducts();
+            renderDiscounts();
+            debugDiv.style.background = "green";
+            debugDiv.innerText += "Render: SUCCESS";
+        } catch (e) {
+            debugDiv.innerText += "Render ERROR: " + e.message;
+        }
+    }
+}
+
+// Run debug after page loads
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', showDebugInfo);
+} else {
+    showDebugInfo();
+}
