@@ -291,6 +291,12 @@ function handleEditDiscount(e) {
   };
 }
 
+// -------------------- DISCOUNT LOGIC --------------------
+
+// Use the same table body reference from the top of your script
+// (already declared as: const discountTableBody = document.querySelector("#discountTable tbody");)
+
+// Default submit behavior (add mode)
 function defaultDiscountSubmit(e) {
   e.preventDefault();
 
@@ -308,12 +314,101 @@ function defaultDiscountSubmit(e) {
   renderDiscounts();
   discountForm.reset();
 
-  // Ensure button is normal
+  // Reset button appearance
   const submitBtn = discountForm.querySelector("button[type='submit']");
   submitBtn.textContent = "Add Discount";
   submitBtn.style.backgroundColor = "";
 }
 
+// Render discounts table
+function renderDiscounts() {
+  discountTableBody.innerHTML = "";
+
+  if (discounts.length === 0) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 4;
+    td.style.textAlign = "center";
+    td.textContent = "No discounts found.";
+    tr.appendChild(td);
+    discountTableBody.appendChild(tr);
+    return;
+  }
+
+  discounts.forEach((discount, index) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${discount.reason}</td>
+      <td>${discount.type}</td>
+      <td>${discount.value}</td>
+      <td>
+        <button class="edit-discount" data-index="${index}">Edit</button>
+        <button class="delete-discount" data-index="${index}">Delete</button>
+      </td>
+    `;
+    discountTableBody.appendChild(tr);
+  });
+
+  // Attach edit/delete handlers
+  document.querySelectorAll(".delete-discount").forEach(btn =>
+    btn.addEventListener("click", handleDeleteDiscount)
+  );
+  document.querySelectorAll(".edit-discount").forEach(btn =>
+    btn.addEventListener("click", handleEditDiscount)
+  );
+}
+
+// Delete discount
+function handleDeleteDiscount(e) {
+  const index = e.target.getAttribute("data-index");
+  if (confirm("Are you sure you want to delete this discount?")) {
+    discounts.splice(index, 1);
+    saveDiscounts();
+    renderDiscounts();
+  }
+}
+
+// Edit discount
+function handleEditDiscount(e) {
+  const index = e.target.getAttribute("data-index");
+  const discount = discounts[index];
+  const submitBtn = discountForm.querySelector("button[type='submit']");
+
+  // Fill form with existing values
+  document.getElementById("discountName").value = discount.reason;
+  document.getElementById("discountType").value = discount.type;
+  document.getElementById("discountValue").value = discount.value;
+
+  // Change button to indicate edit mode
+  submitBtn.textContent = "Save Changes";
+  submitBtn.style.backgroundColor = "#ff9800"; // orange highlight
+
+  // Replace submit behavior temporarily
+  discountForm.onsubmit = function(ev) {
+    ev.preventDefault();
+
+    const updatedReason = document.getElementById("discountName").value.trim();
+    const updatedType = document.getElementById("discountType").value;
+    const updatedValue = parseFloat(document.getElementById("discountValue").value);
+
+    if (!updatedReason || isNaN(updatedValue)) {
+      alert("Please fill in discount reason and a valid value.");
+      return;
+    }
+
+    discounts[index] = { reason: updatedReason, type: updatedType, value: updatedValue };
+    saveDiscounts();
+    renderDiscounts();
+    discountForm.reset();
+
+    // Restore add mode
+    submitBtn.textContent = "Add Discount";
+    submitBtn.style.backgroundColor = "";
+    discountForm.onsubmit = defaultDiscountSubmit;
+  };
+}
+
+// Attach default listener
 discountForm.addEventListener("submit", defaultDiscountSubmit);
 
 // Responsive re-render on resize
