@@ -227,9 +227,37 @@ function renderDiscounts() {
     discountTableBody.appendChild(tr);
   });
 
-  // Add edit/delete handlers if you want, or leave blank for now
+  // Attach handlers after rendering
+  document.querySelectorAll(".delete-discount").forEach(btn => {
+    btn.addEventListener("click", handleDeleteDiscount);
+  });
+
+  document.querySelectorAll(".edit-discount").forEach(btn => {
+    btn.addEventListener("click", handleEditDiscount);
+  });
 }
 
+  // Add edit/delete handlers if you want, or leave blank for now
+}
+// discount saveDiscountsfunction defaultDiscountSubmit(e) {
+  e.preventDefault();
+
+  const reason = document.getElementById("discountName").value.trim();
+  const type = document.getElementById("discountType").value;
+  const value = parseFloat(document.getElementById("discountValue").value);
+
+  if (!reason || isNaN(value)) {
+    alert("Please fill in discount reason and a valid value.");
+    return;
+  }
+
+  discounts.push({ reason, type, value });
+  saveDiscounts();
+  renderDiscounts();
+  discountForm.reset();
+}
+
+discountForm.addEventListener("submit", defaultDiscountSubmit);
 
 // Responsive re-render on resize
 window.addEventListener("resize", renderProducts);
