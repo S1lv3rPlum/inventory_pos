@@ -87,6 +87,7 @@ addProductForm.addEventListener("submit", e=>{
 // -------------------- RENDER PRODUCTS --------------------
 function renderProducts() {
     productTableBody.innerHTML = "";
+
     if (products.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
@@ -98,7 +99,7 @@ function renderProducts() {
         return;
     }
 
-    // Group by category
+    // Group products by category
     const grouped = {};
     products.forEach((p, index) => {
         if (!grouped[p.category]) grouped[p.category] = [];
@@ -118,7 +119,7 @@ function renderProducts() {
         grouped[category].forEach(product => {
             const tr = document.createElement("tr");
 
-            // Create size inputs inline
+            // Create size inputs
             let sizeInputs = "";
             if (product.hasSizes) {
                 sizeInputs = DEFAULT_SIZES.map(size =>
@@ -141,19 +142,14 @@ function renderProducts() {
                 <td>${sizeInputs}</td>
                 <td>
                     <input type="file" accept="image/*" class="row-image-input"><br>
-                    
-        
-        <button class="save-btn" data-index="${product.index}">Save</button>
-        <button class="delete-btn" data-index="${product.index}">Delete</button>
-    </td>
-</tr>
-    `;
-              
+                    <button class="save-btn" data-index="${product.index}">Save</button>
+                    <button class="delete-btn" data-index="${product.index}">Delete</button>
+                </td>
             `;
 
             productTableBody.appendChild(tr);
 
-            // Handle row image change
+            // Row image input change
             const rowImageInput = tr.querySelector(".row-image-input");
             rowImageInput.addEventListener("change", function () {
                 const file = this.files[0];
@@ -177,8 +173,43 @@ function renderProducts() {
                 };
                 reader.readAsDataURL(file);
             });
+
+            // Save button
+            const saveBtn = tr.querySelector(".save-btn");
+            saveBtn.addEventListener("click", () => {
+                const tr = saveBtn.closest("tr");
+                const p = products[product.index];
+
+                p.name = tr.querySelector(".name-field").value.trim();
+                p.price = parseFloat(tr.querySelector(".price-field").value);
+                p.gender = tr.querySelector(".gender-field").value;
+
+                if (p.hasSizes) {
+                    DEFAULT_SIZES.forEach(size => {
+                        const input = tr.querySelector(`.size-input[data-size="${size}"]`);
+                        p.sizes[size] = parseInt(input.value) || 0;
+                    });
+                } else {
+                    const input = tr.querySelector(`.size-input[data-size="OneSize"]`);
+                    p.sizes.OneSize = parseInt(input.value) || 0;
+                }
+
+                saveProducts();
+                renderProducts();
+            });
+
+            // Delete button
+            const deleteBtn = tr.querySelector(".delete-btn");
+            deleteBtn.addEventListener("click", () => {
+                if (confirm("Are you sure you want to delete this product?")) {
+                    products.splice(product.index, 1);
+                    saveProducts();
+                    renderProducts();
+                }
+            });
         });
     });
+}
 
     // Save button logic
     document.querySelectorAll(".save-btn").forEach(btn => {
