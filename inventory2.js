@@ -142,10 +142,13 @@ function renderProducts() {
                 <td>
                     <input type="file" accept="image/*" class="row-image-input"><br>
                     
-        <button class="save-btn" data-index="${idx}">Save</button>
-        <button class="delete-btn" data-index="${idx}">Delete</button>
+        <input type="file" accept="image/*" class="row-image-input"><br>
+        <button class="save-btn" data-index="${product.index}">Save</button>
+        <button class="delete-btn" data-index="${product.index}">Delete</button>
+    </td>
+</tr>
     `;
-                </td>
+              
             `;
 
             productTableBody.appendChild(tr);
