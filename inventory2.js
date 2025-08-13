@@ -127,6 +127,15 @@ function renderProducts() {
     });
   }
 
+  // Attach button listeners after rendering
+  document.querySelectorAll(".edit-btn").forEach(btn =>
+    btn.addEventListener("click", handleEditProduct)
+  );
+  document.querySelectorAll(".delete-btn").forEach(btn =>
+    btn.addEventListener("click", handleDeleteProduct)
+  );
+}
+
   // Reattach event listeners
   document.querySelectorAll(".edit-btn").forEach(btn => btn.addEventListener("click", handleEditProduct));
   document.querySelectorAll(".delete-btn").forEach(btn => btn.addEventListener("click", handleDeleteProduct));
