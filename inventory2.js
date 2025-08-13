@@ -142,7 +142,7 @@ function renderProducts() {
                 <td>
                     <input type="file" accept="image/*" class="row-image-input"><br>
                     
-        <input type="file" accept="image/*" class="row-image-input"><br>
+        
         <button class="save-btn" data-index="${product.index}">Save</button>
         <button class="delete-btn" data-index="${product.index}">Delete</button>
     </td>
