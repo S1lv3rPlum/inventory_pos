@@ -104,6 +104,7 @@ function renderProducts() {
     });
 
     Object.keys(grouped).forEach(category => {
+        // Category header row
         const trHeader = document.createElement("tr");
         const tdHeader = document.createElement("td");
         tdHeader.colSpan = 6;
@@ -115,6 +116,7 @@ function renderProducts() {
         grouped[category].forEach(product => {
             const tr = document.createElement("tr");
 
+            // Create size inputs
             let sizeInputs = "";
             if (product.hasSizes) {
                 sizeInputs = DEFAULT_SIZES.map(size =>
@@ -144,8 +146,8 @@ function renderProducts() {
 
             productTableBody.appendChild(tr);
 
-            // Row image input
-            tr.querySelector(".row-image-input").addEventListener("change", function() {
+            // Row image input change
+            tr.querySelector(".row-image-input").addEventListener("change", function () {
                 const file = this.files[0];
                 if (!file) return;
                 const reader = new FileReader();
