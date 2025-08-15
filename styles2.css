@@ -656,3 +656,29 @@ input[type="number"] {
 .actions button:active {
   transform: translateY(1px);
 }
+
+/* ===== Table Layout Fix ===== */
+
+/* Desktop tables: normal behavior */
+@media (min-width: 768px) {
+  #productTable tbody {
+    display: table-row-group; /* restores proper table row layout */
+  }
+
+  #productTable tr {
+    display: table-row;
+  }
+
+  #productTable td, #productTable th {
+    display: table-cell;
+    text-align: left; /* optional, adjust as needed */
+    vertical-align: middle;
+  }
+}
+
+/* Mobile product cards (keep your existing styles) */
+@media (max-width: 767px) {
+  #productTable tbody {
+    display: block; /* block for mobile cards */
+  }
+}
