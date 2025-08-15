@@ -77,6 +77,88 @@ function exportDiscounts() {
     XLSX.writeFile(wb, "Discounts.xlsx");
 }
 
+// --- import functions----
+function handleInventoryImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        // Clear current products
+        products = [];
+
+        rows.forEach(row => {
+            // Determine if product has multiple sizes
+            const hasSizes = DEFAULT_SIZES.some(size => row[size] !== undefined);
+            const sizes = {};
+
+            if (hasSizes) {
+                DEFAULT_SIZES.forEach(size => {
+                    sizes[size] = parseInt(row[size]) || 0;
+                });
+            } else {
+                sizes.OneSize = parseInt(row["One Size"]) || 0;
+            }
+
+            products.push({
+                name: row["Name"] || "",
+                category: row["Category"] || "",
+                price: parseFloat(row["Price"]) || 0,
+                gender: row["Gender"] || "",
+                hasSizes,
+                sizes,
+                image: row["Image"] || ""
+            });
+        });
+
+        saveProducts();
+        renderProducts();
+        alert("Inventory imported successfully!");
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
+function handleDiscountImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        // Clear current discounts
+        discounts = [];
+
+        rows.forEach(row => {
+            discounts.push({
+                reason: row["Reason"] || "",
+                type: row["Type"] || "flat",
+                value: parseFloat(row["Value"]) || 0
+            });
+        });
+
+        saveDiscounts();
+        renderDiscounts();
+        alert("Discounts imported successfully!");
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
+
 // -------------------- IMAGE PREVIEW & COMPRESSION --------------------
 productImageInput?.addEventListener("change", function() {
     const file = this.files[0];
