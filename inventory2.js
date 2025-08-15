@@ -22,6 +22,61 @@ let currentCompressedImage = "";
 function saveProducts() { localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products)); }
 function saveDiscounts() { localStorage.setItem(DISCOUNTS_KEY, JSON.stringify(discounts)); }
 
+
+// ---- export functions----
+function exportInventory() {
+    if (products.length === 0) {
+        alert("No products to export.");
+        return;
+    }
+
+    const data = products.map(p => {
+        const row = {
+            Name: p.name,
+            Category: p.category,
+            Price: p.price,
+            Gender: p.gender,
+            Image: p.image || ""
+        };
+
+        // Add each size as its own column
+        if (p.hasSizes) {
+            DEFAULT_SIZES.forEach(size => {
+                row[size] = p.sizes[size] || 0;
+            });
+        } else {
+            row["One Size"] = p.sizes.OneSize || 0;
+        }
+
+        return row;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+
+    XLSX.writeFile(wb, "Inventory.xlsx");
+}
+
+function exportDiscounts() {
+    if (discounts.length === 0) {
+        alert("No discounts to export.");
+        return;
+    }
+
+    const data = discounts.map(d => ({
+        Reason: d.reason,
+        Type: d.type,
+        Value: d.value
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Discounts");
+
+    XLSX.writeFile(wb, "Discounts.xlsx");
+}
+
 // -------------------- IMAGE PREVIEW & COMPRESSION --------------------
 productImageInput?.addEventListener("change", function() {
     const file = this.files[0];
