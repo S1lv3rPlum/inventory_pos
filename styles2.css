@@ -337,6 +337,29 @@ td img {
   white-space: normal; /* allow wrap for size/qty column */
 }
 
+
+/* Narrow quantity input fields */
+#productTable td input[type="number"].qty-input {
+  width: 60px; /* adjust as needed */
+  min-width: 50px;
+  max-width: 80px;
+  padding: 2px 4px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* Wrap text ONLY in the Sizes/Qty column */
+#productTable td.sizes-column {
+  white-space: normal; /* allow wrapping */
+  word-break: break-word;
+}
+
+/* Keep all other columns on one line */
+#productTable td:not(.sizes-column),
+#productTable th:not(.sizes-column) {
+  white-space: nowrap;
+}
+
 /* Category row spans full table */
 .category-row td {
   font-weight: bold;
@@ -447,6 +470,8 @@ input[type=number] {
   gap: 6px;
   justify-content: center;
 }
+
+
 
 .qty-controls input[type="number"] {
   width: 80px;
