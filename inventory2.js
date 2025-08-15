@@ -116,38 +116,117 @@ function renderProducts() {
         grouped[category].forEach(product => {
             const tr = document.createElement("tr");
 
-            // Create size inputs
-            let sizeInputs = "";
-            if (product.hasSizes) {
-                sizeInputs = DEFAULT_SIZES.map(size =>
-                    `<label>${size}: <input type="number" min="0" value="${product.sizes[size] || 0}" data-size="${size}" class="size-input"></label>`
-                ).join(" ");
-            } else {
-                sizeInputs = `<label>One Size: <input type="number" min="0" value="${product.sizes.OneSize || 0}" data-size="OneSize" class="size-input"></label>`;
+            // --- Image Cell ---
+            const tdImage = document.createElement("td");
+            if (product.image) {
+                const img = document.createElement("img");
+                img.src = product.image;
+                img.style.maxWidth = "50px";
+                img.style.maxHeight = "50px";
+                tdImage.appendChild(img);
             }
+            tr.appendChild(tdImage);
 
-            tr.innerHTML = `
-                <td>${product.image ? `<img src="${product.image}" style="max-width:50px; max-height:50px;">` : ""}</td>
-                <td><input type="text" value="${product.name}" class="edit-field name-field"></td>
-                <td><input type="number" min="0" step="0.01" value="${product.price}" class="edit-field price-field"></td>
-                <td>
-                    <select class="edit-field gender-field">
-                        <option value="M" ${product.gender === "M" ? "selected" : ""}>M</option>
-                        <option value="F" ${product.gender === "F" ? "selected" : ""}>F</option>
-                    </select>
-                </td>
-                <td>${sizeInputs}</td>
-                <td>
-                    <input type="file" accept="image/*" class="row-image-input"><br>
-                    <button class="save-btn" data-index="${product.index}">Save</button>
-                    <button class="delete-btn" data-index="${product.index}">Delete</button>
-                </td>
-            `;
+            // --- Name Cell ---
+            const tdName = document.createElement("td");
+            const nameInput = document.createElement("input");
+            nameInput.type = "text";
+            nameInput.value = product.name;
+            nameInput.className = "edit-field name-field";
+            tdName.appendChild(nameInput);
+            tr.appendChild(tdName);
+
+            // --- Price Cell ---
+            const tdPrice = document.createElement("td");
+            const priceInput = document.createElement("input");
+            priceInput.type = "number";
+            priceInput.min = 0;
+            priceInput.step = 0.01;
+            priceInput.value = product.price;
+            priceInput.className = "edit-field price-field";
+            tdPrice.appendChild(priceInput);
+            tr.appendChild(tdPrice);
+
+            // --- Gender Cell ---
+            const tdGender = document.createElement("td");
+            const genderSelect = document.createElement("select");
+            genderSelect.className = "edit-field gender-field";
+            ["M", "F"].forEach(g => {
+                const opt = document.createElement("option");
+                opt.value = g;
+                opt.textContent = g;
+                if (product.gender === g) opt.selected = true;
+                genderSelect.appendChild(opt);
+            });
+            tdGender.appendChild(genderSelect);
+            tr.appendChild(tdGender);
+
+            // --- Sizes Cell ---
+            const tdSizes = document.createElement("td");
+            tdSizes.className = "sizes-column";
+            const sizeContainer = document.createElement("div");
+            sizeContainer.className = "size-input-container";
+            tdSizes.appendChild(sizeContainer);
+
+            if (product.hasSizes) {
+                DEFAULT_SIZES.forEach(size => {
+                    const label = document.createElement("label");
+                    label.style.display = "inline-flex";
+                    label.style.alignItems = "center";
+                    label.style.marginRight = "6px";
+                    label.textContent = size + ": ";
+
+                    const input = document.createElement("input");
+                    input.type = "number";
+                    input.min = 0;
+                    input.value = product.sizes[size] || 0;
+                    input.dataset.size = size;
+                    input.className = "size-input";
+
+                    label.appendChild(input);
+                    sizeContainer.appendChild(label);
+                });
+            } else {
+                const label = document.createElement("label");
+                label.textContent = "One Size: ";
+                const input = document.createElement("input");
+                input.type = "number";
+                input.min = 0;
+                input.value = product.sizes.OneSize || 0;
+                input.dataset.size = "OneSize";
+                input.className = "size-input";
+                label.appendChild(input);
+                sizeContainer.appendChild(label);
+            }
+            tr.appendChild(tdSizes);
+
+            // --- Actions Cell ---
+            const tdActions = document.createElement("td");
+            const rowImageInput = document.createElement("input");
+            rowImageInput.type = "file";
+            rowImageInput.accept = "image/*";
+            rowImageInput.className = "row-image-input";
+            tdActions.appendChild(rowImageInput);
+            tdActions.appendChild(document.createElement("br"));
+
+            const saveBtn = document.createElement("button");
+            saveBtn.textContent = "Save";
+            saveBtn.className = "save-btn";
+            saveBtn.dataset.index = product.index;
+            tdActions.appendChild(saveBtn);
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Delete";
+            deleteBtn.className = "delete-btn";
+            deleteBtn.dataset.index = product.index;
+            tdActions.appendChild(deleteBtn);
+
+            tr.appendChild(tdActions);
 
             productTableBody.appendChild(tr);
 
-            // Row image input change
-            tr.querySelector(".row-image-input").addEventListener("change", function () {
+            // --- Row image change handler ---
+            rowImageInput.addEventListener("change", function () {
                 const file = this.files[0];
                 if (!file) return;
                 const reader = new FileReader();
@@ -170,31 +249,28 @@ function renderProducts() {
                 reader.readAsDataURL(file);
             });
 
-            // Save button
-            tr.querySelector(".save-btn").addEventListener("click", () => {
-                const trEl = tr;
-                const p = products[product.index];
+            // --- Save button ---
+            saveBtn.addEventListener("click", () => {
+                product.name = nameInput.value.trim();
+                product.price = parseFloat(priceInput.value) || 0;
+                product.gender = genderSelect.value;
 
-                p.name = trEl.querySelector(".name-field").value.trim();
-                p.price = parseFloat(trEl.querySelector(".price-field").value);
-                p.gender = trEl.querySelector(".gender-field").value;
-
-                if (p.hasSizes) {
+                if (product.hasSizes) {
                     DEFAULT_SIZES.forEach(size => {
-                        const input = trEl.querySelector(`.size-input[data-size="${size}"]`);
-                        p.sizes[size] = parseInt(input.value) || 0;
+                        const input = sizeContainer.querySelector(`input[data-size="${size}"]`);
+                        product.sizes[size] = parseInt(input.value) || 0;
                     });
                 } else {
-                    const input = trEl.querySelector(`.size-input[data-size="OneSize"]`);
-                    p.sizes.OneSize = parseInt(input.value) || 0;
+                    const input = sizeContainer.querySelector(`input[data-size="OneSize"]`);
+                    product.sizes.OneSize = parseInt(input.value) || 0;
                 }
 
                 saveProducts();
                 renderProducts();
             });
 
-            // Delete button
-            tr.querySelector(".delete-btn").addEventListener("click", () => {
+            // --- Delete button ---
+            deleteBtn.addEventListener("click", () => {
                 if (confirm("Are you sure you want to delete this product?")) {
                     products.splice(product.index, 1);
                     saveProducts();
