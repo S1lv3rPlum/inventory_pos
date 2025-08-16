@@ -320,9 +320,9 @@ td img {
 }
 
 #inventoryList table {
-  width: 100%;
+  width: auto; /* expand to content , do 100% for full width*/
   border-collapse: collapse;
-  table-layout: fixed; /* ensure proper column widths */
+  table-layout: auto; /* allow columns to size naturally */
 }
 
 #inventoryList th,
@@ -376,6 +376,53 @@ td img {
   text-overflow: ellipsis;
 }
 
+/* Inputs and selects inside product table cells */
+#productTable td input[type="number"],
+#productTable td input[type="text"],
+#productTable td select {
+  width: auto;           /* size depends on content / size attribute */
+  min-width: 1em;        /* minimal small width */
+  max-width: none;       /* no max width restriction */
+  padding: 2px 6px;      /* comfortable padding */
+  box-sizing: border-box; /* include padding in width */
+  font-size: 1em;
+  text-align: center;
+  margin: 0;             /* remove margin to avoid extra width */
+  font-family: inherit;  /* consistent font */
+}
+/* Size inputs */
+/* You had width commented out, keep it like this */
+.size-input {
+  padding: 4px;
+  font-size: 14px;
+  width: auto;
+  min-width: 1em;
+  max-width: none;
+  box-sizing: border-box;
+}
+/* Quantity input inside qty controls */
+/* Remove fixed width, allow auto sizing */
+.qty-controls input[type="number"] {
+  width: auto;
+  min-width: 2em;
+  max-width: none;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  font-size: 1.2rem;
+  text-align: center;
+}
+/* Narrow quantity input fields (.qty-input inside #productTable) */
+/* Make these auto width as well */
+#productTable td input[type="number"].qty-input {
+  width: auto;
+  min-width: 1.5em;
+  max-width: none;
+  padding: 2px 4px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+
 /* ==== Scroll on smaller screens ==== */
 @media (max-width: 768px) {
   #inventoryList {
@@ -388,7 +435,7 @@ td img {
 
 /* ==== Size Input ==== */
 .size-input {
-  width: 30px;
+ /* width: 30px; */
   padding: 4px;
   font-size: 14px;
 }
@@ -580,3 +627,18 @@ input[type=number] {
   color: white;
   font-weight: bold;
   border: none;
+}
+
+/* Make the container a flex container that wraps */
+.size-input-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px; /* space between size inputs, adjust as needed */
+}
+/* Each label takes only the needed space, aligns center */
+.size-input-container label {
+  display: flex;
+  align-items: center;
+  gap: 4px; /* space between label text and input */
+  white-space: nowrap; /* keep each label intact on one line */
+}
