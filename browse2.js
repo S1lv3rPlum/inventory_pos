@@ -2,7 +2,8 @@ function loadProducts() {
   const gallery = document.getElementById("productGallery");
   gallery.innerHTML = "";
 
-  const products = JSON.parse(localStorage.getItem("BandPOSDB_products") || "[]");
+  const PRODUCTS_KEY = "inventory_products";  // match inventory.js
+const products = JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]");
 
   products.forEach(product => {
     const card = document.createElement("div");
