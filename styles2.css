@@ -671,3 +671,70 @@ input[type=number] {
   justify-items: center;
   width: 100%;
 }
+
+@media (max-width: 480px) {
+  /* Stack form controls vertically and full width */
+  form#posForm label,
+  form#posForm select,
+  form#posForm button {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+  }
+  /* Slightly smaller text and padding in cart table */
+  #cartBox table,
+  #cartBox th,
+  #cartBox td {
+    font-size: 0.85rem;
+    padding: 6px 8px;
+  }
+  /* Prevent horizontal scroll, show full table */
+  #cartBox {
+    overflow: visible;
+    padding: 0.5rem;
+  }
+  /* Allow wrapping in table cells to avoid overflow */
+  #cartBox td, 
+  #cartBox th {
+    white-space: normal;
+    word-break: break-word;
+  }
+  /* Make buttons easier to tap */
+  .navButton, button {
+    font-size: 1rem;
+    padding: 10px 0;
+  }
+}
+
+/* Container to align event label and date value horizontally */
+#eventDateContainer {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem; /* space between label and date */
+  margin-bottom: 1rem; /* vertical spacing below */
+}
+/* Reduce bottom margin for labels in posForm */
+/* Adjust the 'Select Size' specifically */
+form#posForm label {
+  margin-bottom: 0.25rem; /* smaller space below all labels */
+}
+/* Even tighter spacing below the size label */
+form#posForm label[for="sizeSelect"] {
+  margin-bottom: 0.125rem;
+}
+/* Ensure selects and button are block and full width or max width */
+form#posForm select,
+form#posForm button[type="submit"] {
+  display: block;
+  width: 100%;
+  max-width: 300px;  /* optional limit */
+  margin-bottom: 0.75rem; /* space between selects and button */
+}
+/* Add extra top margin on button to separate from size dropdown */
+form#posForm button[type="submit"] {
+  margin-top: 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 10px 16px;
+}
