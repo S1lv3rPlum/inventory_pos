@@ -1,34 +1,51 @@
 function loadProducts() {
   const gallery = document.getElementById("productGallery");
-  gallery.innerHTML = "";
-
-  const PRODUCTS_KEY = "inventory_products";  // match inventory.js
-const products = JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]");
-
-  products.forEach(product => {
-    const card = document.createElement("div");
-    card.className = "product-card";
-
-    const img = document.createElement("img");
-    img.src = product.image || "product-images/default.jpg";
-    img.alt = product.name;
-    img.className = "product-image";
-
-    const label = document.createElement("div");
-    label.textContent = product.name;
-    label.className = "product-label";
-
-    card.appendChild(img);
-    card.appendChild(label);
-
-    // 👇 These were broken in your version:
-    card.addEventListener("mousedown", e => startLongPress(e, product));
-    card.addEventListener("touchstart", e => startLongPress(e, product));
-    card.addEventListener("mouseup", clearLongPress);
-    card.addEventListener("mouseleave", clearLongPress);
-    card.addEventListener("touchend", clearLongPress);
-
-    gallery.appendChild(card);
+  gallery.innerHTML = ""; // clear current content
+  const PRODUCTS_KEY = "inventory_products";
+  const products = JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]");
+  // Group products by category
+  const groupedProducts = products.reduce((groups, product) => {
+    const cat = product.category || "Uncategorized";
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(product);
+    return groups;
+  }, {});
+  Object.keys(groupedProducts).forEach(category => {
+    // Create container for category section
+    const categorySection = document.createElement("div");
+    categorySection.className = "category-section";
+    categorySection.style.marginBottom = "2rem"; // spacing between categories
+    // Create and append category header
+    const categoryHeader = document.createElement("h2");
+    categoryHeader.textContent = category;
+    categoryHeader.style.marginBottom = "0.75rem";
+    categorySection.appendChild(categoryHeader);
+    // Create gallery div to hold product cards
+    const categoryGallery = document.createElement("div");
+    categoryGallery.className = "gallery";
+    // Create product cards inside this gallery
+    groupedProducts[category].forEach(product => {
+      const card = document.createElement("div");
+      card.className = "product-card";
+      const img = document.createElement("img");
+      img.src = product.image || "product-images/default.jpg";
+      img.alt = product.name;
+      img.className = "product-image";
+      const label = document.createElement("div");
+      label.textContent = product.name;
+      label.className = "product-label";
+      card.appendChild(img);
+      card.appendChild(label);
+      // Add event listeners as before
+      card.addEventListener("mousedown", e => startLongPress(e, product));
+      card.addEventListener("touchstart", e => startLongPress(e, product));
+      card.addEventListener("mouseup", clearLongPress);
+      card.addEventListener("mouseleave", clearLongPress);
+      card.addEventListener("touchend", clearLongPress);
+      categoryGallery.appendChild(card);
+    });
+    categorySection.appendChild(categoryGallery);  
+    gallery.appendChild(categorySection);
   });
 }
 
@@ -49,28 +66,39 @@ function startLongPress(event, product) {
 function openAddToCartModal(product) {
   const modal = document.getElementById("productModal");
   modal.style.display = "flex";
-
   document.getElementById("modalProductName").textContent = product.name;
+  const priceElem = document.getElementById("modalProductPrice");
+  const priceFormatted = (product.price ?? 0).toFixed(2);
+  priceElem.textContent = `Price: $${priceFormatted}`;
   const sizeSelect = document.getElementById("productSize");
   const sizeRow = document.getElementById("sizeRow");
   sizeSelect.innerHTML = "";
-  const variants = product.variants || [];
-
-  if (variants.length > 1) {
-    sizeRow.style.display = "block";
-    variants.forEach(v => {
-      const opt = document.createElement("option");
-      opt.value = v.size;
-      opt.textContent = `${v.size} (Qty: ${v.stock})`;
-      sizeSelect.appendChild(opt);
-    });
-  } else {
-    sizeRow.style.display = "none";
-    if (variants.length === 1) {
-      sizeSelect.innerHTML = `<option value="${variants[0].size}" selected></option>`;
-    }
+  // Remove any previous single quantity message if it exists
+  const oldSingleQtyMsg = document.getElementById("singleQtyMessage");
+  if (oldSingleQtyMsg) {
+    oldSingleQtyMsg.remove();
   }
-
+  if (product.hasSizes) {
+    sizeRow.style.display = "block";
+    Object.entries(product.sizes).forEach(([size, qty]) => {
+      const option = document.createElement("option");
+      option.value = size;
+      option.textContent = `${size} (Qty: ${qty})`;
+      sizeSelect.appendChild(option);
+    });
+    sizeSelect.disabled = false;
+  } else {
+    // Hide size selector row
+    sizeRow.style.display = "none";
+    // Show available quantity for single size products
+    const oneSizeQty = product.sizes.OneSize || 0;
+    const singleQtyMsg = document.createElement("div");
+    singleQtyMsg.id = "singleQtyMessage";
+    singleQtyMsg.style.marginBottom = "1rem";
+    singleQtyMsg.style.fontWeight = "bold";
+    singleQtyMsg.textContent = `Available quantity: ${oneSizeQty}`;
+    sizeRow.parentNode.insertBefore(singleQtyMsg, sizeRow);
+  }
   document.getElementById("productQty").value = 1;
   document.getElementById("addToCartForm").onsubmit = e => {
     e.preventDefault();
@@ -86,25 +114,28 @@ function changeQty(delta) {
 }
 
 function addToCart(product) {
-  const size = document.getElementById("productSize").value;
+  let size;
+  const sizeRow = document.getElementById("sizeRow");
+  if (sizeRow.style.display === "none") {
+    size = "OneSize";
+  } else {
+    size = document.getElementById("productSize").value;
+  }
   const qty = parseInt(document.getElementById("productQty").value);
   if (!size || isNaN(qty) || qty <= 0) return alert("Please enter a valid quantity.");
-
   let cart = JSON.parse(localStorage.getItem("shoppingCart") || "[]");
+  // Find existing item in cart matching product and size
   const existingIndex = cart.findIndex(item => item.id === product.id && item.size === size);
-  const stock = product.variants.find(v => v.size === size)?.stock ?? 0;
-
+  // Get stock from product.sizes object
+  const stock = product.sizes[size] ?? 0;
   const inCartQty = existingIndex >= 0 ? cart[existingIndex].qty : 0;
   if (inCartQty + qty > stock) return alert(`Only ${stock - inCartQty} item(s) remaining.`);
-
   const price = product.price ?? 0;
-
   if (existingIndex >= 0) {
     cart[existingIndex].qty += qty;
   } else {
     cart.push({ id: product.id, name: product.name, size, qty, price });
   }
-
   localStorage.setItem("shoppingCart", JSON.stringify(cart));
   updateCartIcon();
   closeModal();
@@ -227,3 +258,12 @@ document.addEventListener("DOMContentLoaded", () => {
     cartIcon.addEventListener("click", openCart);
   }
 });
+
+function closeShippingModal() {
+  const shippingModal = document.getElementById("shippingModal");
+  if (shippingModal) {
+    shippingModal.style.display = "none";
+  }
+  window.location.href = "BrowseProducts.html";
+}
+
