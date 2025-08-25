@@ -15,14 +15,16 @@
     }
 
     .container {
-      max-width: 100%;
-      margin: 0 auto;
-      background: white;
-      padding: 0.5rem;
-      border-radius: 8px;
-      box-shadow: 0 0 6px rgba(0,0,0,0.1);
-      box-sizing: border-box;
-    }
+  max-width: 1000px;
+  width: 100%;
+  padding: 0.5rem;
+  margin: 0 auto;
+  box-sizing: border-box;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 0 6px rgba(0,0,0,0.1);
+  display: block; /* instead of table */
+}
 
     #topBar {
       display: flex;
@@ -59,10 +61,12 @@
 
     .gallery {
   display: grid;
-  width: 95%;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 1rem;
   justify-items: center;
+  box-sizing: border-box;
+  padding: 0 0.5rem;
 }
 
 
@@ -234,30 +238,33 @@
   </div>
 
   <!-- Add to cart modal -->
-  <div class="modal" id="productModal" role="dialog" aria-modal="true" aria-labelledby="modalProductName">
-    <div class="modal-content">
-      <h2 id="modalProductName"></h2>
-      <form id="addToCartForm">
-        <div class="form-row" id="sizeRow" style="display:none;">
-          <label for="productSize">Size:</label>
-          <select id="productSize"></select>
+ <div class="modal" id="productModal" role="dialog" aria-modal="true" aria-labelledby="modalProductName">
+  <div class="modal-content">
+    <h2 id="modalProductName"></h2>
+    <!-- Price display: insert here -->
+    <div id="modalProductPrice" style="margin-bottom: 1rem; font-weight: bold; font-size: 1.1rem;">
+      <!-- Price will be inserted here dynamically -->
+    </div>
+    <form id="addToCartForm">
+      <div class="form-row" id="sizeRow" style="display:none;">
+        <label for="productSize">Size:</label>
+        <select id="productSize"></select>
+      </div>
+      <div class="form-row">
+        <label for="productQty">Quantity:</label>
+        <div class="qty-controls">
+          <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
+          <input type="number" id="productQty" min="1" value="1" />
+          <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
         </div>
-<div class="form-row">
-  <label for="productQty">Quantity:</label>
-  <div class="qty-controls">
-    <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
-    <input type="number" id="productQty" min="1" value="1" />
-    <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+      </div>
+      <div class="modal-buttons">
+        <button type="button" onclick="closeModal()">Cancel</button>
+        <button type="submit">Add to Cart</button>
+      </div>
+    </form>
   </div>
 </div>
-
-        <div class="modal-buttons">
-          <button type="button" onclick="closeModal()">Cancel</button>
-          <button type="submit">Add to Cart</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
 <div class="modal" id="cartModal">
   <div class="modal-content">
