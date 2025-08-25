@@ -642,3 +642,32 @@ input[type=number] {
   gap: 4px; /* space between label text and input */
   white-space: nowrap; /* keep each label intact on one line */
 }
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0.25rem;
+  }
+  .gallery {
+    grid-template-columns: 1fr;
+    padding: 0 0.25rem;
+  }
+}
+.category-section {
+  display: block;
+  /* margin-bottom is set inline above but you can move it here */
+  margin-bottom: 2rem;
+}
+.category-section > h2 {
+  /* Styling for category title */
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 0.75rem;
+}
+.gallery {
+  /* Your existing grid styles */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  justify-items: center;
+  width: 100%;
+}
